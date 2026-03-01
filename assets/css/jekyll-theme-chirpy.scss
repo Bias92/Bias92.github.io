@@ -1,6 +1,8 @@
 ---
 ---
 
+@import 'jekyll-theme-chirpy';
+
 /* ===== 노란토끼 기술 블로그 커스텀 테마 ===== */
 
 /* 애니메이션 그라데이션 배경 */
@@ -48,7 +50,7 @@ body::before {
   100% { opacity: 0.7; transform: scale(1) rotate(-1deg); }
 }
 
-/* 플로팅 글로우 orbs */
+/* 플로팅 글로우 orb */
 body::after {
   content: '';
   position: fixed;
@@ -79,7 +81,7 @@ body::after {
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* 메인 컨텐츠 글래스 */
+/* 메인 컨텐츠 z-index */
 #main-wrapper {
   position: relative;
   z-index: 1;
@@ -131,7 +133,7 @@ li code {
   padding: 2px 6px;
 }
 
-/* ===== 타이포그래피 개선 ===== */
+/* ===== 타이포그래피 ===== */
 
 /* 포스트 제목 그라데이션 */
 .post h1,
@@ -166,7 +168,7 @@ a:not(.btn):not(.card-wrapper a):hover {
   text-shadow: 0 0 12px rgba(165, 180, 252, 0.3);
 }
 
-/* ===== 스크롤바 커스텀 ===== */
+/* ===== 커스텀 스크롤바 ===== */
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -185,7 +187,7 @@ a:not(.btn):not(.card-wrapper a):hover {
   background: rgba(99, 102, 241, 0.5);
 }
 
-/* ===== TOC (목차) 글래스 ===== */
+/* ===== TOC 글래스 ===== */
 
 #toc-wrapper {
   background: rgba(15, 15, 30, 0.5) !important;
@@ -195,7 +197,7 @@ a:not(.btn):not(.card-wrapper a):hover {
   border-radius: 12px;
 }
 
-/* ===== 푸터 ===== */
+/* ===== 푸터 투명 ===== */
 
 #core-wrapper + div,
 footer {
@@ -218,8 +220,7 @@ footer {
   }
 }
 
-/* ===== 라이트모드 대응 (선택) ===== */
-/* Chirpy는 기본 다크모드인데, 라이트모드 쓸 경우 */
+/* ===== 라이트모드 대응 ===== */
 
 [data-mode="light"] body,
 html[data-mode="light"] body {
