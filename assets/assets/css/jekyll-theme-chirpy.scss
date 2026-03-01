@@ -1,0 +1,113 @@
+---
+---
+
+/* 기본 Chirpy 테마 import */
+@import 'main';
+
+/* ============================================
+   Custom v8 Theme - Glassmorphism Dark
+   ============================================ */
+
+body {
+  background: #000 !important;
+}
+
+#sidebar {
+  background: rgba(8, 8, 20, 0.82) !important;
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border-right: 1px solid rgba(60, 120, 200, 0.08);
+}
+
+#main-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+.post-content, #post-list, .post {
+  position: relative;
+  z-index: 1;
+}
+
+.card-wrapper .card, .post-preview {
+  background: rgba(10, 14, 28, 0.65) !important;
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(80, 140, 220, 0.1) !important;
+  border-radius: 16px !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-wrapper .card:hover, .post-preview:hover {
+  background: rgba(16, 24, 48, 0.75) !important;
+  border-color: rgba(80, 160, 255, 0.18) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(40, 100, 220, 0.12);
+}
+
+div.highlight, .highlight, .code-header {
+  background: rgba(6, 8, 18, 0.75) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(60, 120, 200, 0.08);
+  border-radius: 12px;
+}
+
+p code, li code {
+  background: rgba(40, 100, 200, 0.12) !important;
+  border: 1px solid rgba(40, 100, 200, 0.18);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.post h1, #post-list h1 {
+  background: linear-gradient(135deg, #b8d4ff, #7eb8ff, #4a9eff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.post-content h2 {
+  border-left: 3px solid rgba(60, 140, 255, 0.5);
+  padding-left: 12px;
+  margin-top: 2rem;
+}
+
+a:not(.btn):not(.card-wrapper a) {
+  color: #7eb8ff !important;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:not(.btn):not(.card-wrapper a):hover {
+  color: #b8d4ff !important;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(40, 100, 220, 0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(40, 100, 220, 0.45); }
+
+#toc-wrapper {
+  background: rgba(8, 12, 24, 0.55) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(60, 120, 200, 0.08);
+  border-radius: 12px;
+}
+
+#core-wrapper + div, footer {
+  background: transparent !important;
+}
+
+#search-result-wrapper {
+  background: rgba(4, 6, 14, 0.92) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+@media (max-width: 849px) {
+  #sidebar {
+    background: rgba(4, 6, 14, 0.92) !important;
+  }
+}
