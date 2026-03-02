@@ -1,0 +1,68 @@
+baseURL: "https://bias92.github.io/"
+languageCode: ko
+defaultContentLanguage: ko
+title: "노란토끼의 기술 블로그"
+theme: "PaperMod"
+paginate: 10
+
+params:
+  env: production
+  description: "GPU Systems & Deep Learning Hardware"
+  author: "노란토끼"
+  defaultTheme: dark
+  disableThemeToggle: false
+  ShowReadingTime: true
+  ShowShareButtons: false
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  ShowToc: true
+  TocOpen: false
+  comments: false
+
+  homeInfoParams:
+    Title: "노란토끼의 기술 블로그"
+    Content: "GPU Systems & Deep Learning Hardware"
+
+  socialIcons:
+    - name: github
+      url: "https://github.com/Bias92"
+
+  assets:
+    favicon: "/favicon.ico"
+    disableFingerprinting: true
+
+  cover:
+    linkFullImages: true
+
+menu:
+  main:
+    - identifier: home
+      name: Home
+      url: /
+      weight: 1
+    - identifier: posts
+      name: Posts
+      url: /posts/
+      weight: 2
+    - identifier: tags
+      name: Tags
+      url: /tags/
+      weight: 3
+    - identifier: search
+      name: Search
+      url: /search/
+      weight: 4
+
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+
+markup:
+  highlight:
+    codeFences: true
+    guessSyntax: true
+    lineNos: false
+    style: dracula
