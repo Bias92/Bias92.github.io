@@ -3,7 +3,8 @@ languageCode: ko
 defaultContentLanguage: ko
 title: "노란토끼의 기술 블로그"
 theme: "PaperMod"
-paginate: 10
+pagination:
+  pagerSize: 10
 
 params:
   env: production
