@@ -1,0 +1,14 @@
+:root {
+  --theme: transparent;
+  --entry: rgba(10, 14, 28, 0.65);
+  --code-bg: rgba(6, 8, 18, 0.75);
+  --border: rgba(80, 140, 220, 0.1);
+  --content: #c8d6e5;
+  --primary: #7eb8ff;
+  --secondary: #8899aa;
+  --tertiary: rgba(40, 100, 220, 0.12);
+}
+body { background: #000 !important; }
+.dark { --theme: transparent; --entry: rgba(10, 14, 28, 0.65); }
+header { background: transparent !important; }
+footer { background: transparent !important; }
