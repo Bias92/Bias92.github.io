@@ -16,18 +16,24 @@ footer { background: transparent !important; }
 
 /* Post navigation (다음/이전 페이지) */
 .paginav {
-  background: var(--entry);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: rgba(10, 14, 28, 0.65) !important;
+  border: 1px solid rgba(80, 140, 220, 0.1) !important;
+  border-radius: 8px !important;
   overflow: hidden;
 }
 
 .paginav a {
-  border: none;
+  background: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+.paginav .prev, .paginav .next {
+  background: transparent !important;
 }
 
 /* Tags section in post */
 .post-tags a {
-  background: var(--entry);
-  border: 1px solid var(--border);
+  background: rgba(10, 14, 28, 0.65) !important;
+  border: 1px solid rgba(80, 140, 220, 0.1) !important;
 }
