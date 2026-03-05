@@ -8,7 +8,26 @@
   --secondary: #8899aa;
   --tertiary: rgba(40, 100, 220, 0.12);
 }
+
 body { background: #000 !important; }
 .dark { --theme: transparent; --entry: rgba(10, 14, 28, 0.65); }
 header { background: transparent !important; }
 footer { background: transparent !important; }
+
+/* Post navigation (다음/이전 페이지) */
+.paginav {
+  background: var(--entry);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.paginav a {
+  border: none;
+}
+
+/* Tags section in post */
+.post-tags a {
+  background: var(--entry);
+  border: 1px solid var(--border);
+}
