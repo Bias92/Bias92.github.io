@@ -1,1 +1,10 @@
-.logo a { color: #ffffff !important; }
+.terms-tags li a {
+    background: rgba(30, 30, 60, 0.7) !important;
+    border: 1px solid rgba(100, 120, 200, 0.3) !important;
+    color: var(--primary) !important;
+}
+
+.terms-tags li a:hover {
+    background: rgba(50, 50, 100, 0.8) !important;
+    border-color: rgba(100, 120, 200, 0.6) !important;
+}
