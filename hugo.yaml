@@ -24,6 +24,10 @@ params:
   homeInfoParams:
     Title: "노란토끼의 기술 블로그"
     Content: "GPU Systems & Deep Learning Hardware"
+    ImageUrl: "/profile.png"
+    ImageWidth: 200
+    ImageHeight: 200
+    ImageTitle: "노란토끼"
 
   socialIcons:
     - name: github
