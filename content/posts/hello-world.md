@@ -3,6 +3,7 @@ title: "Opening Note"
 date: 2025-03-02
 draft: false
 tags: ["intro"]
+categories: ["General"]
 summary: "GPU Systems & Deep Learning Hardware"
 ---
 
