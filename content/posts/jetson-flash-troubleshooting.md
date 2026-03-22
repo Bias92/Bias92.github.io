@@ -2,7 +2,7 @@
 title: "JetPack 6.2.2 Flash Troubleshooting: AMD USB Incompatibility and the chroot Solution"
 date: 2026-03-19
 tags: ["jetson", "nvidia", "edge-ai", "jetpack", "troubleshooting", "cuda", "tegrarcm", "amd", "chroot"]
-categories: ["MLSys"]
+categories: ["Embedded"]
 summary: "Documenting the root cause of tegrarcm_v2 USB write timeout on AMD hosts when flashing Jetson AGX Orin, and the chroot-based workaround using an Intel laptop with limited RAM."
 draft: false
 ---
