@@ -19,7 +19,7 @@ params:
   ShowCodeCopyButtons: true
   ShowToc: true
   TocOpen: false
-  comments: false
+  comments: true
 
   homeInfoParams:
     Title: "노란토끼의 기술 블로그"
