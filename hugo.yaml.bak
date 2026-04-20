@@ -1,7 +1,7 @@
 baseURL: "https://bias92.github.io/"  
 languageCode: ko
 defaultContentLanguage: ko
-title: "굉장히 공격적이고 사나운 사람"
+title: "노란토끼의 기술 블로그"
 theme: "PaperMod"
 pagination:
   pagerSize: 10
@@ -18,15 +18,16 @@ params:
   ShowBreadCrumbs: true
   ShowCodeCopyButtons: true
   ShowToc: true
-  TocOpen: true
-  comments: true
+  TocOpen: false
+  comments: false
 
   homeInfoParams:
-    Title: "굉장히 공격적이고 사나운 사람"
+    Title: "노란토끼의 기술 블로그"
     Content: "GPU Systems & Deep Learning Hardware"
-    Intro: |
-      PLACEHOLDER_INTRO_여기에_네가_쓰고싶은_소개문구_들어감.
-      여러_줄_가능하고_마크다운_지원됨.
+    ImageUrl: "/profile.png"
+    ImageWidth: 200
+    ImageHeight: 200
+    ImageTitle: "노란토끼"
 
   socialIcons:
     - name: github
@@ -39,8 +40,28 @@ params:
   cover:
     linkFullImages: true
 
-# menu 블록 삭제됨 (scaling-book 스타일: 로고만 있는 네비)
-# 원본은 .backups/20260420_195208/hugo.yaml.old 에 보존
+menu:
+  main:
+    - identifier: home
+      name: Home
+      url: /
+      weight: 1
+    - identifier: posts
+      name: Posts
+      url: /posts/
+      weight: 2
+    - identifier: categories
+      name: Categories
+      url: /categories/
+      weight: 3
+    - identifier: tags
+      name: Tags
+      url: /tags/
+      weight: 4
+    - identifier: search
+      name: Search
+      url: /search/
+      weight: 5
 
 outputs:
   home:

@@ -1,0 +1,127 @@
+{{/*
+    Override of PaperMod's toc.html partial
+    - Adds IntersectionObserver JS for active section highlighting
+    - Place this file at: layouts/partials/toc.html
+    - Your config.yml must have: params.ShowToc: true
+*/}}
+{{- $headers := findRE "<h[1-6].*?>(.|\n])+?</h[1-6]>" .Content -}}
+{{- $has_headers := ge (len $headers) 1 -}}
+{{- if $has_headers -}}
+<aside class="toc" aria-label="Table of Contents">
+    <details {{if (default false .Site.Params.TocOpen)}}open{{end}}>
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">{{- i18n "toc" | default "Table of Contents" }}</span>
+        </summary>
+
+        <div class="inner">
+            {{- $largest := 6 -}}
+            {{- range $headers -}}
+                {{- $headerLevel := index (findRE "[1-6]" . 1) 0 -}}
+                {{- $headerLevel := len (seq $headerLevel) -}}
+                {{- if lt $headerLevel $largest -}}
+                    {{- $largest = $headerLevel -}}
+                {{- end -}}
+            {{- end -}}
+
+            {{- $firstHeaderLevel := len (seq (index (findRE "[1-6]" (index $headers 0) 1) 0)) -}}
+
+            {{- $bareul := slice -}}
+            {{- range seq (sub $firstHeaderLevel $largest) -}}
+                {{- $bareul = $bareul | append "<ul>" -}}
+            {{- end -}}
+            {{ delimit $bareul "" | safeHTML }}
+
+            <ul>
+                {{- $curLevel := $firstHeaderLevel -}}
+                {{- range $i, $header := $headers -}}
+                    {{- $headerLevel := len (seq (index (findRE "[1-6]" . 1) 0)) -}}
+                    {{- $headerText := replaceRE "<h[1-6].*?>((.|\n])+?)</h[1-6]>" "$1" . -}}
+                    {{- $cleanedText := replaceRE "<.*?>" "" $headerText -}}
+                    {{- $anchorID := anchorize $cleanedText -}}
+
+                    {{- if gt $headerLevel $curLevel -}}
+                        {{- range seq (sub $headerLevel $curLevel) -}}
+                            <ul>
+                        {{- end -}}
+                    {{- else if lt $headerLevel $curLevel -}}
+                        {{- range seq (sub $curLevel $headerLevel) -}}
+                            </li></ul>
+                        {{- end -}}
+                        </li>
+                    {{- else if ne $i 0 -}}
+                        </li>
+                    {{- end -}}
+
+                    <li>
+                        <a href="#{{- $anchorID -}}" aria-label="{{- $cleanedText | plainify -}}">{{- $headerText | safeHTML -}}</a>
+                    {{- $curLevel = $headerLevel -}}
+                {{- end -}}
+
+                <!-- close remaining tags -->
+                {{- range seq (sub $curLevel $firstHeaderLevel) -}}
+                    </li></ul>
+                {{- end -}}
+                </li>
+            </ul>
+
+            {{- $barelicloseul := slice -}}
+            {{- range seq (sub $firstHeaderLevel $largest) -}}
+                {{- $barelicloseul = $barelicloseul | append "</ul>" -}}
+            {{- end -}}
+            {{ delimit $barelicloseul "" | safeHTML }}
+        </div>
+    </details>
+</aside>
+
+<script>
+    // Active section highlighting via IntersectionObserver
+    document.addEventListener('DOMContentLoaded', function() {
+        const tocLinks = document.querySelectorAll('.toc a');
+        if (tocLinks.length === 0) return;
+
+        const headerIds = [];
+        tocLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('#')) {
+                headerIds.push(href.substring(1));
+            }
+        });
+
+        const headers = headerIds
+            .map(id => document.getElementById(id))
+            .filter(el => el !== null);
+
+        if (headers.length === 0) return;
+
+        let activeLink = null;
+        const setActive = (id) => {
+            if (activeLink) activeLink.classList.remove('active');
+            const link = document.querySelector(`.toc a[href="#${CSS.escape(id)}"]`);
+            if (link) {
+                link.classList.add('active');
+                activeLink = link;
+            }
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            // Find the topmost visible header
+            const visible = entries
+                .filter(e => e.isIntersecting)
+                .map(e => e.target);
+
+            if (visible.length > 0) {
+                // Pick the one closest to the top
+                const sorted = visible.sort((a, b) => {
+                    return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+                });
+                setActive(sorted[0].id);
+            }
+        }, {
+            rootMargin: '-80px 0px -70% 0px',
+            threshold: 0
+        });
+
+        headers.forEach(h => observer.observe(h));
+    });
+</script>
+{{- end }}

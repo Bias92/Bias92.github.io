@@ -1,0 +1,61 @@
+{{- define "main" }}
+
+<article class="sb-home">
+  <header class="sb-home-header">
+    <h1 class="sb-title">{{ .Site.Title }}</h1>
+    {{- with .Site.Params.homeInfoParams.Content }}
+    <p class="sb-subtitle">{{ . }}</p>
+    {{- end }}
+
+    {{- with .Site.Params.homeInfoParams.Intro }}
+    <div class="sb-intro">
+      {{ . | markdownify }}
+    </div>
+    {{- end }}
+  </header>
+
+  {{- $byCategory := dict }}
+  {{- $order := slice }}
+  {{- range .Site.RegularPages.ByDate.Reverse }}
+    {{- $cat := "General" }}
+    {{- with .Params.categories }}
+      {{- $cat = index . 0 }}
+    {{- end }}
+    {{- if not (isset $byCategory $cat) }}
+      {{- $byCategory = merge $byCategory (dict $cat (slice)) }}
+      {{- $order = $order | append $cat }}
+    {{- end }}
+    {{- $existing := index $byCategory $cat }}
+    {{- $byCategory = merge $byCategory (dict $cat ($existing | append .)) }}
+  {{- end }}
+
+  <nav class="sb-toc">
+    {{- range $i, $cat := $order }}
+    {{- $posts := index $byCategory $cat }}
+    <section class="sb-toc-section">
+      <h2 class="sb-toc-heading">
+        <span class="sb-part-label">Part {{ $i }}</span>
+        <span class="sb-cat-name">{{ $cat }}</span>
+      </h2>
+      <ul class="sb-toc-list">
+        {{- range $posts }}
+        <li class="sb-toc-item">
+          <a href="{{ .RelPermalink }}" class="sb-toc-link">
+            <span class="sb-toc-title">{{ .Title }}</span>
+            {{- with .Description }}
+            <span class="sb-toc-desc">{{ . }}</span>
+            {{- else }}
+            {{- with .Summary }}
+            <span class="sb-toc-desc">{{ . | plainify | truncate 120 }}</span>
+            {{- end }}
+            {{- end }}
+          </a>
+        </li>
+        {{- end }}
+      </ul>
+    </section>
+    {{- end }}
+  </nav>
+</article>
+
+{{- end }}
