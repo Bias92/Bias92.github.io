@@ -23,11 +23,7 @@ params:
 
   homeInfoParams:
     Title: "굉장히 공격적이고 사나운 사람"
-    Content: "GPU Systems & Deep Learning Hardware"
-    Intro: |
-      PLACEHOLDER_INTRO_여기에_네가_쓰고싶은_소개문구_들어감.
-      여러_줄_가능하고_마크다운_지원됨.
-
+    Content: "MLSys · GPU Systems · Deep Learning Hardware"
   socialIcons:
     - name: github
       url: "https://github.com/Bias92"
