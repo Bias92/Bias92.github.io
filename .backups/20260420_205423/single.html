@@ -1,0 +1,39 @@
+{{- define "main" }}
+
+<article class="sb-post">
+  <header class="sb-post-header">
+    <h1 class="sb-post-title">{{ .Title }}</h1>
+    {{- with .Description }}
+    <p class="sb-post-subtitle">{{ . }}</p>
+    {{- end }}
+  </header>
+
+  <div class="sb-post-layout">
+    {{- if (.Param "ShowToc") }}
+    {{- partial "toc.html" . }}
+    {{- end }}
+
+    <div class="sb-post-content">
+      {{ .Content }}
+    </div>
+  </div>
+
+  <footer class="sb-post-footer">
+    <nav class="sb-post-nav">
+      {{- with .PrevInSection }}
+      <a href="{{ .RelPermalink }}" class="sb-post-nav-prev">
+        <span class="sb-nav-label">Previous</span>
+        <span class="sb-nav-title">{{ .Title }}</span>
+      </a>
+      {{- end }}
+      {{- with .NextInSection }}
+      <a href="{{ .RelPermalink }}" class="sb-post-nav-next">
+        <span class="sb-nav-label">Next</span>
+        <span class="sb-nav-title">{{ .Title }}</span>
+      </a>
+      {{- end }}
+    </nav>
+  </footer>
+</article>
+
+{{- end }}
