@@ -16,7 +16,7 @@
 
   {{- $byCategory := dict }}
   {{- $order := slice }}
-  {{- range .Site.RegularPages.ByDate.Reverse }}
+  {{- range where .Site.RegularPages.ByDate.Reverse "RelPermalink" "ne" "/search/" }}
     {{- $cat := "General" }}
     {{- with .Params.categories }}
       {{- $cat = index . 0 }}
