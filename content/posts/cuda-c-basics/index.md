@@ -1,7 +1,7 @@
 ---
 title: "01 CUDA C Basics"
 date: 2026-05-22
-draft: true
+draft: false
 tags: ["CUDA", "GPU Programming", "Parallel Programming", "Video Notes"]
 categories: ["CUDA"]
 series: ["CUDA C"]
