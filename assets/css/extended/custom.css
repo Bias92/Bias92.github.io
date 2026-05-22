@@ -25,7 +25,7 @@
     --sb-code-bg:  #2c3237;
 
     --sb-max-width: 900px;
-    --sb-content-width: 760px;
+    --sb-content-width: 900px;
     --sb-serif: Georgia, serif;
     --sb-sans: 'Roboto', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
     --sb-mono: 'SFMono-Regular', 'SF Mono', Menlo, Monaco, Consolas, monospace;
@@ -880,17 +880,23 @@ html { scroll-behavior: smooth; }
     }
 }
 
-/* Wider layout, shift everything left */
+/* Wider layout, balanced on large displays */
 @media (min-width: 1280px) {
     .sb-post {
         max-width: none !important;
-        padding-left: 80px !important;
-        padding-right: 80px !important;
+        padding-left: clamp(40px, 4vw, 80px) !important;
+        padding-right: clamp(40px, 4vw, 80px) !important;
     }
     .sb-post-layout {
-        max-width: none !important;
-        margin: 0 !important;
-        grid-template-columns: 240px minmax(0, 900px) !important;
-        gap: 80px !important;
+        max-width: 1440px !important;
+        margin: 0 auto !important;
+        grid-template-columns: 240px minmax(0, var(--sb-content-width)) minmax(120px, 1fr) !important;
+        gap: 72px !important;
+    }
+    .sb-post-main {
+        max-width: var(--sb-content-width) !important;
+    }
+    .toc {
+        width: 240px !important;
     }
 }
