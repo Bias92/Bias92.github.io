@@ -243,7 +243,8 @@ One more common idiom: instead of sizing the grid exactly to the data, you can f
 ```cpp
 __global__ void add(float* a, float* b, float* c, int N) {
     int stride = blockDim.x * gridDim.x;
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += stride)
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    for (; i < N; i += stride)
         c[i] = a[i] + b[i];
 }
 ```
@@ -258,7 +259,8 @@ Putting the pieces together (the 3-stage transfer, the qualifiers, the launch co
 #include <cmath>
 #include <cuda_runtime.h>
 
-__global__ void add(const float* a, const float* b, float* c, int N) {
+__global__ void add(const float* a, const float* b,
+                    float* c, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) c[i] = a[i] + b[i];   // skip out-of-range threads
 }
@@ -293,7 +295,8 @@ int main() {
 
     // 6) Verify: 1.0 + 2.0 should be 3.0
     float maxErr = 0.0f;
-    for (int i = 0; i < N; i++) maxErr = fmaxf(maxErr, fabsf(h_c[i] - 3.0f));
+    for (int i = 0; i < N; i++)
+        maxErr = fmaxf(maxErr, fabsf(h_c[i] - 3.0f));
     printf("max error: %f\n", maxErr);
 
     // 7) Cleanup
