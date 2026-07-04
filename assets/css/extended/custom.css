@@ -16,7 +16,7 @@
    CSS VARIABLES
    ============================================================ */
 :root {
-    --sb-bg:       #1c1c1d;
+    --sb-bg:       #0d0e10;
     --sb-text:     #e8e8e8;
     --sb-muted:    #828282;
     --sb-border:   #424246;
@@ -900,3 +900,17 @@ html { scroll-behavior: smooth; }
         width: 240px !important;
     }
 }
+
+/* --- 이미지 폭 줄이기: 이미지 주소 끝에 #small 붙이면 최대 480px, 가운데 정렬 --- */
+.sb-post-content img[src*="#small"],
+.post-content img[src*="#small"] {
+    max-width: 480px !important;
+    display: block;
+    margin: 1rem auto;
+}
+
+/* --- 언어 스위처 (EN/KR) --- */
+.sb-lang-switch { display: inline-flex; gap: 2px; align-items: center; margin-right: 10px; font-size: 13px; }
+.sb-lang-switch .sb-lang { color: var(--sb-muted); text-decoration: none; padding: 2px 6px; border-radius: 4px; transition: color .15s, background .15s; }
+.sb-lang-switch .sb-lang:hover { color: var(--sb-text); background: rgba(255,255,255,.06); }
+.sb-lang-switch .sb-lang.active { color: var(--sb-accent); font-weight: 600; }

@@ -1,6 +1,20 @@
 baseURL: "https://bias92.github.io/"  
 languageCode: ko
 defaultContentLanguage: ko
+
+languages:
+  ko:
+    languageName: "KR"
+    weight: 1
+  en:
+    languageName: "EN"
+    weight: 2
+    title: "Fierce & Aggressive"
+    params:
+      homeInfoParams:
+        Title: "Fierce & Aggressive"
+        Content: "MLSys · GPU Systems · Deep Learning Hardware"
+
 title: "굉장히 공격적이고 사나운 사람"
 theme: "PaperMod"
 pagination:
