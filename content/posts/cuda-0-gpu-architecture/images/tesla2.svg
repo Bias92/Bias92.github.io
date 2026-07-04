@@ -1,0 +1,93 @@
+<svg viewBox="0 0 940 470" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Tesla compute hierarchy: SPA to TPC to SM to SP</title>
+  <desc>The Tesla processor hierarchy zoomed left to right. The SPA holds several TPCs; one TPC holds a texture unit and two SMs; one SM holds eight SPs plus two SFUs, an LSU, a warp-issue unit, a register file, and 16 KB of shared memory. On G80 that is 8 TPC times 2 SM times 8 SP = 128 SP.</desc>
+  <style>text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;}</style>
+  <defs>
+    <filter id="g" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="940" height="470" fill="#0d0e10"/>
+
+  <!-- panel titles -->
+  <g text-anchor="middle" font-size="14" font-weight="700" fill="#8fd8ea">
+    <text x="143" y="60">SPA</text>
+    <text x="470" y="60">TPC</text>
+    <text x="788" y="60">SM</text>
+  </g>
+
+  <!-- zoom arrows (dashed) -->
+  <g stroke="#e46fd6" stroke-width="1.8" fill="#e46fd6" stroke-dasharray="5 4" filter="url(#g)">
+    <path d="M242 116 L366 116"/>
+  </g>
+  <path d="M360 110 L372 116 L360 122 Z" fill="#e46fd6" filter="url(#g)"/>
+  <g stroke="#e46fd6" stroke-width="1.8" fill="#e46fd6" stroke-dasharray="5 4" filter="url(#g)">
+    <path d="M556 188 L654 188"/>
+  </g>
+  <path d="M648 182 L660 188 L648 194 Z" fill="#e46fd6" filter="url(#g)"/>
+
+  <!-- Panel 1: SPA -->
+  <rect x="30" y="74" width="226" height="270" rx="9" fill="none" stroke="#33c0e4" stroke-width="1.8" filter="url(#g)"/>
+  <g fill="none" stroke="#4a9fb4" stroke-width="1.4">
+    <rect x="44"  y="92"  width="94" height="52" rx="6"/>
+    <rect x="148" y="92"  width="94" height="52" rx="6"/>
+    <rect x="44"  y="156" width="94" height="52" rx="6"/>
+    <rect x="148" y="156" width="94" height="52" rx="6"/>
+    <rect x="44"  y="220" width="94" height="52" rx="6"/>
+    <rect x="148" y="220" width="94" height="52" rx="6"/>
+    <rect x="44"  y="284" width="94" height="52" rx="6"/>
+  </g>
+  <rect x="148" y="92" width="94" height="52" rx="6" fill="none" stroke="#e46fd6" stroke-width="1.8" filter="url(#g)"/>
+  <g text-anchor="middle" font-size="12" fill="#bcd7de">
+    <text x="91"  y="123">TPC</text><text x="195" y="123">TPC</text>
+    <text x="91"  y="187">TPC</text><text x="195" y="187">TPC</text>
+    <text x="91"  y="251">TPC</text><text x="195" y="251">TPC</text>
+    <text x="91"  y="315">TPC</text>
+    <text x="195" y="315" fill="#5f666c">8 total</text>
+  </g>
+
+  <!-- Panel 2: TPC -->
+  <rect x="372" y="74" width="196" height="240" rx="9" fill="none" stroke="#33c0e4" stroke-width="1.8" filter="url(#g)"/>
+  <rect x="388" y="96" width="164" height="42" rx="6" fill="none" stroke="#4a9fb4" stroke-width="1.4"/>
+  <text x="470" y="122" text-anchor="middle" font-size="12.5" fill="#bcd7de">Texture Unit</text>
+  <rect x="388" y="164" width="76" height="126" rx="6" fill="none" stroke="#4a9fb4" stroke-width="1.4"/>
+  <rect x="476" y="164" width="76" height="126" rx="6" fill="none" stroke="#e46fd6" stroke-width="1.8" filter="url(#g)"/>
+  <g text-anchor="middle" font-size="13" fill="#bcd7de">
+    <text x="426" y="232">SM</text>
+    <text x="514" y="232" fill="#e08fd6">SM</text>
+  </g>
+  <text x="470" y="308" text-anchor="middle" font-size="11" fill="#5f666c">2 SM per TPC (G80)</text>
+
+  <!-- Panel 3: SM -->
+  <rect x="660" y="74" width="256" height="330" rx="9" fill="none" stroke="#e46fd6" stroke-width="1.9" filter="url(#g)"/>
+  <rect x="678" y="92" width="220" height="34" rx="6" fill="none" stroke="#4a9fb4" stroke-width="1.4"/>
+  <text x="788" y="114" text-anchor="middle" font-size="12" fill="#bcd7de">warp issue (MT)</text>
+
+  <text x="678" y="152" font-size="11" fill="#8fb2bd">8 × SP</text>
+  <g fill="none" stroke="#33c0e4" stroke-width="1.4" filter="url(#g)">
+    <rect x="678" y="158" width="22" height="22" rx="3"/>
+    <rect x="706" y="158" width="22" height="22" rx="3"/>
+    <rect x="734" y="158" width="22" height="22" rx="3"/>
+    <rect x="762" y="158" width="22" height="22" rx="3"/>
+    <rect x="790" y="158" width="22" height="22" rx="3"/>
+    <rect x="818" y="158" width="22" height="22" rx="3"/>
+    <rect x="846" y="158" width="22" height="22" rx="3"/>
+    <rect x="874" y="158" width="22" height="22" rx="3"/>
+  </g>
+
+  <g fill="none" stroke="#4a9fb4" stroke-width="1.4">
+    <rect x="678" y="200" width="106" height="34" rx="6"/>
+    <rect x="792" y="200" width="106" height="34" rx="6"/>
+    <rect x="678" y="244" width="220" height="34" rx="6"/>
+    <rect x="678" y="288" width="220" height="34" rx="6"/>
+  </g>
+  <g text-anchor="middle" font-size="12" fill="#bcd7de">
+    <text x="731" y="222">2 × SFU</text>
+    <text x="845" y="222">LSU</text>
+    <text x="788" y="266">Register file</text>
+    <text x="788" y="310">16 KB shared memory</text>
+  </g>
+
+  <text x="470" y="440" text-anchor="middle" font-size="12.5" fill="#9aa8ae">G80: 8 TPC × 2 SM × 8 SP = 128 SP</text>
+</svg>

@@ -59,6 +59,17 @@ outputs:
     - JSON
 
 markup:
+  goldmark:
+    extensions:
+      passthrough:
+        enable: true
+        delimiters:
+          block:
+            - ["$$", "$$"]
+            - ["\\[", "\\]"]
+          inline:
+            - ["$", "$"]
+            - ["\\(", "\\)"]
   highlight:
     codeFences: true
     guessSyntax: true

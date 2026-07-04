@@ -1,0 +1,142 @@
+<svg viewBox="0 0 1480 1010" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>NVIDIA Tesla (G80) unified architecture</title>
+  <desc>The G80 Tesla architecture: Host CPU, bridge, and system memory feed the GPU host interface; the input assembler and vertex/pixel/compute work distributors dispatch work to a Streaming Processor Array of 8 TPCs, each holding 2 SMs (8 SP each plus shared memory) and a texture unit; results cross an interconnection network to 6 ROP/L2 units and 6 DRAM partitions. 8 TPC x 2 SM x 8 SP = 128 SP.</desc>
+  <style>text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;fill:#dbeef4;}</style>
+  <defs>
+    <filter id="gl" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- one SM: 72 x 292 -->
+    <g id="sm">
+      <rect x="0" y="0" width="72" height="292" rx="5" fill="none" stroke="#33c0e4" stroke-width="1.4"/>
+      <text x="36" y="16" text-anchor="middle" font-size="12">SM</text>
+      <rect x="7" y="24" width="58" height="11" rx="2" fill="none" stroke="#3f7f90" stroke-width="1"/>
+      <rect x="7" y="38" width="58" height="11" rx="2" fill="none" stroke="#3f7f90" stroke-width="1"/>
+      <g fill="none" stroke="#4aa6be" stroke-width="1.1">
+        <rect x="13" y="58" width="18" height="18" rx="2"/><rect x="41" y="58" width="18" height="18" rx="2"/>
+        <rect x="13" y="82" width="18" height="18" rx="2"/><rect x="41" y="82" width="18" height="18" rx="2"/>
+        <rect x="13" y="106" width="18" height="18" rx="2"/><rect x="41" y="106" width="18" height="18" rx="2"/>
+        <rect x="13" y="130" width="18" height="18" rx="2"/><rect x="41" y="130" width="18" height="18" rx="2"/>
+      </g>
+      <g fill="#8fb2bd" font-size="8.5" text-anchor="middle">
+        <text x="22" y="71">SP</text><text x="50" y="71">SP</text><text x="22" y="95">SP</text><text x="50" y="95">SP</text>
+        <text x="22" y="119">SP</text><text x="50" y="119">SP</text><text x="22" y="143">SP</text><text x="50" y="143">SP</text>
+      </g>
+      <rect x="7" y="248" width="58" height="34" rx="3" fill="none" stroke="#3f7f90" stroke-width="1"/>
+      <text x="36" y="262" text-anchor="middle" font-size="8.5" fill="#9fc0ca">Shared</text>
+      <text x="36" y="274" text-anchor="middle" font-size="8.5" fill="#9fc0ca">memory</text>
+    </g>
+    <!-- one TPC: 160 x 396 -->
+    <g id="tpc">
+      <rect x="0" y="0" width="160" height="396" rx="6" fill="none" stroke="#33c0e4" stroke-width="1.7"/>
+      <text x="80" y="16" text-anchor="middle" font-size="12" fill="#9fdcec">TPC</text>
+      <rect x="7" y="24" width="146" height="14" rx="2" fill="none" stroke="#3f7f90" stroke-width="1"/>
+      <use href="#sm" x="7" y="48"/>
+      <use href="#sm" x="81" y="48"/>
+      <rect x="7" y="350" width="146" height="20" rx="3" fill="none" stroke="#3f7f90" stroke-width="1.1"/>
+      <text x="80" y="364" text-anchor="middle" font-size="10" fill="#9fc0ca">Texture unit / Tex L1</text>
+    </g>
+    <!-- one memory partition: ROP + L2 -->
+    <g id="part">
+      <rect x="0" y="0" width="96" height="40" rx="5" fill="none" stroke="#33c0e4" stroke-width="1.5"/>
+      <text x="48" y="26" text-anchor="middle" font-size="14">ROP</text>
+      <rect x="106" y="0" width="76" height="40" rx="5" fill="none" stroke="#4a7f8e" stroke-width="1.5"/>
+      <text x="144" y="26" text-anchor="middle" font-size="14" fill="#9fc0ca">L2</text>
+    </g>
+  </defs>
+
+  <rect width="1480" height="1010" fill="#0d0e10"/>
+
+  <!-- top: host -->
+  <g filter="url(#gl)" fill="none" stroke="#33c0e4" stroke-width="1.6">
+    <rect x="60" y="30" width="180" height="44" rx="6"/>
+    <rect x="284" y="30" width="140" height="44" rx="6"/>
+    <rect x="468" y="30" width="200" height="44" rx="6"/>
+  </g>
+  <g text-anchor="middle" font-size="16">
+    <text x="150" y="58">Host CPU</text><text x="354" y="58">Bridge</text><text x="568" y="58">System memory</text>
+  </g>
+  <g stroke="#2f8ba0" stroke-width="1.4" fill="none">
+    <path d="M240 52 L284 52"/><path d="M424 52 L468 52"/><path d="M354 74 L354 150"/>
+  </g>
+
+  <!-- GPU boundary -->
+  <rect x="40" y="108" width="1400" height="882" rx="10" fill="none" stroke="#22323a" stroke-width="1.4"/>
+  <text x="1420" y="130" text-anchor="end" font-size="15" fill="#7f9aa2">GPU</text>
+
+  <!-- control / distribution -->
+  <g filter="url(#gl)" fill="none" stroke="#33c0e4" stroke-width="1.6">
+    <rect x="270" y="150" width="170" height="40" rx="6"/>
+    <rect x="270" y="208" width="170" height="40" rx="6"/>
+    <rect x="270" y="268" width="170" height="46" rx="6"/>
+    <rect x="640" y="196" width="190" height="54" rx="6"/>
+    <rect x="640" y="268" width="170" height="46" rx="6"/>
+    <rect x="878" y="268" width="184" height="46" rx="6" stroke="#e46fd6"/>
+  </g>
+  <g text-anchor="middle" font-size="14">
+    <text x="355" y="175">Host interface</text>
+    <text x="355" y="233">Input assembler</text>
+    <text x="355" y="290">Vertex work</text><text x="355" y="305" font-size="11" fill="#9fc0ca">distribution</text>
+    <text x="735" y="217">Viewport / clip /</text><text x="735" y="234" font-size="11" fill="#9fc0ca">setup / raster / zcull</text>
+    <text x="725" y="290">Pixel work</text><text x="725" y="305" font-size="11" fill="#9fc0ca">distribution</text>
+    <text x="970" y="290" fill="#f0a8e6">Compute work</text><text x="970" y="305" font-size="11" fill="#e08fd6">distribution</text>
+  </g>
+  <g stroke="#2f8ba0" stroke-width="1.4" fill="none">
+    <path d="M355 190 L355 208"/><path d="M355 248 L355 268"/>
+    <path d="M355 170 L970 170 M735 170 L735 196 M970 170 L970 268"/>
+    <path d="M735 250 L735 268"/>
+    <!-- feed bus to TPCs -->
+    <path d="M355 314 L355 344 M735 314 L735 344 M970 314 L970 344"/>
+    <path d="M120 344 L1400 344"/>
+  </g>
+
+  <!-- SPA: 8 TPCs -->
+  <g stroke="#2f8ba0" stroke-width="1.2" fill="none">
+    <path d="M132 344 L132 372 M304 344 L304 372 M476 344 L476 372 M648 344 L648 372 M820 344 L820 372 M992 344 L992 372 M1164 344 L1164 372 M1336 344 L1336 372"/>
+  </g>
+  <use href="#tpc" x="52"   y="372"/>
+  <use href="#tpc" x="224"  y="372"/>
+  <use href="#tpc" x="396"  y="372"/>
+  <use href="#tpc" x="568"  y="372"/>
+  <use href="#tpc" x="740"  y="372"/>
+  <use href="#tpc" x="912"  y="372"/>
+  <use href="#tpc" x="1084" y="372"/>
+  <use href="#tpc" x="1256" y="372"/>
+
+  <!-- TPC -> interconnect -->
+  <g stroke="#2f8ba0" stroke-width="1.2" fill="none">
+    <path d="M132 768 L132 812 M304 768 L304 812 M476 768 L476 812 M648 768 L648 812 M820 768 L820 812 M992 768 L992 812 M1164 768 L1164 812 M1336 768 L1336 812"/>
+  </g>
+
+  <!-- interconnection network -->
+  <rect x="60" y="812" width="1360" height="30" rx="15" fill="none" stroke="#33c0e4" stroke-width="1.6" filter="url(#gl)"/>
+  <text x="740" y="832" text-anchor="middle" font-size="14">Interconnection network</text>
+
+  <!-- 6 ROP/L2 partitions -->
+  <use href="#part" x="96"   y="874"/>
+  <use href="#part" x="322"  y="874"/>
+  <use href="#part" x="548"  y="874"/>
+  <use href="#part" x="774"  y="874"/>
+  <use href="#part" x="1000" y="874"/>
+  <use href="#part" x="1226" y="874"/>
+
+  <!-- interconnect -> partitions, partitions -> DRAM -->
+  <g stroke="#2f8ba0" stroke-width="1.3" fill="none">
+    <path d="M144 842 L144 874 M370 842 L370 874 M596 842 L596 874 M822 842 L822 874 M1048 842 L1048 874 M1274 842 L1274 874"/>
+    <path d="M144 914 L144 946 M370 914 L370 946 M596 914 L596 946 M822 914 L822 946 M1048 914 L1048 946 M1274 914 L1274 946"/>
+  </g>
+
+  <!-- 6 DRAM -->
+  <g filter="url(#gl)" fill="none" stroke="#33c0e4" stroke-width="1.6">
+    <rect x="66"   y="946" width="176" height="44" rx="6"/>
+    <rect x="292"  y="946" width="176" height="44" rx="6"/>
+    <rect x="518"  y="946" width="176" height="44" rx="6"/>
+    <rect x="744"  y="946" width="176" height="44" rx="6"/>
+    <rect x="970"  y="946" width="176" height="44" rx="6"/>
+    <rect x="1196" y="946" width="176" height="44" rx="6"/>
+  </g>
+  <g text-anchor="middle" font-size="15" font-weight="700" letter-spacing="2">
+    <text x="154" y="974">DRAM</text><text x="380" y="974">DRAM</text><text x="606" y="974">DRAM</text>
+    <text x="832" y="974">DRAM</text><text x="1058" y="974">DRAM</text><text x="1284" y="974">DRAM</text>
+  </g>
+</svg>

@@ -2,3 +2,9 @@ public/
 resources/
 .hugo_build.lock
 .DS_Store
+
+# editor / preview / session artifacts (not part of the site)
+.claude/
+_session_backups/
+*.bak
+*.bak2
