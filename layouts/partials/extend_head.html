@@ -4,3 +4,29 @@
       백업: extend_head.html.bak2
       복구 방법: cp extend_head.html.bak2 extend_head.html
 */ -}}
+
+{{- /* KaTeX: front matter에 `math: true`인 페이지에서만 로드.
+       auto-render는 기본적으로 <pre>/<code>를 건드리지 않으므로
+       코드블록 안의 `$ nvcc ...` 같은 셸 프롬프트는 안전하다. */ -}}
+{{- if .Param "math" }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+    onload="renderMathInElement(document.body, {
+        delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '\\[', right: '\\]', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false}
+        ],
+        ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+        throwOnError: false
+    });"></script>
+<style>
+    /* 인라인 수식이 본문 줄높이를 밀지 않게, 살짝 톤다운 */
+    .katex { font-size: 1.02em; }
+    .katex-display { margin: 1.2em 0; padding: 0.5em 0; overflow-x: auto; overflow-y: hidden; }
+    /* \text{} 안 CJK가 있어도 위아래 안 잘리게 여유 */
+    .katex-display > .katex { padding: 0.12em 0; }
+</style>
+{{- end }}
