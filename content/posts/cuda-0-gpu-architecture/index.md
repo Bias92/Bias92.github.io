@@ -13,9 +13,9 @@ summary: "CUDA C 이전: 2008 IEEE Micro 논문의 Tesla 통합 아키텍처(G80
 
 ## CUDA C 전에 이걸 읽는 이유
 
-CUDA C 글은 block, warp, SM, occupancy, memory coalescing을 마치 언어 기능처럼 다룬다. 아니다. 이건 NVIDIA가 2006년 11월 G80(GeForce 8800 GTX)로 내놓고 2008년 GT200(GTX 280)으로 다듬은 하드웨어 아키텍처의, 소프트웨어에서 보이는 이름들이다. NVIDIA는 그 아키텍처를 Tesla라 부르고, 근거는 위의 IEEE Micro 논문이다.
+[CUDA C 글](../cuda-c-basics/)은 block, warp, SM, occupancy, memory coalescing을 마치 언어 기능처럼 다룬다. 아니다. 이건 NVIDIA가 2006년 11월 G80(GeForce 8800 GTX)로 내놓고 2008년 GT200(GTX 280)으로 다듬은 하드웨어 아키텍처의, 소프트웨어에서 보이는 이름들이다. NVIDIA는 그 아키텍처를 Tesla라 부르고, 근거는 위의 IEEE Micro 논문이다.
 
-이 계층을 건너뛰고 CUDA C를 배우면 `warp = 32`나 "접근을 coalesce해라"는 외워야 할 규칙이 된다. 하드웨어를 먼저 보면 그건 결과다. 이 글은 Tesla 데이터 경로를 위에서 아래로 한 번 훑어서, 다음 글의 CUDA 추상들이 물리적인 무언가 위에 얹히게 만든다.
+이 계층을 건너뛰고 CUDA C를 배우면 `warp = 32`나 "접근을 coalesce해라"는 외워야 할 규칙이 된다. 하드웨어를 먼저 보면 그건 결과다. 이 글은 Tesla 데이터 경로를 위에서 아래로 한 번 훑어서, [CUDA C 글](../cuda-c-basics/)의 CUDA 추상들이 물리적인 무언가 위에 얹히게 만든다.
 
 먼저 한 가지 단서: 여기서 Tesla(G80/GT200)는 역사적 기준점이지 현대 GPU의 스냅샷이 아니다. SM은 2006년 이후 여러 번 다시 지어졌다. SM당 FP32 lane이 8개에서 128개로 늘었고, warp scheduler 하나가 넷이 됐고, shared memory가 16KB에서 200KB 넘게 커졌고, 그때 없던 유닛들(범용 L1 데이터 캐시, tensor core, async copy)이 붙었다. 살아남은 건 이름의 족보와 멘탈 모델이다. SPA → TPC → SM → SP가 CUDA의 block, warp, SM 스케줄링 뒤에 있는 계보다. 아래 숫자들은 오늘의 스펙시트가 아니라 2008년 스냅샷으로 읽고, 개념을 오래 가는 부분으로 받아들여라.
 
@@ -62,7 +62,7 @@ $$
 SM당 실행 유닛 2종이 CUDA에서 더 중요하다.
 
 - **SFU (Special Function Unit).** SM당 2개. transcendental(reciprocal, reciprocal-sqrt, sin, cos, log, exp)을 계산하고, 그래픽에선 pixel 속성을 보간한다. CUDA 커널이 `__sinf`나 `rsqrtf`를 부르면 이 유닛이다.
-- **LSU (Load/Store Unit).** global·local memory로의 load/store를 메모리 파이프라인을 통해 발행하는 경로. warp 하나가 이걸 어떻게 쓰느냐가 다음 글 coalescing의 전부다.
+- **LSU (Load/Store Unit).** global·local memory로의 load/store를 메모리 파이프라인을 통해 발행하는 경로. warp 하나가 이걸 어떻게 쓰느냐가 [CUDA C 글](../cuda-c-basics/) coalescing의 전부다.
 
 ## SIMT와 warp의 탄생
 

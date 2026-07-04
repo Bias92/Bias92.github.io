@@ -1,0 +1,32 @@
+<svg viewBox="0 0 1632 440" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Rubin and Vera Rubin platform diagram</title>
+<style>
+text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+.plateTitle{font-size:22px;font-weight:800;fill:#e6f6fb}.meta{font-size:13px;fill:#86a6b1}
+.label{font-size:14px;font-weight:700;fill:#0d0e10}.darkLabel{font-size:13px;font-weight:700;fill:#d9f1f7}
+.small{font-size:12px;fill:#d9f1f7}.tiny{font-size:10px;fill:#d9f1f7}.note{font-size:12px;fill:#8aaab4}
+.outline{fill:#0d0e10;stroke:#33c0e4;stroke-width:2}.ic{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.sched{fill:#ffa25a;stroke:#0d0e10;stroke-width:1.2}.reg{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.core{fill:#2dcc35;stroke:#0d0e10;stroke-width:1}.ldst{fill:#b7db75;stroke:#0d0e10;stroke-width:1}
+.sfu{fill:#8fd06b;stroke:#0d0e10;stroke-width:1}.tensor{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.rt{fill:#ffe14f;stroke:#0d0e10;stroke-width:1.2}.tex{fill:#4d68b7;stroke:#0d0e10;stroke-width:1.2}
+.mem{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}.hot{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.fabric{fill:#a9c0d5;stroke:#0d0e10;stroke-width:1.2}.arrow{fill:#a9b0b4}
+</style>
+<defs>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.8" fill="#1b2a30"/></pattern>
+</defs>
+<rect width="1632" height="440" fill="#0d0e10"/><rect width="1632" height="440" fill="url(#dots)" opacity="0.32"/>
+  <g transform="translate(20 20)" filter="url(#glow)">
+    <rect width="1592" height="400" rx="12" class="outline"/>
+    <text x="24" y="42" class="plateTitle">Rubin / Vera Rubin platform</text><text x="24" y="64" class="meta">the unit of architecture moves beyond one SM</text>
+    <rect x="36" y="82" width="300" height="230" class="tensor"/><text x="186" y="122" text-anchor="middle" class="label">Rubin GPU</text><text x="186" y="156" text-anchor="middle" class="label">HBM4 · NVLink 6</text><text x="186" y="190" text-anchor="middle" class="label">NVFP4 Tensor</text><text x="186" y="224" text-anchor="middle" class="label">SM array</text><text x="186" y="258" text-anchor="middle" class="label">memory fabric</text>
+    <rect x="418" y="82" width="250" height="230" class="mem"/><text x="543" y="122" text-anchor="middle" class="label">Vera CPU</text><text x="543" y="160" text-anchor="middle" class="label">Arm cores</text><text x="543" y="198" text-anchor="middle" class="label">NVLink-C2C</text>
+    <rect x="750" y="82" width="250" height="230" class="fabric"/><text x="875" y="122" text-anchor="middle" class="label">NVLink switch</text><text x="875" y="160" text-anchor="middle" class="label">rack fabric</text><text x="875" y="198" text-anchor="middle" class="label">72 GPUs domain</text>
+    <rect x="1082" y="82" width="220" height="230" class="ldst"/><text x="1192" y="122" text-anchor="middle" class="label">DPU / NIC</text><text x="1192" y="160" text-anchor="middle" class="label">storage</text><text x="1192" y="198" text-anchor="middle" class="label">networking</text>
+    <rect x="1370" y="82" width="160" height="230" class="rt"/><text x="1450" y="122" text-anchor="middle" class="label">Ethernet</text><text x="1450" y="160" text-anchor="middle" class="label">switching</text>
+    <path d="M336 197 H418 M668 197 H750 M1000 197 H1082 M1302 197 H1370" stroke="#e46fd6" stroke-width="5" stroke-dasharray="14 10"/>
+    <text x="36" y="358" class="note">Rubin is why the genealogy ends at rack scale: SM details still matter, but the product boundary is now GPU + CPU + memory + fabric + networking.</text>
+  </g>
+</svg>

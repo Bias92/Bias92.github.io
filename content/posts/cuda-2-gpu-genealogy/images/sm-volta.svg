@@ -1,0 +1,38 @@
+<svg viewBox="0 0 422 496" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Volta SM component diagram, GV100 2017</title>
+<style>
+text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+.plateTitle{font-size:22px;font-weight:800;fill:#e6f6fb}.meta{font-size:13px;fill:#86a6b1}
+.label{font-size:14px;font-weight:700;fill:#0d0e10}.darkLabel{font-size:13px;font-weight:700;fill:#d9f1f7}
+.small{font-size:12px;fill:#d9f1f7}.tiny{font-size:10px;fill:#d9f1f7}.note{font-size:12px;fill:#8aaab4}
+.outline{fill:#0d0e10;stroke:#33c0e4;stroke-width:2}.ic{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.sched{fill:#ffa25a;stroke:#0d0e10;stroke-width:1.2}.reg{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.core{fill:#2dcc35;stroke:#0d0e10;stroke-width:1}.ldst{fill:#b7db75;stroke:#0d0e10;stroke-width:1}
+.sfu{fill:#8fd06b;stroke:#0d0e10;stroke-width:1}.tensor{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.rt{fill:#ffe14f;stroke:#0d0e10;stroke-width:1.2}.tex{fill:#4d68b7;stroke:#0d0e10;stroke-width:1.2}
+.mem{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}.hot{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.fabric{fill:#a9c0d5;stroke:#0d0e10;stroke-width:1.2}.arrow{fill:#a9b0b4}
+</style>
+<defs>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.8" fill="#1b2a30"/></pattern>
+</defs>
+<rect width="422" height="496" fill="#0d0e10"/><rect width="422" height="496" fill="url(#dots)" opacity="0.32"/>
+  <g transform="translate(20 20)" filter="url(#glow)">
+    <rect width="382" height="456" rx="12" class="outline"/>
+    <text x="22" y="34" class="plateTitle">Volta SM</text><text x="132" y="34" class="meta">GV100 · 2017</text>
+    <rect x="22" y="58" width="338" height="28" class="ic"/><text x="191" y="77" text-anchor="middle" class="label">Instruction cache</text>
+    <g transform="translate(22 100)">
+      <rect width="74" height="30" class="sched"/><rect x="88" width="74" height="30" class="sched"/><rect x="176" width="74" height="30" class="sched"/><rect x="264" width="74" height="30" class="sched"/>
+      <text x="37" y="20" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="125" y="20" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="213" y="20" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="301" y="20" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text>
+    </g>
+    <rect x="22" y="146" width="338" height="46" class="reg"/><text x="191" y="174" text-anchor="middle" class="label">256 KB register file</text>
+    <rect x="22" y="212" width="150" height="102" class="core"/><text x="97" y="254" text-anchor="middle" class="label">64 FP32</text><text x="97" y="280" text-anchor="middle" class="label">64 INT32</text>
+    <rect x="188" y="212" width="78" height="102" class="ldst"/><text x="227" y="268" text-anchor="middle" class="label">LD/ST</text>
+    <rect x="282" y="212" width="78" height="102" class="sfu"/><text x="321" y="268" text-anchor="middle" class="label">SFU</text>
+    <rect x="22" y="334" width="338" height="38" class="tensor"/><text x="191" y="359" text-anchor="middle" class="label">8 Tensor Cores · HMMA FP16</text>
+    <rect x="22" y="390" width="338" height="30" class="mem"/><text x="191" y="410" text-anchor="middle" class="label">128 KB shared memory / L1</text>
+    <text x="22" y="442" class="note">Also: independent thread scheduling.</text>
+  </g>
+
+</svg>

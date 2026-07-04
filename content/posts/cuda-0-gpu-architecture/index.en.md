@@ -13,9 +13,9 @@ summary: "Before CUDA C: the Tesla unified architecture (G80/GT200) from the 200
 
 ## Why Read This Before CUDA C
 
-The CUDA C post talks about blocks, warps, SMs, occupancy, and memory coalescing as if they were language features. They are not. They are the software-visible names of a hardware architecture NVIDIA shipped in November 2006 as the G80 (GeForce 8800 GTX) and refined in 2008 as the GT200 (GTX 280). NVIDIA calls that architecture Tesla, and the reference is the IEEE Micro paper above.
+The [CUDA C post](../cuda-c-basics/) talks about blocks, warps, SMs, occupancy, and memory coalescing as if they were language features. They are not. They are the software-visible names of a hardware architecture NVIDIA shipped in November 2006 as the G80 (GeForce 8800 GTX) and refined in 2008 as the GT200 (GTX 280). NVIDIA calls that architecture Tesla, and the reference is the IEEE Micro paper above.
 
-If you learn CUDA C without this layer, `warp = 32` and "coalesce your accesses" are rules to memorize. If you see the hardware first, they are consequences. This post walks the Tesla data path once, top to bottom, so that the CUDA abstractions in the next post land on something physical.
+If you learn CUDA C without this layer, `warp = 32` and "coalesce your accesses" are rules to memorize. If you see the hardware first, they are consequences. This post walks the Tesla data path once, top to bottom, so that the CUDA abstractions in the CUDA C post land on something physical.
 
 One caveat up front: Tesla (G80/GT200) is the historical anchor here, not a snapshot of a modern GPU. The SM has been rebuilt many times since 2006. FP32 lanes per SM went from 8 to 128, one warp scheduler became four, shared memory grew from 16 KB to over 200 KB, and units that did not exist then (a general-purpose L1 data cache, tensor cores, async copy) were added. What survives is the naming lineage and the mental model: SPA to TPC to SM to SP is the genealogy behind CUDA's blocks, warps, and SM scheduling. Read the numbers below as a 2008 snapshot, not today's spec sheet, and take the concepts as the part that lasts.
 
@@ -62,7 +62,7 @@ $$
 Two more execution units per SM matter for CUDA:
 
 - **SFU (Special Function Unit).** Two per SM. It computes transcendentals (reciprocal, reciprocal-sqrt, sin, cos, log, exp) and, in graphics, interpolates pixel attributes. When a CUDA kernel calls `__sinf` or `rsqrtf`, this is the unit.
-- **LSU (Load/Store Unit).** The path that issues loads and stores to global and local memory through the memory pipeline. Its behavior under a warp is the whole subject of coalescing in the next post.
+- **LSU (Load/Store Unit).** The path that issues loads and stores to global and local memory through the memory pipeline. Its behavior under a warp is the whole subject of coalescing in the CUDA C post.
 
 ## SIMT and the Birth of the Warp
 

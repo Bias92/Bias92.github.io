@@ -1,0 +1,50 @@
+<svg viewBox="0 0 422 496" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Fermi SM component diagram, GF100 2010</title>
+<style>
+text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+.plateTitle{font-size:22px;font-weight:800;fill:#e6f6fb}.meta{font-size:13px;fill:#86a6b1}
+.label{font-size:14px;font-weight:700;fill:#0d0e10}.darkLabel{font-size:13px;font-weight:700;fill:#d9f1f7}
+.small{font-size:12px;fill:#d9f1f7}.tiny{font-size:10px;fill:#d9f1f7}.note{font-size:12px;fill:#8aaab4}
+.outline{fill:#0d0e10;stroke:#33c0e4;stroke-width:2}.ic{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.sched{fill:#ffa25a;stroke:#0d0e10;stroke-width:1.2}.reg{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.core{fill:#2dcc35;stroke:#0d0e10;stroke-width:1}.ldst{fill:#b7db75;stroke:#0d0e10;stroke-width:1}
+.sfu{fill:#8fd06b;stroke:#0d0e10;stroke-width:1}.tensor{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.rt{fill:#ffe14f;stroke:#0d0e10;stroke-width:1.2}.tex{fill:#4d68b7;stroke:#0d0e10;stroke-width:1.2}
+.mem{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}.hot{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.fabric{fill:#a9c0d5;stroke:#0d0e10;stroke-width:1.2}.arrow{fill:#a9b0b4}
+</style>
+<defs>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.8" fill="#1b2a30"/></pattern>
+</defs>
+<rect width="422" height="496" fill="#0d0e10"/><rect width="422" height="496" fill="url(#dots)" opacity="0.32"/>
+  <g transform="translate(20 20)" filter="url(#glow)">
+    <rect width="382" height="456" rx="12" class="outline"/>
+    <text x="22" y="34" class="plateTitle">Fermi SM</text><text x="132" y="34" class="meta">GF100 · 2010</text>
+    <rect x="22" y="58" width="338" height="28" class="ic"/><text x="191" y="77" text-anchor="middle" class="label">Instruction cache</text>
+    <rect x="22" y="100" width="162" height="34" class="sched"/><text x="103" y="122" text-anchor="middle" class="label">Warp scheduler</text>
+    <rect x="198" y="100" width="162" height="34" class="sched"/><text x="279" y="122" text-anchor="middle" class="label">Warp scheduler</text>
+    <rect x="22" y="142" width="162" height="30" class="sched"/><text x="103" y="162" text-anchor="middle" class="label">Dispatch</text>
+    <rect x="198" y="142" width="162" height="30" class="sched"/><text x="279" y="162" text-anchor="middle" class="label">Dispatch</text>
+    <rect x="22" y="188" width="338" height="54" class="reg"/><text x="191" y="220" text-anchor="middle" class="label">Register file · 32,768 x 32-bit</text>
+    <g transform="translate(22 262)">
+      <text x="95" y="-8" text-anchor="middle" class="small">32 CUDA cores</text>
+      <rect width="158" height="104" fill="none" stroke="#33c0e4"/>
+      <rect x="0" y="0" width="79" height="26" class="core"/><rect x="79" y="0" width="79" height="26" class="core"/>
+      <rect x="0" y="26" width="79" height="26" class="core"/><rect x="79" y="26" width="79" height="26" class="core"/>
+      <rect x="0" y="52" width="79" height="26" class="core"/><rect x="79" y="52" width="79" height="26" class="core"/>
+      <rect x="0" y="78" width="79" height="26" class="core"/><rect x="79" y="78" width="79" height="26" class="core"/>
+      <text x="79" y="60" text-anchor="middle" class="label">core array</text>
+    </g>
+    <g transform="translate(202 262)">
+      <rect width="54" height="23" class="ldst"/><text x="27" y="16" text-anchor="middle" class="tiny">LD/ST</text>
+      <rect y="27" width="54" height="23" class="ldst"/><text x="27" y="43" text-anchor="middle" class="tiny">LD/ST</text>
+      <rect y="54" width="54" height="23" class="ldst"/><text x="27" y="70" text-anchor="middle" class="tiny">LD/ST</text>
+      <rect y="81" width="54" height="23" class="ldst"/><text x="27" y="97" text-anchor="middle" class="tiny">LD/ST</text>
+      <rect x="72" width="72" height="104" class="sfu"/><text x="108" y="58" text-anchor="middle" class="label">4 SFU</text>
+    </g>
+    <rect x="22" y="386" width="338" height="30" class="hot"/><text x="191" y="406" text-anchor="middle" class="label">64 KB shared memory / L1 data cache</text>
+    <rect x="22" y="424" width="338" height="16" class="mem"/><text x="191" y="437" text-anchor="middle" class="tiny" fill="#0d0e10">uniform cache + texture path inside SM</text>
+  </g>
+
+</svg>

@@ -1,0 +1,79 @@
+<svg viewBox="0 0 1220 620" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Anatomy of a GPU die: where the SM sits</title>
+<desc>Schematic of a GPU die. An array of SMs (one highlighted) sits inside a host interface, L2 cache, memory controllers to off-die HBM or GDDR, and a graphics-only fixed-function path. The per-generation diagrams in this post zoom into one SM.</desc>
+<style>
+text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+.title{font-size:28px;font-weight:800;fill:#e7f8fc}
+.subtitle{font-size:17px;fill:#8aaab4}
+.lbl{font-size:15px;font-weight:700;fill:#0d0e10}
+.lblw{font-size:15px;font-weight:700;fill:#eaf6fa}
+.small{font-size:13px;fill:#9fb8c2}
+.tiny{font-size:11px;font-weight:700;fill:#0d0e10}
+.note{font-size:13px;fill:#8aaab4}
+.mag{font-size:14px;fill:#cfe6ec}
+.magt{font-size:19px;font-weight:800;fill:#f3afe9}
+.outline{fill:#0d0e10;stroke:#33c0e4;stroke-width:2}
+.mem{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.core{fill:#2dcc35;stroke:#0d0e10;stroke-width:1}
+.hot{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.4}
+.tex{fill:#4d68b7;stroke:#0d0e10;stroke-width:1.2}
+.reg{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.fabric{fill:#a9c0d5;stroke:#0d0e10;stroke-width:1.2}
+.ctx{fill:#10161a;stroke:#4a5a62;stroke-width:1.2}
+</style>
+<defs>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.8" fill="#1b2a30"/></pattern>
+<marker id="ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#e46fd6"/></marker>
+</defs>
+<rect width="1220" height="620" fill="#0d0e10"/><rect width="1220" height="620" fill="url(#dots)" opacity="0.32"/>
+<text x="40" y="50" class="title">Anatomy of a GPU die: where the SM sits</text>
+<text x="40" y="80" class="subtitle">The per-generation diagrams in this post zoom into one SM. This is the GPU around it.</text>
+
+<text x="44" y="150" class="small">off-die memory</text>
+<rect x="44" y="164" width="128" height="92" class="mem"/><text x="108" y="216" text-anchor="middle" class="lbl">HBM / GDDR</text>
+<rect x="44" y="270" width="128" height="92" class="mem"/><text x="108" y="322" text-anchor="middle" class="lbl">HBM / GDDR</text>
+<rect x="44" y="376" width="128" height="92" class="mem"/><text x="108" y="428" text-anchor="middle" class="lbl">HBM / GDDR</text>
+<g stroke="#4a5a62" stroke-width="1.6" stroke-dasharray="5 4"><path d="M172 210 H200"/><path d="M172 316 H200"/><path d="M172 422 H200"/></g>
+
+<text x="200" y="112" class="small">GPU die</text>
+<g filter="url(#glow)"><rect x="200" y="120" width="620" height="470" rx="14" class="outline"/></g>
+<rect x="220" y="138" width="580" height="34" class="fabric"/><text x="510" y="160" text-anchor="middle" class="lbl">Host interface  ·  PCIe / NVLink</text>
+<text x="220" y="200" class="small">GPC / TPC / SM array</text>
+<g transform="translate(220 210)">
+<rect x="0" y="0" width="84" height="62" class="core"/><text x="42" y="37" text-anchor="middle" class="tiny">SM</text>
+<rect x="96" y="0" width="84" height="62" class="core"/><text x="138" y="37" text-anchor="middle" class="tiny">SM</text>
+<rect x="192" y="0" width="84" height="62" class="core"/><text x="234" y="37" text-anchor="middle" class="tiny">SM</text>
+<rect x="288" y="0" width="84" height="62" class="core"/><text x="330" y="37" text-anchor="middle" class="tiny">SM</text>
+<rect x="384" y="0" width="84" height="62" class="core"/><text x="426" y="37" text-anchor="middle" class="tiny">SM</text>
+<rect x="480" y="0" width="84" height="62" class="hot"/><text x="522" y="37" text-anchor="middle" class="tiny">SM</text>
+<rect x="0" y="74" width="84" height="62" class="core"/><text x="42" y="111" text-anchor="middle" class="tiny">SM</text>
+<rect x="96" y="74" width="84" height="62" class="core"/><text x="138" y="111" text-anchor="middle" class="tiny">SM</text>
+<rect x="192" y="74" width="84" height="62" class="core"/><text x="234" y="111" text-anchor="middle" class="tiny">SM</text>
+<rect x="288" y="74" width="84" height="62" class="core"/><text x="330" y="111" text-anchor="middle" class="tiny">SM</text>
+<rect x="384" y="74" width="84" height="62" class="core"/><text x="426" y="111" text-anchor="middle" class="tiny">SM</text>
+<rect x="480" y="74" width="84" height="62" class="core"/><text x="522" y="111" text-anchor="middle" class="tiny">SM</text>
+<rect x="0" y="148" width="84" height="62" class="core"/><text x="42" y="185" text-anchor="middle" class="tiny">SM</text>
+<rect x="96" y="148" width="84" height="62" class="core"/><text x="138" y="185" text-anchor="middle" class="tiny">SM</text>
+<rect x="192" y="148" width="84" height="62" class="core"/><text x="234" y="185" text-anchor="middle" class="tiny">SM</text>
+<rect x="288" y="148" width="84" height="62" class="core"/><text x="330" y="185" text-anchor="middle" class="tiny">SM</text>
+<rect x="384" y="148" width="84" height="62" class="core"/><text x="426" y="185" text-anchor="middle" class="tiny">SM</text>
+<rect x="480" y="148" width="84" height="62" class="core"/><text x="522" y="185" text-anchor="middle" class="tiny">SM</text>
+</g>
+<rect x="220" y="440" width="430" height="40" class="tex"/><text x="435" y="465" text-anchor="middle" class="lblw">raster / ROP  ·  texture  ·  copy engines</text>
+<rect x="662" y="440" width="138" height="40" class="ctx"/><text x="731" y="465" text-anchor="middle" class="note">graphics-only</text>
+<rect x="220" y="492" width="580" height="32" class="reg"/><text x="510" y="514" text-anchor="middle" class="lbl">L2 cache</text>
+<rect x="220" y="536" width="580" height="30" class="mem"/><text x="510" y="557" text-anchor="middle" class="lbl">memory controllers</text>
+
+<path d="M786 241 H852" fill="none" stroke="#e46fd6" stroke-width="2.4" marker-end="url(#ah)"/>
+<rect x="860" y="168" width="330" height="264" rx="12" fill="#10161a" stroke="#e46fd6" stroke-width="1.8"/>
+<text x="884" y="208" class="magt">Each SM</text>
+<text x="884" y="234" class="note" style="fill:#c98fc0">the unit this post zooms into</text>
+<text x="884" y="272" class="mag">warp scheduler  ·  registers</text>
+<text x="884" y="300" class="mag">CUDA cores  ·  LD/ST  ·  SFU</text>
+<text x="884" y="328" class="mag">Tensor Core  /  RT Core</text>
+<text x="884" y="356" class="mag">shared memory / L1  ·  TMA / TMEM</text>
+<text x="884" y="404" class="note">Every per-generation diagram below is this one box.</text>
+
+<text x="44" y="610" class="note">One SM is a small block in a large array. This genealogy tracks how that block changed across generations; the L2, memory controllers, ROPs, and fabric are the GPU around it.</text>
+</svg>

@@ -1,0 +1,46 @@
+<svg viewBox="0 0 422 496" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Tesla SM component diagram, G80 2006</title>
+<style>
+text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+.plateTitle{font-size:22px;font-weight:800;fill:#e6f6fb}.meta{font-size:13px;fill:#86a6b1}
+.label{font-size:14px;font-weight:700;fill:#0d0e10}.darkLabel{font-size:13px;font-weight:700;fill:#d9f1f7}
+.small{font-size:12px;fill:#d9f1f7}.tiny{font-size:10px;fill:#d9f1f7}.note{font-size:12px;fill:#8aaab4}
+.outline{fill:#0d0e10;stroke:#33c0e4;stroke-width:2}.ic{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.sched{fill:#ffa25a;stroke:#0d0e10;stroke-width:1.2}.reg{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.core{fill:#2dcc35;stroke:#0d0e10;stroke-width:1}.ldst{fill:#b7db75;stroke:#0d0e10;stroke-width:1}
+.sfu{fill:#8fd06b;stroke:#0d0e10;stroke-width:1}.tensor{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.rt{fill:#ffe14f;stroke:#0d0e10;stroke-width:1.2}.tex{fill:#4d68b7;stroke:#0d0e10;stroke-width:1.2}
+.mem{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}.hot{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.fabric{fill:#a9c0d5;stroke:#0d0e10;stroke-width:1.2}.arrow{fill:#a9b0b4}
+</style>
+<defs>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.8" fill="#1b2a30"/></pattern>
+</defs>
+<rect width="422" height="496" fill="#0d0e10"/><rect width="422" height="496" fill="url(#dots)" opacity="0.32"/>
+  <g transform="translate(20 20)" filter="url(#glow)">
+    <rect width="382" height="456" rx="12" class="outline"/>
+    <text x="22" y="34" class="plateTitle">Tesla SM</text><text x="132" y="34" class="meta">G80 · 2006</text>
+    <rect x="22" y="58" width="338" height="28" class="ic"/><text x="191" y="77" text-anchor="middle" class="label">Instruction cache</text>
+    <rect x="22" y="100" width="162" height="34" class="sched"/><text x="103" y="122" text-anchor="middle" class="label">Warp scheduler</text>
+    <rect x="198" y="100" width="162" height="34" class="sched"/><text x="279" y="122" text-anchor="middle" class="label">Dispatch</text>
+    <rect x="22" y="150" width="338" height="48" class="reg"/><text x="191" y="180" text-anchor="middle" class="label">Register file</text>
+    <g transform="translate(22 218)">
+      <rect width="190" height="118" fill="none" stroke="#33c0e4" stroke-width="1.4"/>
+      <text x="95" y="-8" text-anchor="middle" class="small">8 scalar SP</text>
+      <rect x="0" y="0" width="95" height="59" class="core"/><rect x="95" y="0" width="95" height="59" class="core"/>
+      <rect x="0" y="59" width="95" height="59" class="core"/><rect x="95" y="59" width="95" height="59" class="core"/>
+      <text x="47" y="35" text-anchor="middle" class="label">SP</text><text x="142" y="35" text-anchor="middle" class="label">SP</text>
+      <text x="47" y="94" text-anchor="middle" class="label">SP</text><text x="142" y="94" text-anchor="middle" class="label">SP</text>
+    </g>
+    <g transform="translate(236 218)">
+      <rect width="56" height="56" class="ldst"/><text x="28" y="35" text-anchor="middle" class="label">LD/ST</text>
+      <rect y="62" width="56" height="56" class="ldst"/><text x="28" y="97" text-anchor="middle" class="label">LD/ST</text>
+      <rect x="74" width="70" height="118" class="sfu"/><text x="109" y="66" text-anchor="middle" class="label">SFU</text>
+    </g>
+    <rect x="22" y="360" width="338" height="28" class="mem"/><text x="191" y="379" text-anchor="middle" class="label">16 KB shared memory</text>
+    <rect x="22" y="400" width="78" height="34" class="tex"/><text x="61" y="423" text-anchor="middle" font-size="22" fill="#fff">TEX</text>
+    <rect x="114" y="400" width="246" height="34" fill="#a9c0d5" stroke="#0d0e10"/><text x="237" y="422" text-anchor="middle" class="label">interconnect to memory</text>
+  </g>
+
+</svg>
