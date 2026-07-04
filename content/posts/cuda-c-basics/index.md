@@ -243,7 +243,8 @@ add<<<gridSize, blockSize>>>(a, b, c, N);
 ```cpp
 __global__ void add(float* a, float* b, float* c, int N) {
     int stride = blockDim.x * gridDim.x;
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += stride)
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    for (; i < N; i += stride)
         c[i] = a[i] + b[i];
 }
 ```
@@ -258,7 +259,8 @@ __global__ void add(float* a, float* b, float* c, int N) {
 #include <cmath>
 #include <cuda_runtime.h>
 
-__global__ void add(const float* a, const float* b, float* c, int N) {
+__global__ void add(const float* a, const float* b,
+                    float* c, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < N) c[i] = a[i] + b[i];   // 경계 밖 thread는 건너뛴다
 }
@@ -293,7 +295,8 @@ int main() {
 
     // 6) 검증: 1.0 + 2.0 = 3.0 이어야 함
     float maxErr = 0.0f;
-    for (int i = 0; i < N; i++) maxErr = fmaxf(maxErr, fabsf(h_c[i] - 3.0f));
+    for (int i = 0; i < N; i++)
+        maxErr = fmaxf(maxErr, fabsf(h_c[i] - 3.0f));
     printf("max error: %f\n", maxErr);
 
     // 7) 정리
