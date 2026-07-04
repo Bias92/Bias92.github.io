@@ -1,15 +1,15 @@
 ---
-title: "JetPack 6.2.2 Flash Troubleshooting: AMD USB Incompatibility and the chroot Solution"
+title: "JetPack 6.2.2 Flash Troubleshooting: AMD USB 비호환과 chroot 해법"
 date: 2026-03-19
 tags: ["jetson", "nvidia", "edge-ai", "jetpack", "troubleshooting", "cuda", "tegrarcm", "amd", "chroot"]
 categories: ["Embedded"]
-summary: "Documenting the root cause of tegrarcm_v2 USB write timeout on AMD hosts when flashing Jetson AGX Orin, and the chroot-based workaround using an Intel laptop with limited RAM."
+summary: "Jetson AGX Orin을 플래시할 때 AMD 호스트에서 발생하는 tegrarcm_v2 USB write timeout의 근본 원인, 그리고 RAM이 부족한 Intel 노트북을 사용한 chroot 기반 우회법을 정리한다."
 draft: false
 ---
 
 ## Problem
 
-Flashing JetPack 6.2.2 (L4T R36.5.0) onto a Jetson AGX Orin 64GB Developer Kit fails at the `tegrarcm_v2` stage with `ERROR: might be timeout in USB write` when using an AMD B650-based host PC. This occurs regardless of host OS environment (Windows WSL2, Ubuntu Live Boot, Ubuntu native install).
+JetPack 6.2.2 (L4T R36.5.0)를 Jetson AGX Orin 64GB Developer Kit에 플래시하면 AMD B650 기반 호스트 PC에서 `tegrarcm_v2` 단계에서 `ERROR: might be timeout in USB write`로 실패한다. 이 현상은 호스트 OS 환경(Windows WSL2, Ubuntu Live Boot, Ubuntu 네이티브 설치)과 무관하게 발생한다.
 
 ```
 [ 0.2574 ] Sending bct_br
@@ -20,102 +20,102 @@ Command tegrarcm_v2 --new_session --chip 0x23 ...
 
 ## Background
 
-The target setup was a real-time voice chat demo ([LlamaSpeak](https://www.jetson-ai-lab.com/archive/tutorial_llamaspeak.html)) running on-device. The board came pre-flashed with JetPack 5.1.3 (CUDA 11.4), and text-based LLM inference (Llama 3 8B via MLC) was already functional. However, every available ASR path required JetPack 6:
+목표 구성은 온디바이스로 동작하는 실시간 음성 채팅 데모([LlamaSpeak](https://www.jetson-ai-lab.com/archive/tutorial_llamaspeak.html))였다. 보드는 JetPack 5.1.3 (CUDA 11.4)이 미리 플래시된 상태로 도착했고, 텍스트 기반 LLM 추론(MLC를 통한 Llama 3 8B)은 이미 동작하고 있었다. 그런데 사용 가능한 모든 ASR 경로가 JetPack 6을 요구했다.
 
-| ASR Option | Failure Reason on JP5.1.3 |
+| ASR 옵션 | JP5.1.3에서의 실패 원인 |
 |---|---|
-| Riva 2.14.0 | Models removed from NGC (HTTP 403) |
-| Riva 2.19.0 | Requires CUDA 12 — `cudaError_t 35` |
-| Riva 2.13.1 | `riva_init.sh` internal NGC CLI ignores host API keys |
-| whisper_trt | JP6-only module — `ImportError` |
+| Riva 2.14.0 | NGC에서 모델 제거됨 (HTTP 403) |
+| Riva 2.19.0 | CUDA 12 필요, `cudaError_t 35` |
+| Riva 2.13.1 | `riva_init.sh` 내부 NGC CLI가 호스트 API 키를 무시함 |
+| whisper_trt | JP6 전용 모듈, `ImportError` |
 
-This made a JetPack 6 reflash mandatory.
+이 때문에 JetPack 6으로의 재플래시가 필수가 되었다.
 
 ## Environment
 
-**Host PC (AMD — fails):**
+#### Host PC (AMD, 실패)
 - AMD B650 AORUS ELITE V2
 - RTX 4060 Ti
-- USB 3.x ports (AMD USB controller)
+- USB 3.x 포트 (AMD USB 컨트롤러)
 
-**Host PC (Intel — works):**
-- Samsung NT930SBE laptop
+#### Host PC (Intel, 성공)
+- Samsung NT930SBE 노트북
 - Intel Core i5-8265U
-- 8GB RAM, USB-C only (3 ports)
+- 8GB RAM, USB-C 전용 (3포트)
 
-**Target:**
+#### Target
 - Jetson AGX Orin 64GB Developer Kit
 - eMMC + 1TB NVMe
-- Original USB-A to C data cable
+- 정품 USB-A to C 데이터 케이블
 
 ## Root Cause: AMD USB Controller Incompatibility
 
-NVIDIA's `tegrarcm_v2` tool communicates with the Jetson in APX recovery mode over USB. On the AMD B650 USB controller, this communication fails at the very first stage (`Sending bct_br`) with a write timeout.
+NVIDIA의 `tegrarcm_v2` 도구는 APX 리커버리 모드의 Jetson과 USB로 통신한다. AMD B650 USB 컨트롤러에서는 이 통신이 가장 첫 단계(`Sending bct_br`)에서 write timeout으로 실패한다.
 
-The following environments were tested on the AMD host — all produced the identical error:
+AMD 호스트에서 다음 환경들을 테스트했고, 모두 동일한 에러를 냈다.
 
-| Host Environment | Result |
+| 호스트 환경 | 결과 |
 |---|---|
 | Windows SDK Manager (WSL2) | USB timeout |
 | Ubuntu 22.04 Live Boot (USB) | USB timeout |
-| Ubuntu 22.04 Native (External SSD) | USB timeout |
+| Ubuntu 22.04 네이티브 (외장 SSD) | USB timeout |
 | Windows SDK Manager (Native WSL) | USB timeout |
 
-Mitigations attempted (all ineffective):
-- Disabling USB autosuspend: `echo -1 > /sys/module/usbcore/parameters/autosuspend`
-- Different USB ports (front/rear)
-- Zadig driver replacement (VBoxUSB → WinUSB)
-- Different host OS environments
+시도한 완화책(전부 효과 없음):
+- USB autosuspend 비활성화: `echo -1 > /sys/module/usbcore/parameters/autosuspend`
+- 다른 USB 포트 (전면/후면)
+- Zadig 드라이버 교체 (VBoxUSB → WinUSB)
+- 다른 호스트 OS 환경
 
-The common denominator was the AMD USB controller. Switching to an Intel-based host resolved the USB timeout entirely — `tegrarcm_v2` completed with zero errors on the first attempt.
+공통 분모는 AMD USB 컨트롤러였다. Intel 기반 호스트로 바꾸자 USB timeout이 완전히 사라졌고, `tegrarcm_v2`가 첫 시도에서 에러 없이 완료되었다.
 
 ## Partial Flash Consequences
 
-Before identifying the root cause, one `flash.sh` run on the AMD host partially completed. The result:
+근본 원인을 파악하기 전, AMD 호스트에서 `flash.sh`를 한 번 돌렸고 일부만 완료되었다. 그 결과는 다음과 같다.
 
-- CLI boot worked (`tty2` login functional)
-- Internet connectivity intact
-- `nvidia` kernel modules loaded
-- `dpkg` showed L4T 36.5.0 packages installed
-- **GUI completely broken** — black screen after NVIDIA logo
-- **`/dev/nvhost*` missing** — zero GPU device nodes
+- CLI 부팅 동작 (`tty2` 로그인 가능)
+- 인터넷 연결 정상
+- `nvidia` 커널 모듈 로드됨
+- `dpkg`에 L4T 36.5.0 패키지 설치 확인
+- GUI 완전 고장: NVIDIA 로고 이후 검은 화면
+- `/dev/nvhost*` 없음: GPU 디바이스 노드가 하나도 없음
 - Xorg: `eglInitialize() failed`, `no screens found`
 - Weston: `NvRmMemInitNvmap failed with Permission denied`
 
-The root cause was an incomplete Device Tree Blob (DTB) due to corrupted USB transfer. This is **not recoverable through software** — no amount of xorg.conf editing, package reinstallation, or ldconfig configuration will fix missing device tree entries. A clean reflash with reliable USB transfer is required.
+근본 원인은 USB 전송 손상으로 인한 불완전한 Device Tree Blob (DTB)이었다. 이것은 소프트웨어로는 복구할 수 없다. xorg.conf를 아무리 편집하거나, 패키지를 재설치하거나, ldconfig를 설정해도 누락된 device tree 항목은 고쳐지지 않는다. 신뢰할 수 있는 USB 전송으로 깨끗하게 재플래시하는 것이 유일한 방법이다.
 
-**Key takeaway**: `flash.sh` reporting success does not guarantee a clean flash. USB transmission errors can silently corrupt firmware/DTB. Always verify `/dev/nvhost*` presence after flashing.
+핵심 교훈: `flash.sh`가 성공을 보고해도 깨끗한 플래시가 보장되지는 않는다. USB 전송 에러가 조용히 펌웨어/DTB를 손상시킬 수 있다. 플래시 후에는 항상 `/dev/nvhost*` 존재 여부를 확인하라.
 
 ## Solution: Intel Host + chroot
 
-The Intel laptop had only 8GB RAM and couldn't boot from the external SSD via BIOS. This introduced two additional problems that had to be solved:
+Intel 노트북은 RAM이 8GB뿐이었고 BIOS에서 외장 SSD로 부팅할 수 없었다. 이 때문에 해결해야 할 문제가 두 개 더 생겼다.
 
-1. **RAM exhaustion**: `flash.sh` builds a ~6GB `system.img` in memory. With Ubuntu GUI running in Live Boot, 8GB RAM is insufficient → segfault during `sed` operations on rootfs.
-2. **SQUASHFS corruption**: Ubuntu Live Boot loads system binaries from a SQUASHFS filesystem on the USB stick. Under heavy I/O, the USB stick degraded → read errors → segfault when loading `sed`, `bash`, etc.
+1. RAM 고갈: `flash.sh`는 메모리에 약 6GB짜리 `system.img`를 빌드한다. Live Boot에서 Ubuntu GUI가 돌아가는 상태에서는 8GB RAM으로는 부족해서 rootfs에 대한 `sed` 작업 중 segfault가 난다.
+2. SQUASHFS 손상: Ubuntu Live Boot는 USB 스틱의 SQUASHFS 파일시스템에서 시스템 바이너리를 로드한다. 무거운 I/O 부하에서 USB 스틱이 열화되면서 read error가 발생했고, `sed`, `bash` 등을 로드할 때 segfault가 났다.
 
 ### Failed Intermediate Approaches
 
-| Approach | Failure |
+| 접근 | 실패 |
 |---|---|
-| Live Boot + GUI | Segfault — RAM exhaustion |
-| Live Boot + GUI + 4GB swap on SSD | Segfault — GUI still consuming too much RAM |
-| Live Boot + CLI (`systemd.unit=multi-user.target`) | Segfault — SQUASHFS read errors on dying USB stick |
+| Live Boot + GUI | Segfault, RAM 고갈 |
+| Live Boot + GUI + SSD에 4GB swap | Segfault, GUI가 여전히 RAM을 너무 많이 씀 |
+| Live Boot + CLI (`systemd.unit=multi-user.target`) | Segfault, 죽어가는 USB 스틱의 SQUASHFS read error |
 
 ### Working Approach: CLI Boot + chroot
 
-The solution was to use the USB stick only as a minimal bootstrap, then `chroot` into a full Ubuntu installation on the external SSD. Inside the chroot, all binaries load from the SSD — completely bypassing the USB stick's SQUASHFS.
+해법은 USB 스틱을 최소한의 부트스트랩 용도로만 쓰고, 외장 SSD에 설치된 완전한 Ubuntu로 `chroot`하는 것이었다. chroot 안에서는 모든 바이너리가 SSD에서 로드되므로 USB 스틱의 SQUASHFS를 완전히 우회한다.
 
-**Step 1: Boot into CLI mode**
+#### Step 1: Boot into CLI mode
 
-At the GRUB menu, press `e` to edit the boot entry. Append `systemd.unit=multi-user.target` to the `linux` line:
+GRUB 메뉴에서 `e`를 눌러 부트 항목을 편집한다. `linux` 줄 끝에 `systemd.unit=multi-user.target`을 추가한다.
 
 ```
 linux /casper/vmlinuz file=/cdrom/preseed/ubuntu.seed maybe-ubiquity quiet splash --- systemd.unit=multi-user.target
 ```
 
-Press `F10` to boot. Login with `ubuntu` (no password).
+`F10`을 눌러 부팅한다. `ubuntu`(비밀번호 없음)로 로그인한다.
 
-**Step 2: Mount SSD and enter chroot**
+#### Step 2: Mount SSD and enter chroot
 
 ```bash
 sudo -i
@@ -128,9 +128,9 @@ chroot /mnt /bin/bash
 export PATH=/usr/bin:/usr/sbin:/bin:/sbin
 ```
 
-**Step 3: Configure networking**
+#### Step 3: Configure networking
 
-WiFi must be configured outside the chroot (NetworkManager runs on the host):
+WiFi는 chroot 바깥에서 설정해야 한다 (NetworkManager는 호스트에서 돈다).
 
 ```bash
 # Exit chroot
@@ -145,24 +145,24 @@ export PATH=/usr/bin:/usr/sbin:/bin:/sbin
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 ```
 
-**Step 4: Install dependencies**
+#### Step 4: Install dependencies
 
 ```bash
 apt-get update && apt-get install -y libxml2-utils binutils
 ```
 
-Both are required by `flash.sh` — `xmllint` for XML validation and `strings` for binary inspection.
+둘 다 `flash.sh`가 요구한다. XML 검증용 `xmllint`, 바이너리 검사용 `strings`다.
 
-**Step 5: Flash**
+#### Step 5: Flash
 
-Put the Jetson in recovery mode (unplug power → hold middle Force Recovery button → plug power → wait 10s → release), connect the USB cable, then:
+Jetson을 리커버리 모드로 둔다(전원 분리 → 가운데 Force Recovery 버튼 누른 채 유지 → 전원 연결 → 10초 대기 → 버튼 놓기). USB 케이블을 연결한 뒤 실행한다.
 
 ```bash
 cd /home/<user>/nvidia/nvidia_sdk/JetPack_6.2.2_Linux_JETSON_AGX_ORIN_TARGETS/Linux_for_Tegra/
 ./flash.sh jetson-agx-orin-devkit internal
 ```
 
-The `internal` flag targets eMMC, preserving any data on NVMe.
+`internal` 플래그는 eMMC를 타깃으로 삼아 NVMe의 데이터를 보존한다.
 
 ### Result
 
@@ -172,10 +172,10 @@ The `internal` flag targets eMMC, preserving any data on NVMe.
 *** The target generic has been flashed successfully. ***
 ```
 
-All 60 partitions written at 100%. After rebooting the Jetson:
-- Ubuntu GUI: functional
-- `/dev/nvhost*`: 15+ device nodes present
-- `nvidia-smi` inside Docker: Driver 540.5.0, CUDA 12.6
+전체 60개 파티션이 100%로 기록되었다. Jetson을 재부팅한 뒤:
+- Ubuntu GUI: 정상
+- `/dev/nvhost*`: 15개 이상의 디바이스 노드 존재
+- Docker 내부의 `nvidia-smi`: Driver 540.5.0, CUDA 12.6
 
 ## Post-Flash Setup
 
@@ -214,19 +214,19 @@ sudo docker run --rm --runtime nvidia nvidia/cuda:12.6.0-base-ubuntu22.04 nvidia
 
 ## Summary
 
-| Factor | Detail |
+| 항목 | 내용 |
 |---|---|
-| Root cause | AMD USB controller incompatible with `tegrarcm_v2` |
-| Solution | Use Intel USB host |
-| RAM constraint | chroot into SSD-based Ubuntu to avoid Live Boot SQUASHFS dependency |
-| CLI boot | Required to keep RAM usage under 8GB |
-| Flash target | `internal` (eMMC) to preserve NVMe data |
-| Verification | Check `/dev/nvhost*` — not just `flash.sh` exit status |
+| 근본 원인 | AMD USB 컨트롤러가 `tegrarcm_v2`와 비호환 |
+| 해법 | Intel USB 호스트 사용 |
+| RAM 제약 | Live Boot의 SQUASHFS 의존을 피하려 SSD 기반 Ubuntu로 chroot |
+| CLI 부팅 | RAM 사용량을 8GB 이하로 유지하기 위해 필요 |
+| 플래시 타깃 | NVMe 데이터 보존을 위한 `internal` (eMMC) |
+| 검증 | `flash.sh` 종료 상태가 아니라 `/dev/nvhost*`를 확인 |
 
 ## References
 
 - [NVIDIA SDK Manager Install Guide](https://docs.nvidia.com/sdk-manager/install-with-sdkm-jetson/index.html)
 - [JetPack Installation Guide](https://docs.nvidia.com/jetson/jetpack/install-setup/index.html)
 - [LlamaSpeak Tutorial](https://www.jetson-ai-lab.com/archive/tutorial_llamaspeak.html)
-- [NVIDIA Developer Forum — Jetson AGX Orin](https://forums.developer.nvidia.com/c/robotics-edge-computing/jetson-systems/jetson-agx-orin/486)
+- [NVIDIA Developer Forum, Jetson AGX Orin](https://forums.developer.nvidia.com/c/robotics-edge-computing/jetson-systems/jetson-agx-orin/486)
 - [Forum Post: USB Timeout on Flash](https://forums.developer.nvidia.com/t/jetson-agx-orin-64gb-usb-timeout-on-flash-gui-broken-after-flash-sh-sdk-manager-no-sdks-on-windows/363988)

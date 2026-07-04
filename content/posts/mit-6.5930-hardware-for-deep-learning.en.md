@@ -12,4 +12,4 @@ summary: "MIT EECS 6.5930 by Prof. Vivienne Sze, Hardware Architecture for Deep 
 >
 > Course: https://MIT-6.5930.github.io
 
-*내용 작성 예정*
+*Draft in progress.*

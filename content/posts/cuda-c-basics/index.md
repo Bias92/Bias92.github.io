@@ -137,7 +137,7 @@ C 한 줄(`c[i] = a[i] + b[i]`)이 어떻게 낮아지는지가 그대로 보인
 - Grid는 훨씬 넉넉하다. x축 2³¹-1개, y·z 각 65535개까지 된다. 어지간한 데이터셋으로 이 한도에 부딪힐 일은 없다.
 - Shared memory는 사람들이 뭉뚱그리는 숫자가 셋이다. *정적(static)* 할당의 Block당 상한은 48KB(호환용 기본값, 모든 아키텍처 동일)다. *opt-in 동적(dynamic)* 할당의 Block당 최대치는 더 높고 `cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, bytes)`로 요청한다. A100(cc 8.0) 약 163KB, H100(cc 9.0) 약 227KB다. 이 둘 다 SM의 *통합* L1/shared memory 용량(A100 192KB, H100 256KB)에서 잘라 쓰는 것으로, 하드웨어가 L1 캐시와 shared memory로 나눈다.
 
-이 숫자들은 임의로 정한 게 아니라 하드웨어에서 나온다. Block 하나는 반드시 SM(Streaming Multiprocessor) 하나 위에서 끝까지 실행되며, 도중에 다른 SM으로 쪼개 옮기지 않는다. SM은 그 block을 warp 단위로 스케줄한다. 그래서 block당 thread 상한 1024는 warp로 치면 32개다. 게다가 SM의 레지스터 파일은 유한하다. 최근 아키텍처는 SM당 32-bit 레지스터가 65,536개인데, 이걸 그 SM에 올라간 모든 thread가 나눠 쓴다. thread 하나가 레지스터를 많이 잡아먹으면 SM에 동시에 올릴 수 있는 thread 수가 줄어든다. 이게 바로 다음 절의 occupancy 얘기다.
+이 숫자들은 임의로 정한 게 아니라 [하드웨어](../cuda-0-gpu-architecture/)에서 나온다. Block 하나는 반드시 SM(Streaming Multiprocessor) 하나 위에서 끝까지 실행되며, 도중에 다른 SM으로 쪼개 옮기지 않는다. SM은 그 block을 warp 단위로 스케줄한다. 그래서 block당 thread 상한 1024는 warp로 치면 32개다. 게다가 SM의 레지스터 파일은 유한하다. 최근 아키텍처는 SM당 32-bit 레지스터가 65,536개인데, 이걸 그 SM에 올라간 모든 thread가 나눠 쓴다. thread 하나가 레지스터를 많이 잡아먹으면 SM에 동시에 올릴 수 있는 thread 수가 줄어든다. 이게 바로 다음 절의 occupancy 얘기다.
 
 ## Warp와 32의 배수
 
