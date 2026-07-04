@@ -1,0 +1,39 @@
+<svg viewBox="0 0 422 496" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Blackwell SM component diagram, B200 2024</title>
+<style>
+text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+.plateTitle{font-size:22px;font-weight:800;fill:#e6f6fb}.meta{font-size:13px;fill:#86a6b1}
+.label{font-size:14px;font-weight:700;fill:#0d0e10}.darkLabel{font-size:13px;font-weight:700;fill:#d9f1f7}
+.small{font-size:12px;fill:#d9f1f7}.tiny{font-size:10px;fill:#d9f1f7}.note{font-size:12px;fill:#8aaab4}
+.outline{fill:#0d0e10;stroke:#33c0e4;stroke-width:2}.ic{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.sched{fill:#ffa25a;stroke:#0d0e10;stroke-width:1.2}.reg{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.core{fill:#2dcc35;stroke:#0d0e10;stroke-width:1}.ldst{fill:#b7db75;stroke:#0d0e10;stroke-width:1}
+.sfu{fill:#8fd06b;stroke:#0d0e10;stroke-width:1}.tensor{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.rt{fill:#ffe14f;stroke:#0d0e10;stroke-width:1.2}.tex{fill:#4d68b7;stroke:#0d0e10;stroke-width:1.2}
+.mem{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}.hot{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.fabric{fill:#a9c0d5;stroke:#0d0e10;stroke-width:1.2}.arrow{fill:#a9b0b4}
+</style>
+<defs>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.8" fill="#1b2a30"/></pattern>
+</defs>
+<rect width="422" height="496" fill="#0d0e10"/><rect width="422" height="496" fill="url(#dots)" opacity="0.32"/>
+<g transform="translate(20 20)" filter="url(#glow)">
+  <rect width="382" height="396" rx="12" class="outline"/>
+  <text x="22" y="34" class="plateTitle">Blackwell SM</text><text x="176" y="34" class="meta">B200 · 2024</text>
+  <rect x="22" y="58" width="338" height="28" class="ic"/><text x="191" y="77" text-anchor="middle" class="label">Instruction cache</text>
+  <g transform="translate(22 100)">
+    <rect width="74" height="30" class="sched"/><rect x="88" width="74" height="30" class="sched"/><rect x="176" width="74" height="30" class="sched"/><rect x="264" width="74" height="30" class="sched"/>
+    <text x="37" y="20" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="125" y="20" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="213" y="20" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="301" y="20" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text>
+  </g>
+  <rect x="22" y="146" width="338" height="44" class="reg"/><text x="191" y="174" text-anchor="middle" class="label">Register file</text>
+  <rect x="22" y="204" width="170" height="88" class="core"/><text x="107" y="244" text-anchor="middle" class="label">CUDA cores</text><text x="107" y="268" text-anchor="middle" class="label">FP32 / INT</text>
+  <rect x="206" y="204" width="154" height="88" class="tensor"/><text x="283" y="240" text-anchor="middle" class="label">Tensor Core</text><text x="283" y="264" text-anchor="middle" class="label">5th gen · FP4</text>
+  <rect x="22" y="304" width="170" height="42" class="tensor"/><text x="107" y="330" text-anchor="middle" class="label">TMEM</text>
+  <rect x="206" y="304" width="154" height="42" class="tensor"/><text x="283" y="330" text-anchor="middle" class="label">CTA-pair MMA</text>
+  <rect x="22" y="358" width="170" height="34" class="mem"/><text x="107" y="380" text-anchor="middle" class="label">shared / L1</text>
+  <rect x="206" y="358" width="154" height="34" class="tensor"/><text x="283" y="380" text-anchor="middle" class="label">NVFP4 / MXFP</text>
+  <text x="191" y="414" text-anchor="middle" class="note">GPU package context, outside the SM</text>
+  <rect x="22" y="422" width="338" height="28" class="fabric"/><text x="191" y="441" text-anchor="middle" class="label">2 reticle dies · NVLink 5 · HBM3e</text>
+</g>
+</svg>

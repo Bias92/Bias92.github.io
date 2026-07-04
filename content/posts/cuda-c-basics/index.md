@@ -1,6 +1,6 @@
 ---
-title: "01 CUDA C Basics"
-date: 2026-05-22
+title: "02 CUDA C Basics"
+date: 2026-05-29
 draft: false
 tags: ["CUDA", "GPU Programming", "Parallel Programming", "Video Notes"]
 categories: ["CUDA"]

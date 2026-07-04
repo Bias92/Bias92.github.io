@@ -30,3 +30,15 @@
     .katex-display > .katex { padding: 0.12em 0; }
 </style>
 {{- end }}
+
+<style>
+    /* 세대별 SM component 카드는 ~420px로 그려짐. 본문 컬럼폭으로 upscale되지 않게 상한을 건다.
+       넓은 개요 도식(timeline, architecture-snapshots, rubin-platform)은 "sm-"이 없어 매칭 안 됨. */
+    img[src*="/images/sm-"] {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        display: block;
+        margin: 1.1rem auto;
+    }
+</style>

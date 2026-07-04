@@ -1,0 +1,41 @@
+<svg viewBox="0 0 422 496" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Turing and Ada SM component diagram</title>
+<style>
+text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+.plateTitle{font-size:22px;font-weight:800;fill:#e6f6fb}.meta{font-size:13px;fill:#86a6b1}
+.label{font-size:14px;font-weight:700;fill:#0d0e10}.darkLabel{font-size:13px;font-weight:700;fill:#d9f1f7}
+.small{font-size:12px;fill:#d9f1f7}.tiny{font-size:10px;fill:#d9f1f7}.note{font-size:12px;fill:#8aaab4}
+.outline{fill:#0d0e10;stroke:#33c0e4;stroke-width:2}.ic{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.sched{fill:#ffa25a;stroke:#0d0e10;stroke-width:1.2}.reg{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}
+.core{fill:#2dcc35;stroke:#0d0e10;stroke-width:1}.ldst{fill:#b7db75;stroke:#0d0e10;stroke-width:1}
+.sfu{fill:#8fd06b;stroke:#0d0e10;stroke-width:1}.tensor{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.rt{fill:#ffe14f;stroke:#0d0e10;stroke-width:1.2}.tex{fill:#4d68b7;stroke:#0d0e10;stroke-width:1.2}
+.mem{fill:#75b7dc;stroke:#0d0e10;stroke-width:1.2}.hot{fill:#e46fd6;stroke:#0d0e10;stroke-width:1.2}
+.fabric{fill:#a9c0d5;stroke:#0d0e10;stroke-width:1.2}.arrow{fill:#a9b0b4}
+</style>
+<defs>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.8" fill="#1b2a30"/></pattern>
+</defs>
+<rect width="422" height="496" fill="#0d0e10"/><rect width="422" height="496" fill="url(#dots)" opacity="0.32"/>
+  <g transform="translate(20 20)" filter="url(#glow)">
+    <rect width="382" height="456" rx="12" class="outline"/>
+    <text x="22" y="34" class="plateTitle">Turing / Ada SM</text><text x="188" y="34" class="meta">RTX line</text>
+    <rect x="22" y="58" width="338" height="28" class="ic"/><text x="191" y="77" text-anchor="middle" class="label">Instruction cache</text>
+    <g transform="translate(22 104)">
+      <rect width="156" height="74" class="core"/><text x="78" y="32" text-anchor="middle" class="label">FP32 lanes</text><text x="78" y="56" text-anchor="middle" class="label">INT32 lanes</text>
+      <rect x="182" width="74" height="74" class="tensor"/><text x="219" y="42" text-anchor="middle" class="label">Tensor</text>
+      <rect x="270" width="68" height="74" class="rt"/><text x="304" y="42" text-anchor="middle" class="label">RT</text>
+    </g>
+    <rect x="22" y="198" width="338" height="46" class="reg"/><text x="191" y="226" text-anchor="middle" class="label">Register file · 4 processing blocks</text>
+    <g transform="translate(22 264)">
+      <rect width="74" height="38" class="sched"/><rect x="88" width="74" height="38" class="sched"/><rect x="176" width="74" height="38" class="sched"/><rect x="264" width="74" height="38" class="sched"/>
+      <text x="37" y="24" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="125" y="24" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="213" y="24" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text><text x="301" y="24" text-anchor="middle" class="tiny" fill="#0d0e10">sched</text>
+    </g>
+    <rect x="22" y="326" width="162" height="34" class="tex"/><text x="103" y="349" text-anchor="middle" font-size="18" fill="#fff">TEX</text>
+    <rect x="198" y="326" width="162" height="34" class="ldst"/><text x="279" y="349" text-anchor="middle" class="label">LD/ST</text>
+    <rect x="22" y="382" width="338" height="30" class="mem"/><text x="191" y="402" text-anchor="middle" class="label">shared memory / L1</text>
+    <text x="22" y="442" class="note">Turing adds RT. Ada adds SER and newer RT/Tensor.</text>
+  </g>
+
+</svg>
