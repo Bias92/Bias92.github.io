@@ -15,7 +15,7 @@ draft: false
 
 이는 곧 MLSys가 AI-resistant한 커리어인 이유이기도 하다. AI 모델이 아무리 바뀌어도 (CNN → Transformer → MoE → Mamba...) 결국 Compute는 필연적인 존재다. 모델을 만드는 사람은 새 아키텍처가 나올 때마다 리셋되지만, 그 모델을 효율적으로 돌리는 하드웨어/시스템 인프라를 다루는 사람은 계속 수요가 있다.
 
-## AI Ingredients: AI 폭발의 3대 요소 (L01-2)
+## AI Ingredients: 3대 요소 (L01-2)
 
 ![AI Ingredients](images/L01-2-ai-ingredients.png)
 
@@ -35,7 +35,7 @@ draft: false
 
 > Note: A100의 sparsity는 아무 sparse matrix나 되는 게 아니라 2:4 structured sparsity (연속 4개 원소 중 정확히 2개가 0)만 하드웨어가 인식하고 가속함. 이 제약 때문에 pruning 알고리즘과 하드웨어 sparsity 패턴이 같이 맞아야 하는데, 이것이 algorithm-hardware co-design의 핵심이다.
 
-## Software Companies Building HW (L01-5)
+## SW 기업의 자체 HW (L01-5)
 
 ![Software Companies Building HW](images/L01-5-sw-companies-hw.png)
 
@@ -201,7 +201,7 @@ SMT는 어려워 보이지만 Out-of-Order Pipeline에 Thread Choosing만 추가
 
 이 모든 제어 로직(Branch Prediction, Register Renaming, Issue Queue, Retire, Thread Choosing...)이 범용성을 위한 오버헤드다. DNN은 연산 패턴이 규칙적(MatMul의 반복)이라 이런 게 전부 불필요하므로, Accelerator에서는 이걸 다 빼고 PE array + memory hierarchy만 남긴다.
 
-## Every Accelerator is Unique (L01-26)
+## Accelerator 다양성 (L01-26)
 
 ![alt text](image-4.png)
 
