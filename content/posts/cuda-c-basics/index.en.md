@@ -11,7 +11,7 @@ summary: "The CUDA C execution model from the ground up: the compilation pipelin
 
 > Source: [01 CUDA C Basics](https://youtu.be/OsK8YFHTtNs)
 
-## What Is CUDA?
+## The CUDA Stack
 
 CUDA (Compute Unified Device Architecture) is NVIDIA's parallel computing platform, and it is more than one thing. It bundles a programming model, the driver and runtime APIs, a compiler toolchain (`nvcc`, lowering to PTX and then SASS), and a library stack (cuBLAS, cuDNN, and the rest). *CUDA C++* is the specific layer that extends C++ with device code; it is one part of the platform, not the whole of it. Since its 2007 release CUDA has become the de facto standard for deep-learning infrastructure, opening up the GPU as a general-purpose compute device (GPGPU) rather than a graphics-only one.
 
@@ -49,7 +49,7 @@ The workloads where GPGPU shines share one trait: they repeat the same operation
 
 As an aside: one of the earliest cases of using a GPU to train a neural network was a 2004 paper by Korean researchers (Oh & Jung, *"GPU implementation of neural networks,"* Pattern Recognition). There was no CUDA back then, so they ran the network on shaders.
 
-## Splitting Work Between CPU and GPU
+## Heterogeneous Computing
 
 Heterogeneous computing means different architectures (CPU and GPU) cooperating within a single system. The key idea in CUDA is not "run everything on the GPU." Control flow and light logic stay on the CPU (Host); only the heavy compute (matrix and tensor ops) is offloaded to the GPU (Device).
 
@@ -58,7 +58,7 @@ Why the split? It comes down to two design philosophies. A CPU puts a few cores 
 ![CPU vs GPU design philosophy](./images/neon5.png)
 *The CPU optimizes for latency with a few large cores; the GPU optimizes for throughput with thousands of small ones*
 
-### The 3-Stage Data Flow
+### Host-Device Data Flow
 
 In the explicit-copy model this post uses, the CPU (Host) and GPU (Device) have separate physical memories: a variable allocated on the CPU is not visible to a kernel, so you move the data yourself. (Unified Virtual Addressing, Unified/managed memory, and integrated GPUs relax this, sharing an address space or auto-migrating pages, but that is a separate topic; the explicit model is the one to understand first.) Under it, every CUDA program goes through these three stages to bridge the memory gap.
 
@@ -110,7 +110,7 @@ To run this on the GPU, you first have to declare where each function runs and w
 
 The reason a `__global__` kernel only returns `void` is the execution model. A kernel launch is asynchronous, so the CPU that called `kernel<<<...>>>()` does not wait for it to finish; it moves straight to the next line. There is no synchronous path to return a value on. If you need the result, you wait for completion with `cudaMemcpy` (an implicit sync) or `cudaDeviceSynchronize`, then read it back from device memory.
 
-## How nvcc Splits the Code
+## The nvcc Compilation Pipeline
 
 A single `.cu` file can freely mix CPU code (`main`) and GPU code (`__global__`). NVIDIA's compiler `nvcc` scans the source and splits the two apart.
 
@@ -131,7 +131,7 @@ st.global.f32 [%rd10], %f3;        // c[i] = ...
 
 You can see exactly how the single C line (`c[i] = a[i] + b[i]`) lowers. The index math folds into one `mad.lo.s32`, a 32-bit *integer* multiply-add for the address calculation, not an FP32 fused-multiply-add, `if (i < N)` becomes `setp` plus a predicated branch (`@%p1 bra`), and the actual work is two global loads, one FP32 `add`, and one global store. The "12 bytes and 1 FLOP per element" from the roofline analysis later is exactly these four lines. From here `ptxas` lowers this PTX to architecture-specific SASS, which you can inspect with `cuobjdump -sass`.
 
-## How Many Threads and Blocks Can You Have?
+## Thread and Block Limits
 
 - Threads per block max out at 1024. You're free to split across dimensions (`dim3`), but if the product exceeds 1024 the launch fails with `cudaErrorInvalidConfiguration`. `dim3(32, 32, 1)` (=1024) passes; `dim3(32, 32, 2)` (=2048) dies. There's also a separate cap of 64 on the z-axis that's easy to forget.
 - Grids are far more generous: 2³¹-1 on the x-axis and 65535 each on y/z. You won't hit these with any reasonable dataset.
@@ -139,7 +139,7 @@ You can see exactly how the single C line (`c[i] = a[i] + b[i]`) lowers. The ind
 
 These numbers aren't arbitrary; they come from [the hardware](../cuda-0-gpu-architecture/). A block runs to completion on exactly one SM (Streaming Multiprocessor) and is never split across SMs, and the SM schedules that block in units of warps. So the 1024-thread cap per block is 32 warps. On top of that, an SM has a finite register file: recent architectures have 65,536 32-bit registers per SM, shared among every thread resident on that SM. If a thread uses a lot of registers, fewer threads can be resident at once. That is exactly the occupancy story in the next section.
 
-## Warps and Thread Counts
+## Warps and SIMT Execution
 
 The GPU executes threads in groups called warps. A warp is 32 threads, a number fixed across every generation of NVIDIA GPU that developers cannot change.
 
@@ -172,7 +172,7 @@ These per-SM limits are set by compute capability. On cc 8.0 (A100): $T_{\text{S
 
 High occupancy is not the goal in itself; it is one lever for hiding memory latency. Once latency is already hidden, more occupancy buys nothing and can even hurt by shrinking the per-thread register budget. Instruction-level parallelism, achieved DRAM bandwidth, and cache behavior all matter alongside it. Measure rather than assume: `sm__warps_active.avg.pct_of_peak_sustained_active` in Nsight Compute reports *achieved* occupancy, which is what actually counts.
 
-## Memory Access Is Coalesced Per Warp
+## Memory Coalescing
 
 How you read global memory (HBM) inside the kernel matters as much as the host-device transfer. The GPU coalesces the global memory requests issued by a warp's 32 threads into hardware transactions.
 
@@ -191,7 +191,7 @@ Work the two ends for a warp loading 32 `float`s (requested $= 32 \times 4 = 128
 
 This is why vector addition is fast: `i = blockIdx.x * blockDim.x + threadIdx.x` makes adjacent lanes read adjacent addresses (a[0], a[1], a[2] …), so a warp hits four contiguous sectors and $\eta = 1$. Read it strided, like `a[i * stride]`, and $\eta$ falls toward $1/8$ while the kernel slows in step. Nsight Compute measures it directly: `l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum` counts sectors moved and `l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum` counts the load requests, so their ratio is the average sectors-per-request (ideal 4 for a full-warp 32-bit load, worst 32), which is the coalescing quality. The rule "map threads to the fastest-varying dimension (x)" is just keeping that ratio at its floor.
 
-## Blocks Can't Communicate
+## Block Independence
 
 Threads within the same block share shared memory and synchronize with `__syncthreads()`, because they physically sit on the same SM.
 
@@ -209,7 +209,7 @@ Here's that hierarchy laid out by dimension:
 ![Grid/Block/Thread 1D/2D/3D](./images/neon4.png)
 *Layout by dimension. 1D `kernel<<<4, 8>>>` (32 threads), 2D `kernel<<<dim3(2,2), dim3(4,4)>>>`, 3D `kernel<<<dim3(2,2,2), dim3(2,2,2)>>>` (64 threads). The global index is `blockIdx.x * blockDim.x + threadIdx.x`*
 
-## Launching a Kernel with `<<< >>>`
+## Execution Configuration: `<<<>>>`
 
 Calling a `__global__` function like a normal function is a compile error. You must use the triple chevron syntax.
 
@@ -249,7 +249,7 @@ __global__ void add(float* a, float* b, float* c, int N) {
 }
 ```
 
-## Full Example: A Vector Add That Compiles
+## Worked Example: Vector Add
 
 Putting the pieces together (the 3-stage transfer, the qualifiers, the launch config) gives this. Save it as `vector_add.cu` and it compiles and runs as-is.
 
@@ -316,7 +316,7 @@ max error: 0.000000
 
 This single file contains everything from the earlier sections: the qualifier (`__global__`), the three transfers (`cudaMemcpy` three times), the launch config (`<<<gridSize, blockSize>>>`), and the bounds check (`if (i < N)`). One caveat: this code skips error handling for brevity. In real code you check the return value of every CUDA call and call `cudaGetLastError()` right after the launch, because a failed kernel launch fails silently.
 
-## This Kernel Is Bound by Bandwidth, Not Compute
+## Roofline: Bandwidth-Bound
 
 Vector addition gets used as the example of "compute the GPU speeds up," but an expert reads it the opposite way. This kernel barely does any FLOPs. Per element it moves 12 bytes (two loads for a and b, one store for c) and performs exactly one addition. That ratio is the arithmetic intensity.
 

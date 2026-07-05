@@ -11,7 +11,7 @@ summary: "One line from Tesla (2006) to Rubin (2026): how the NVIDIA SM stayed t
 
 > Primary: NVIDIA architecture whitepapers and product pages. Narrative and microarchitecture: Fabien Sanglard, Chips and Cheese, SemiAnalysis.
 
-## Why Trace the Whole Line
+## Overview: How to Read the Genealogy
 
 The [primer post](../cuda-0-gpu-architecture/) used the 2006 Tesla chip as an anchor for CUDA's vocabulary. This post follows that anchor forward. The goal is narrow: place any NVIDIA GPU on one timeline and state in a sentence what it changed and why.
 
@@ -90,7 +90,7 @@ This genealogy mostly follows the SM, because CUDA programs are scheduled onto S
 
 **Rubin (2026).** The current generation, and the point where the unit of design finishes moving from chip to rack. NVIDIA's Rubin materials list a 336 billion transistor Rubin GPU with 288 GB of HBM4 at 22 TB/s and NVLink 6 at 3.6 TB/s. NVIDIA marks the public specifications as preliminary, and it does not frame the product as just "a Rubin GPU." It frames Vera Rubin as a platform, which is the distinction the next section makes.
 
-## The Tensor Core, One Arc
+## Tensor Core Evolution
 
 Of all the threads through the genealogy, the Tensor Core is the one that decided where the transistors and the R&D went. It is a matrix-multiply-accumulate unit, and its five generations move along two axes: precision and asynchrony.
 
@@ -108,7 +108,7 @@ From Volta onward the family runs on two branches that share DNA but optimize fo
 
 The datacenter line (GV100, GA100, GH100, GB200, Rubin) maximizes AI throughput and interconnect: fewer FP32 lanes per SM but more INT/FP64/Tensor, HBM instead of GDDR, NVLink and now whole-rack fabrics, features like MIG and thread block clusters. The graphics line (Turing, Ada, the consumer Ampere and Blackwell parts) keeps enough Tensor Cores for DLSS and adds RT Cores and rendering features, on GDDR. Ampere and Blackwell exist on both branches under one name, which is why "an Ampere GPU" can mean an A100 or an RTX 3090 with quite different SMs. Naming a generation is not enough; you have to say which line.
 
-## Rubin Is a Platform, Not a GPU
+## Rubin as a Rack-Scale Platform
 
 The newest entry is easy to misread. "Blackwell" still names a GPU you can point at. "Rubin" mostly names a system. NVIDIA's own description of Vera Rubin is a rack, the NVL72: 72 Rubin GPUs and 36 Vera CPUs in one liquid-cooled, NVLink-6 domain, delivering on the order of 3.6 EFLOPS of FP4 inference with 20.7 TB of HBM4. The Vera CPU is its own chip, 88 custom Olympus Arm cores. NVIDIA's latest Vera Rubin page frames the platform as seven chips across compute, networking, storage, and switching, so treating Rubin as a lone SM diagram is already the wrong abstraction.
 
@@ -137,7 +137,7 @@ So keep two names apart. The Rubin GPU is a microarchitecture, comparable to GB1
 | Blackwell | 2024 | 2 dies, 208 B | FP4, TMEM, 5th NVLink, scale-first | TSMC 4NP | B200 / GB200 |
 | Rubin | 2026 | 2 dies, 336 B | HBM4, NVLink 6; Vera Rubin = rack platform | not finalized in NVIDIA public specs | Rubin / Vera Rubin NVL72 |
 
-## What the Genealogy Tells You
+## Synthesis: Three Trajectories
 
 Three trajectories run the whole length. Specialization increases: the SM keeps a general core and accretes Tensor Cores, RT Cores, a Transformer Engine, and dedicated Tensor Memory around it. Precision decreases: FP32 down to FP4, because AI pays for throughput with bits. And the unit of design grows: chip, then two dies, then a rack.
 

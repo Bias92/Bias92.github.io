@@ -11,7 +11,7 @@ summary: "Before CUDA C: the Tesla unified architecture (G80/GT200) from the 200
 
 > Source: Lindholm, Nickolls, Oberman, Montrym, *"NVIDIA Tesla: A Unified Graphics and Computing Architecture,"* IEEE Micro 28(2), 2008.
 
-## Why Read This Before CUDA C
+## Motivation: The Hardware Under CUDA
 
 The [CUDA C post](../cuda-c-basics/) talks about blocks, warps, SMs, occupancy, and memory coalescing as if they were language features. They are not. They are the software-visible names of a hardware architecture NVIDIA shipped in November 2006 as the G80 (GeForce 8800 GTX) and refined in 2008 as the GT200 (GTX 280). NVIDIA calls that architecture Tesla, and the reference is the IEEE Micro paper above.
 
@@ -19,7 +19,7 @@ If you learn CUDA C without this layer, `warp = 32` and "coalesce your accesses"
 
 One caveat up front: Tesla (G80/GT200) is the historical anchor here, not a snapshot of a modern GPU. The SM has been rebuilt many times since 2006. FP32 lanes per SM went from 8 to 128, one warp scheduler became four, shared memory grew from 16 KB to over 200 KB, and units that did not exist then (a general-purpose L1 data cache, tensor cores, async copy) were added. What survives is the naming lineage and the mental model: SPA to TPC to SM to SP is the genealogy behind CUDA's blocks, warps, and SM scheduling. Read the numbers below as a 2008 snapshot, not today's spec sheet, and take the concepts as the part that lasts.
 
-## The Unified Shift
+## The Unified Shader Architecture
 
 A pre-Tesla GPU had a fixed pipeline of specialized processors: vertex shaders, then rasterization, then pixel (fragment) shaders, each a different unit with its own instruction set and its own silicon. The ratio between vertex and pixel work is fixed at design time, so a vertex-heavy or pixel-heavy frame leaves half the chip idle.
 
@@ -30,7 +30,7 @@ That single decision is what created GPGPU. Once you have a general, programmabl
 ![NVIDIA Tesla (G80) unified architecture](./images/tesla1.svg?v=2)
 *G80 shown: 8 TPC × 2 SM × 8 SP = 128 SP, 6 DRAM partitions. The SPA is the array of 8 TPCs; the compute work distribution path (magenta) is the one CUDA drives.*
 
-## Walking the Data Path
+## The Data Path
 
 Follow the work from memory, through the chip, and back to memory. In graphics mode the path is:
 
@@ -64,7 +64,7 @@ Two more execution units per SM matter for CUDA:
 - **SFU (Special Function Unit).** Two per SM. It computes transcendentals (reciprocal, reciprocal-sqrt, sin, cos, log, exp) and, in graphics, interpolates pixel attributes. When a CUDA kernel calls `__sinf` or `rsqrtf`, this is the unit.
 - **LSU (Load/Store Unit).** The path that issues loads and stores to global and local memory through the memory pipeline. Its behavior under a warp is the whole subject of coalescing in the CUDA C post.
 
-## SIMT and the Birth of the Warp
+## SIMT and the Warp
 
 Here is where the CUDA abstraction is literally defined by the hardware. The SM's instruction unit does not track threads one at a time. It creates, manages, schedules, and executes them in groups of 32 called a warp. The Tesla paper coined the term SIMT (Single-Instruction, Multiple-Thread) for this: the SM issues one instruction to a warp, and all 32 threads execute it, each on its own data and its own registers.
 
@@ -96,7 +96,7 @@ $$
 
 NVIDIA quoted a higher figure (518 GFLOP/s) by also counting a MUL that the SFU can co-issue in the same clock, which real kernels rarely sustain. That gap between the marketing peak and the achievable peak is a habit worth keeping: always ask which clock and which instruction mix a number assumes.
 
-## The Memory Subsystem: DRAM Partitions and the Road to Coalescing
+## The Memory Subsystem: DRAM Partitions and Coalescing
 
 Tesla's DRAM is not one monolithic memory. It is split into independent partitions, each with its own memory controller and its own ROP. G80 has 6 partitions of 64 bits each (a 384-bit aggregate bus); GT200 has 8 (512-bit). Addresses are interleaved across partitions so that sequential memory marches across all controllers in parallel, and total bandwidth is the sum of the partitions.
 
@@ -108,7 +108,7 @@ $$
 
 This partitioned, interleaved, wide memory is the reason coalescing exists as a rule in CUDA. When a warp's 32 lanes issue loads, the LSU turns them into memory transactions that the partitions service. If the 32 addresses are contiguous, they fall into a few wide transactions spread across the controllers and the bus runs full. If they are scattered, each address drags its own transaction and most of every fetched line is thrown away. The CUDA-level advice "make warp accesses contiguous" is just "feed the partitioned memory system the wide, aligned transactions it was built for."
 
-## What Carried Over, What Changed
+## Continuity and Change
 
 Everything above is a 2008 chip. Open an A100 (2020) or H100 (2022) SM and the numbers are unrecognizable, but the skeleton is the same. That split, stable concepts and shifting magnitudes, is the whole reason Tesla is worth reading.
 

@@ -25,7 +25,7 @@ This is also precisely why MLSys is an AI-resistant career. No matter how much t
 
 3) New ML Techniques. Just as AlexNet opened the CNN era and LLMs/Transformers dominate today, hardware requirements keep changing as algorithms advance.
 
-## How GPUs Evolved into DNN-Specific Hardware (L01-4)
+## GPU Evolution into DNN-Specific Hardware (L01-4)
 
 ![GPU Evolution](images/L01-4-gpu-evolution.png)
 
@@ -65,7 +65,7 @@ DNN-specific units go not only into datacenters but also into phone and laptop c
 - Apple M2 (2022). 16 Neural Engine cores. 26x faster than the A11. The fact that the speed is 26x with the same core count means the core architecture itself improved significantly from generation to generation.
 - Conditions under which the ANE runs well: a small, integer-quantized, pruned model. These are the practical constraints of on-device inference.
 
-## The Explosive Growth of Computing Energy Consumption (L01-8)
+## Growth in Computing Energy Consumption (L01-8)
 
 ![alt text](image-1.png)
 
@@ -298,7 +298,7 @@ So the core goal of accelerator design is to keep data as close to the PE as pos
 
 > "Farther and larger memories consume more power." This one line is the core principle of this course.
 
-## L01-44 Things to Decide When Designing an Accelerator (L01-44)
+## Accelerator Design Decisions (L01-44)
 
 ![alt text](image-10.png)
 
@@ -314,7 +314,7 @@ These are the items a designer has to decide in the structure above, and each ma
 
 Think of it as each layer of the TeAAL Pyramid (Compute, Mapping, Format, Binding) coming down here into concrete design decisions.
 
-## Analyzing Accelerator Inefficiency with the Roofline Model (L01-45)
+## Roofline Analysis of Accelerator Inefficiency (L01-45)
 
 ![alt text](image-11.png)
 
@@ -344,7 +344,7 @@ Steps 1~7 show, stepwise, "why performance drops from the theoretical peak to th
 
 Going from top to bottom, the roofline tightens. Starting from the theoretical peak and reflecting the realistic constraints one by one gives you the actually achievable performance.
 
-### The Real Roofline: As Seen in Nsight Compute
+### Measured Roofline: Nsight Compute
 
 ![alt text](image-12.png)
 
