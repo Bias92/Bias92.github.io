@@ -53,7 +53,7 @@ The bottom line is cost plus optimization. An NVIDIA GPU is general-purpose, des
 
 An interesting extreme case is the Cerebras WSE. A normal chip is a single small die cut from a wafer, but Cerebras uses the entire wafer as one chip. As a result it boasts a whopping 18GB of SRAM (the A100 is around 20MB, and even a TPU is within 32MB).
 
-That said, in practice yield, cooling, and price problems are so severe that it is not widely used. Think of it as an example that shows how far domain-specific design can go.
+In practice, yield, cooling, and price problems are so severe that it is not widely used. It is an example of how far domain-specific design can go.
 
 ## Mobile SoCs for DNNs (L01-7)
 
@@ -312,7 +312,7 @@ These are the items a designer has to decide in the structure above, and each ma
 | Sparsity handling | gating, skipping, compression format | Lab 4 |
 | Implementation technology | RRAM, optical, superconductors, etc. | Lab 5 |
 
-Think of it as each layer of the TeAAL Pyramid (Compute, Mapping, Format, Binding) coming down here into concrete design decisions.
+Each layer of the TeAAL Pyramid (Compute, Mapping, Format, Binding) comes down here to concrete design decisions.
 
 ## Roofline Analysis of Accelerator Inefficiency (L01-45)
 

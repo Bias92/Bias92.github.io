@@ -84,7 +84,7 @@ Before the root cause was identified, one `flash.sh` run on the AMD host partial
 
 The root cause was an incomplete Device Tree Blob (DTB) due to a corrupted USB transfer. This is not recoverable through software: no amount of xorg.conf editing, package reinstallation, or ldconfig configuration will fix missing device tree entries. The only fix is a clean reflash with reliable USB transfer.
 
-Key takeaway: `flash.sh` reporting success does not guarantee a clean flash. USB transmission errors can silently corrupt firmware/DTB. Always verify `/dev/nvhost*` presence after flashing.
+`flash.sh` reporting success does not guarantee a clean flash. USB transmission errors can silently corrupt firmware/DTB. Always verify `/dev/nvhost*` presence after flashing.
 
 ## Solution: Intel Host + chroot
 

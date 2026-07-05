@@ -186,8 +186,8 @@ $$
 
 warp가 float 32개를 읽는 두 극단을 계산해 보자(요청 $= 32 \times 4 = 128$ B):
 
-- **연속·정렬:** 128 B가 정확히 sector 4개에 걸쳐 $S = 4$, 그래서 $\eta = 128 / (32 \cdot 4) = 1$. 정확한 표현은 "*32바이트 sector 4개(= 128바이트 연속 구간)를 꽉 채워 씀*"이지 "트랜잭션 1번"이 아니다.
-- **완전 산개:** lane마다 각자의 sector에 떨어져 $S = 32$, 그래서 128 B 요청에 $32 \cdot 32 = 1024$ B가 오가고 $\eta = 128/1024 = 1/8$. 4바이트 원소 기준 바닥은 $1/32$가 아니라 $1/8$이다. 옛날 "$1/32$"는 128바이트 트랜잭션을 가정한 건데, sector 접근은 그렇게 동작하지 않는다.
+- 연속·정렬: 128 B가 정확히 sector 4개에 걸쳐 $S = 4$, 그래서 $\eta = 128 / (32 \cdot 4) = 1$. 정확한 표현은 "*32바이트 sector 4개(= 128바이트 연속 구간)를 꽉 채워 씀*"이지 "트랜잭션 1번"이 아니다.
+- 완전 산개: lane마다 각자의 sector에 떨어져 $S = 32$, 그래서 128 B 요청에 $32 \cdot 32 = 1024$ B가 오가고 $\eta = 128/1024 = 1/8$. 4바이트 원소 기준 바닥은 $1/32$가 아니라 $1/8$이다. 옛날 "$1/32$"는 128바이트 트랜잭션을 가정한 건데, sector 접근은 그렇게 동작하지 않는다.
 
 벡터 덧셈이 빠른 진짜 이유가 이거다. `i = blockIdx.x * blockDim.x + threadIdx.x`로 인덱싱하면 이웃 lane이 이웃 주소(a[0], a[1], a[2] …)를 읽어서 warp가 연속된 sector 4개를 건드리고 $\eta = 1$이 된다. `a[i * stride]`처럼 성기게 읽으면 $\eta$가 $1/8$ 쪽으로 떨어지고 커널도 그만큼 느려진다. Nsight Compute가 바로 재준다. `l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum`이 옮긴 sector 수, `l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum`이 load request 수이고, 둘의 비(sector ÷ request)가 request당 평균 sector(full-warp 32-bit load면 이상 4, 최악 32) = coalescing 품질이다. "thread를 가장 빠르게 변하는 차원(x)에 매핑하라"는 규칙은 이 비율을 바닥에 붙여두는 것일 뿐이다.
 
