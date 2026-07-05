@@ -34,12 +34,12 @@ That single decision is what created GPGPU. Once you have a general, programmabl
 
 Follow the work from memory, through the chip, and back to memory. In graphics mode the path is:
 
-1. **Input Assembler.** Reads vertex indices and attributes from DRAM and assembles them into primitives (points, lines, triangles). This is the front door.
-2. **Work distribution.** Tesla has separate distributors for vertex, pixel, and compute work. Each one hands batches of work to the SPA and load-balances them across the processors. In compute mode, the *compute work distribution* unit is the piece that hands thread blocks to SMs, one block at a time as SMs free up. That load-balancer is the physical origin of CUDA's transparent scalability.
-3. **SPA.** The processor array executes the shader (or the kernel). For graphics it runs vertex shading, then later pixel shading; for CUDA it runs the kernel. It is the compute engine and everything else feeds it or drains it.
-4. **Setup / raster (graphics only).** Between vertex and pixel work, fixed-function units clip, set up triangles, and rasterize them into fragments, which the pixel distributor then feeds back into the SPA.
-5. **ROP (Raster Operations Processor).** After pixel shading, the ROP does the fixed-function back end: depth and stencil test, color blend, antialiasing, and the final write to the framebuffer. Each ROP is tied to a DRAM partition.
-6. **DRAM.** The memory partitions, where everything starts and ends.
+1. Input Assembler. Reads vertex indices and attributes from DRAM and assembles them into primitives (points, lines, triangles). This is the front door.
+2. Work distribution. Tesla has separate distributors for vertex, pixel, and compute work. Each one hands batches of work to the SPA and load-balances them across the processors. In compute mode, the *compute work distribution* unit is the piece that hands thread blocks to SMs, one block at a time as SMs free up. That load-balancer is the physical origin of CUDA's transparent scalability.
+3. SPA. The processor array executes the shader (or the kernel). For graphics it runs vertex shading, then later pixel shading; for CUDA it runs the kernel. It is the compute engine and everything else feeds it or drains it.
+4. Setup / raster (graphics only). Between vertex and pixel work, fixed-function units clip, set up triangles, and rasterize them into fragments, which the pixel distributor then feeds back into the SPA.
+5. ROP (Raster Operations Processor). After pixel shading, the ROP does the fixed-function back end: depth and stencil test, color blend, antialiasing, and the final write to the framebuffer. Each ROP is tied to a DRAM partition.
+6. DRAM. The memory partitions, where everything starts and ends.
 
 For CUDA the graphics-specific stages (setup, raster, ROP) sit idle, and the path collapses to: host launches a grid, the compute work distributor spreads blocks over SMs, the SPA runs the kernel, and loads/stores move data to and from DRAM. Same silicon, fewer stages lit up.
 
@@ -47,9 +47,9 @@ For CUDA the graphics-specific stages (setup, raster, ROP) sit idle, and the pat
 
 The SPA is not a flat pool of cores. It is a three-level hierarchy, and each level maps to a CUDA concept.
 
-- **TPC (Texture / Processor Cluster).** The SPA is divided into TPCs. A TPC bundles a texture unit with a small number of SMs that share it. G80 has 8 TPCs of 2 SMs each; GT200 has 10 TPCs of 3 SMs each.
-- **SM (Streaming Multiprocessor).** The unit that actually runs threads. Each SM holds 8 SPs, 2 SFUs, a multithreaded instruction fetch/issue unit, a register file, and 16 KB of shared memory. The SM is where a CUDA thread block lands and stays.
-- **SP (Streaming Processor).** A scalar ALU that executes one thread's floating-point and integer work, primarily a MAD (multiply-add). Eight per SM. This is the unit later marketing renamed the "CUDA core."
+- TPC (Texture / Processor Cluster). The SPA is divided into TPCs. A TPC bundles a texture unit with a small number of SMs that share it. G80 has 8 TPCs of 2 SMs each; GT200 has 10 TPCs of 3 SMs each.
+- SM (Streaming Multiprocessor). The unit that actually runs threads. Each SM holds 8 SPs, 2 SFUs, a multithreaded instruction fetch/issue unit, a register file, and 16 KB of shared memory. The SM is where a CUDA thread block lands and stays.
+- SP (Streaming Processor). A scalar ALU that executes one thread's floating-point and integer work, primarily a MAD (multiply-add). Eight per SM. This is the unit later marketing renamed the "CUDA core."
 
 The totals fall straight out of the hierarchy:
 
@@ -61,8 +61,8 @@ $$
 
 Two more execution units per SM matter for CUDA:
 
-- **SFU (Special Function Unit).** Two per SM. It computes transcendentals (reciprocal, reciprocal-sqrt, sin, cos, log, exp) and, in graphics, interpolates pixel attributes. When a CUDA kernel calls `__sinf` or `rsqrtf`, this is the unit.
-- **LSU (Load/Store Unit).** The path that issues loads and stores to global and local memory through the memory pipeline. Its behavior under a warp is the whole subject of coalescing in the CUDA C post.
+- SFU (Special Function Unit). Two per SM. It computes transcendentals (reciprocal, reciprocal-sqrt, sin, cos, log, exp) and, in graphics, interpolates pixel attributes. When a CUDA kernel calls `__sinf` or `rsqrtf`, this is the unit.
+- LSU (Load/Store Unit). The path that issues loads and stores to global and local memory through the memory pipeline. Its behavior under a warp is the whole subject of coalescing in the CUDA C post.
 
 ## SIMT and the Warp
 

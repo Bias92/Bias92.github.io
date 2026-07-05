@@ -31,64 +31,64 @@ This genealogy mostly follows the SM, because CUDA programs are scheduled onto S
 
 ## The Unified Era: Tesla and Fermi
 
-**Tesla (2006, G80).** The starting point, covered in the primer. Its one idea, replacing fixed vertex and pixel pipelines with a single unified array of programmable cores, is what made a GPU a general compute device and made CUDA possible. 8 SP per SM, one warp scheduler, SIMT, 90 nm.
+Tesla (2006, G80). The starting point, covered in the primer. Its one idea, replacing fixed vertex and pixel pipelines with a single unified array of programmable cores, is what made a GPU a general compute device and made CUDA possible. 8 SP per SM, one warp scheduler, SIMT, 90 nm.
 
 ![Tesla SM component diagram](./images/sm-tesla.svg?v=1)
 *Tesla SM (G80): 8 scalar SP, one scheduler, 16 KB shared. The origin.*
 
-**Fermi (2010, GF100).** The generation that turned a graphics chip into a compute chip on purpose. Fermi added the things a real programming target needs: a proper L1 data cache and L2, ECC, a fused multiply-add, full IEEE double precision, and C++ support. The SM grew to 32 CUDA cores with two warp schedulers, and texture units moved inside the SM. If Tesla proved the GPU could compute, Fermi made it something you would actually build a numerical library on.
+Fermi (2010, GF100). The generation that turned a graphics chip into a compute chip on purpose. Fermi added the things a real programming target needs: a proper L1 data cache and L2, ECC, a fused multiply-add, full IEEE double precision, and C++ support. The SM grew to 32 CUDA cores with two warp schedulers, and texture units moved inside the SM. If Tesla proved the GPU could compute, Fermi made it something you would actually build a numerical library on.
 
 ![Fermi SM component diagram](./images/sm-fermi.svg?v=1)
 *Fermi SM (GF100): 32 cores, two schedulers, the first L1 data cache.*
 
 ## The Efficiency Era: Kepler, Maxwell, Pascal
 
-**Kepler (2012, GK110).** The throughput bet. Kepler widened the SM enormously into the SMX, 192 CUDA cores, and moved instruction scheduling out of hardware and into the compiler to save power. The bet was that raw core count and a simpler scheduler would win perf-per-watt at lower clocks. It half worked: Kepler was efficient in aggregate but hard to keep fed, and per-core utilization suffered. It is the generation people point to when they say a wider SM is not automatically a faster one.
+Kepler (2012, GK110). The throughput bet. Kepler widened the SM enormously into the SMX, 192 CUDA cores, and moved instruction scheduling out of hardware and into the compiler to save power. The bet was that raw core count and a simpler scheduler would win perf-per-watt at lower clocks. It half worked: Kepler was efficient in aggregate but hard to keep fed, and per-core utilization suffered. It is the generation people point to when they say a wider SM is not automatically a faster one.
 
 ![Kepler SMX component diagram](./images/sm-kepler.svg?v=3)
 *Kepler SMX (GK110): 192 cores, four schedulers, compiler scheduling.*
 
-**Maxwell (2014, GM200).** The correction. Maxwell narrowed the SM back to 128 cores and partitioned it into four processing blocks of 32, each with its own scheduler and register file, so the hardware maps cleanly onto warps again. No new process node, just a cleaner design, and it delivered one of NVIDIA's largest efficiency jumps. Maxwell is the case study for why architectural tidiness can beat brute width.
+Maxwell (2014, GM200). The correction. Maxwell narrowed the SM back to 128 cores and partitioned it into four processing blocks of 32, each with its own scheduler and register file, so the hardware maps cleanly onto warps again. No new process node, just a cleaner design, and it delivered one of NVIDIA's largest efficiency jumps. Maxwell is the case study for why architectural tidiness can beat brute width.
 
-**Pascal (2016).** The split becomes visible. The consumer parts (GP102, GTX 1080 Ti) were essentially Maxwell moved to 16 nm with faster GDDR5X, a process-and-bandwidth generation. The datacenter part (GP100, P100) was a different animal: 64 FP32 lanes per SM but with FP64 and, for the first time, NVLink and HBM2. Pascal is where the consumer and datacenter designs stopped being the same chip with a different bin.
+Pascal (2016). The split becomes visible. The consumer parts (GP102, GTX 1080 Ti) were effectively Maxwell moved to 16 nm with faster GDDR5X, a process-and-bandwidth generation. The datacenter part (GP100, P100) was a different animal: 64 FP32 lanes per SM but with FP64 and, for the first time, NVLink and HBM2. Pascal is where the consumer and datacenter designs stopped being the same chip with a different bin.
 
 ![Maxwell and Pascal SM component diagram](./images/sm-maxwell-pascal.svg?v=2)
 *Maxwell and Pascal: the SM cut into four warp-sized partitions.*
 
 ## The AI Pivot: Volta and Turing
 
-**Volta (2017, GV100).** The hinge of the whole genealogy. Volta added the first Tensor Core, a unit that does a small matrix multiply and accumulate in one instruction, because doing matmul with ordinary FP instructions wastes most of its power on instruction overhead rather than arithmetic. It also introduced independent thread scheduling: every thread got its own program counter, which is why the CUDA C post has to caveat warp lockstep and reach for `__syncwarp()`. Volta had no consumer part; it was datacenter only. Everything about modern AI hardware starts here.
+Volta (2017, GV100). The hinge of the whole genealogy. Volta added the first Tensor Core, a unit that does a small matrix multiply and accumulate in one instruction, because doing matmul with ordinary FP instructions wastes most of its power on instruction overhead rather than arithmetic. It also introduced independent thread scheduling: every thread got its own program counter, which is why the CUDA C post has to caveat warp lockstep and reach for `__syncwarp()`. Volta had no consumer part; it was datacenter only. Everything about modern AI hardware starts here.
 
 ![Volta SM component diagram](./images/sm-volta.svg?v=1)
 *Volta SM (GV100): the first Tensor Core joins the CUDA cores.*
 
-**Turing (2018, TU102).** Volta's ideas reach the graphics line. Turing put a second-generation Tensor Core and a new RT Core for ray tracing into a consumer GPU, and split the datapath so an SM could issue FP32 and INT32 at once. It is the moment the graphics line stopped being purely graphics and started carrying AI and ray-tracing accelerators, which is how you get DLSS.
+Turing (2018, TU102). Volta's ideas reach the graphics line. Turing put a second-generation Tensor Core and a new RT Core for ray tracing into a consumer GPU, and split the datapath so an SM could issue FP32 and INT32 at once. It is the moment the graphics line stopped being purely graphics and started carrying AI and ray-tracing accelerators, which is how you get DLSS.
 
 ![Turing and Ada SM component diagram](./images/sm-turing-ada.svg?v=1)
 *Turing and Ada: an RT Core and a graphics Tensor Core enter the SM.*
 
 ## The Datacenter Arms Race: Ampere and Hopper
 
-**Ampere (2020, GA100).** Scale plus format. The third-generation Tensor Core added TF32 (FP32 range, reduced mantissa, a drop-in for training) and BF16, plus structured sparsity for a 2x throughput claim. Just as important, `cp.async` let a thread copy global to shared memory without staging through registers, relieving the register pressure that limits Tensor Core kernels. Ampere also brought MIG, slicing an A100 into isolated instances. The A100 ran 64 FP32 lanes per SM; the consumer RTX 30 parts ran 128.
+Ampere (2020, GA100). Scale plus format. The third-generation Tensor Core added TF32 (FP32 range, reduced mantissa, a drop-in for training) and BF16, plus structured sparsity for a 2x throughput claim. Just as important, `cp.async` let a thread copy global to shared memory without staging through registers, relieving the register pressure that limits Tensor Core kernels. Ampere also brought MIG, slicing an A100 into isolated instances. The A100 ran 64 FP32 lanes per SM; the consumer RTX 30 parts ran 128.
 
 ![Ampere SM component diagram](./images/sm-ampere.svg?v=1)
 *Ampere SM (GA100): 3rd-gen Tensor and cp.async feeding shared memory.*
 
-**Hopper (2022, GH100).** The Transformer Engine generation. The fourth-generation Tensor Core added FP8 (E4M3 and E5M2), and Hopper wrapped it in machinery aimed squarely at large language models: warpgroup-level asynchronous MMA (`wgmma`), the Tensor Memory Accelerator (TMA) for bulk async copies driven by a single thread, and thread block clusters with distributed shared memory so SMs can share data directly. The motivating problem, in SemiAnalysis's framing, is that Tensor Core throughput doubled every generation while global memory latency did not, so Hopper spent its budget on hiding and feeding, not on more raw FLOPs. H100, HBM3, NVLink 4 at 900 GB/s.
+Hopper (2022, GH100). The Transformer Engine generation. The fourth-generation Tensor Core added FP8 (E4M3 and E5M2), and Hopper wrapped it in machinery aimed squarely at large language models: warpgroup-level asynchronous MMA (`wgmma`), the Tensor Memory Accelerator (TMA) for bulk async copies driven by a single thread, and thread block clusters with distributed shared memory so SMs can share data directly. The motivating problem, in SemiAnalysis's framing, is that Tensor Core throughput doubled every generation while global memory latency did not, so Hopper spent its budget on hiding and feeding, not on more raw FLOPs. H100, HBM3, NVLink 4 at 900 GB/s.
 
 ![Hopper SM component diagram](./images/sm-hopper.svg?v=2)
 *Hopper SM (GH100): FP8 Tensor, TMA, wgmma, thread block clusters.*
 
 ## The Scale Era: Ada, Blackwell, Rubin
 
-**Ada (2022, AD102).** The graphics-line counterpart to Hopper. Fourth-generation Tensor Cores, third-generation RT Cores, Shader Execution Reordering to claw back ray-tracing divergence, and the DLSS 3 frame-generation stack. RTX 4090, TSMC 4 nm.
+Ada (2022, AD102). The graphics-line counterpart to Hopper. Fourth-generation Tensor Cores, third-generation RT Cores, Shader Execution Reordering to claw back ray-tracing divergence, and the DLSS 3 frame-generation stack. RTX 4090, TSMC 4 nm.
 
-**Blackwell (2024).** Two chips, one name. The datacenter part (B200) is where the die stopped being one die: two reticle-limited dies joined by a 10 TB/s link and presented to software as a single GPU, 208 billion transistors together, on HBM3e. The consumer part (GB202, RTX 5090) is instead a single die near 750 mm2 with 192 SMs on GDDR7, and it is the one Chips and Cheese reads as scale over specialization, a 64-bank L2 at roughly 8.7 TB/s chosen for bandwidth over latency, winning by sheer core density rather than per-core cleverness. Both share the fifth-generation Tensor Core, which added FP4 (NVFP4 and the microscaling MXFP formats), a dedicated Tensor Memory (TMEM) so operands live outside the register file, and CTA-pair MMA where two SMs cooperate on one matrix op. GB200 pairs two datacenter Blackwell GPUs with a Grace CPU; GB200 NVL72 wires 72 of them into one NVLink domain that behaves as a single rack-scale GPU.
+Blackwell (2024). Two chips, one name. The datacenter part (B200) is where the die stopped being one die: two reticle-limited dies joined by a 10 TB/s link and presented to software as a single GPU, 208 billion transistors together, on HBM3e. The consumer part (GB202, RTX 5090) is instead a single die near 750 mm2 with 192 SMs on GDDR7, and it is the one Chips and Cheese reads as scale over specialization, a 64-bank L2 at roughly 8.7 TB/s chosen for bandwidth over latency, winning by sheer core density rather than per-core cleverness. Both share the fifth-generation Tensor Core, which added FP4 (NVFP4 and the microscaling MXFP formats), a dedicated Tensor Memory (TMEM) so operands live outside the register file, and CTA-pair MMA where two SMs cooperate on one matrix op. GB200 pairs two datacenter Blackwell GPUs with a Grace CPU; GB200 NVL72 wires 72 of them into one NVLink domain that behaves as a single rack-scale GPU.
 
 ![Blackwell SM component diagram](./images/sm-blackwell.svg?v=2)
 *Blackwell SM (B200): FP4 Tensor, dedicated TMEM, CTA-pair MMA.*
 
-**Rubin (2026).** The current generation, and the point where the unit of design finishes moving from chip to rack. NVIDIA's Rubin materials list a 336 billion transistor Rubin GPU with 288 GB of HBM4 at 22 TB/s and NVLink 6 at 3.6 TB/s. NVIDIA marks the public specifications as preliminary, and it does not frame the product as just "a Rubin GPU." It frames Vera Rubin as a platform, which is the distinction the next section makes.
+Rubin (2026). The current generation, and the point where the unit of design finishes moving from chip to rack. NVIDIA's Rubin materials list a 336 billion transistor Rubin GPU with 288 GB of HBM4 at 22 TB/s and NVLink 6 at 3.6 TB/s. NVIDIA marks the public specifications as preliminary, and it does not frame the product as just "a Rubin GPU." It frames Vera Rubin as a platform, which is the distinction the next section makes.
 
 ## Tensor Core Evolution
 
