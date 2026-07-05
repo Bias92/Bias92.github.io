@@ -15,7 +15,7 @@ He said this at the 50th anniversary event for the ACM Turing Award in 2017: "Co
 
 This is also precisely why MLSys is an AI-resistant career. No matter how much the AI models change (CNN → Transformer → MoE → Mamba...), compute is ultimately inevitable. The people who build models get reset every time a new architecture appears, but the people who work on the hardware and system infrastructure that runs those models efficiently stay in demand.
 
-## AI Ingredients: The Three Elements Behind the AI Explosion (L01-2)
+## AI Ingredients: The Three Elements (L01-2)
 
 ![AI Ingredients](images/L01-2-ai-ingredients.png)
 
@@ -35,7 +35,7 @@ In 2020, the A100 Tensor Core added sparsity support. This is a technique that r
 
 > Note: A100 sparsity does not work with just any sparse matrix. Only 2:4 structured sparsity (exactly 2 zeros among 4 consecutive elements) is recognized and accelerated by the hardware. Because of this constraint, the pruning algorithm and the hardware sparsity pattern have to match up together, and this is the core of algorithm-hardware co-design.
 
-## Software Companies Building HW (L01-5)
+## In-House Hardware at Software Companies (L01-5)
 
 ![Software Companies Building HW](images/L01-5-sw-companies-hw.png)
 
@@ -201,7 +201,7 @@ Summary of pipeline evolution:
 
 All of this control logic (branch prediction, register renaming, issue queue, retire, thread choosing...) is overhead for the sake of generality. Since DNNs have a regular computation pattern (repeated MatMul), all of this is unnecessary, so an accelerator strips it all out and keeps only the PE array + memory hierarchy.
 
-## Every Accelerator is Unique (L01-26)
+## Accelerator Diversity (L01-26)
 
 ![alt text](image-4.png)
 
