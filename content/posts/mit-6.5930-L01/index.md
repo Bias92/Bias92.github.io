@@ -43,7 +43,7 @@ draft: false
 
 결론부터 말하면 비용 + 최적화이다. NVIDIA GPU는 범용이라 DNN 이외의 것도 다 돌릴 수 있게 설계되었지만, Google 입장에선 데이터센터 작업의 대부분이 DNN Inference/Training이니까, 거기에 딱 맞는 칩을 만들면 전력/면적 대비(TOPS/W, TOPS/mm²) 성능이 훨씬 나온다.
 
-- Google TPU. v1(2016)은 Inference 전용, 256×256 systolic array로 행렬곱 특화. v4는 Training도 지원.
+- Google TPU. v1(2016)은 Inference 전용, 256×256 systolic array로 행렬곱 특화. v2(2017)부터 Training도 지원.
 - Amazon Inferentia/Trainium. AWS에서 돌리는 모델들의 inference/training 비용을 줄이려고 만든 것.
 - 국내에서도 FuriosaAI, Rebellions 등이 같은 방향으로 설계하고 있다.
 
@@ -62,7 +62,7 @@ draft: false
 데이터센터뿐 아니라 폰/노트북 칩에서도 DNN 전용 유닛이 들어간다. Edge Device AI의 시대가 도래하고 있음을 시사한다.
 
 - Apple A11 (2017). 처음으로 ANE(Apple Neural Engine) 탑재. FaceID, Animoji 같은 on-device inference용.
-- Apple M2 (2022). 16 Neural Engine 코어. A11 대비 26배 속도 향상. 코어 수는 같은데 속도가 26배라는 건 코어 아키텍처 자체가 세대마다 크게 개선되었다는 뜻.
+- Apple M2 (2022). 16 Neural Engine 코어. A11의 Neural Engine은 2코어였으므로, A11 대비 26배 속도 향상에는 코어 수 증가와 세대별 아키텍처 개선이 함께 들어간다.
 - ANE가 잘 돌리는 조건: 작고, 정수 양자화되어 있고, pruning된 모델. on-device inference의 현실적 제약이다.
 
 ## 컴퓨팅 에너지 소비 증가 (L01-8)
@@ -84,7 +84,7 @@ draft: false
 
 ## Computing Cost of ChatGPT (L01-12)
 
-GPT-3는 96개 레이어, 175B 파라미터, 학습에 필요한 부동소수점 연산은 총 3.14×10²³ FLOPS.
+GPT-3는 96개 레이어, 175B 파라미터, 학습에 필요한 부동소수점 연산은 총 3.14×10²³ FLOPs.
 - V100 한 장으로 돌리면 355년 소요
 - 클라우드로 돌려도 약 $4.6M(한화 ~60억 원) 소요
 - GPT-4는 $100M+(한화 ~1,300억 원 이상) 추정
@@ -93,7 +93,7 @@ GPT-3는 96개 레이어, 175B 파라미터, 학습에 필요한 부동소수점
 
 ![](2026-03-07-14-59-08.png)
 
-GPT-4가 1,300억 이상 소요한 학습을, DeepSeek는 약 80억 원으로 해냈다. 이로 인해 기존 모델들을 훨씬 싸게 경쟁력 있게 만드는 데 시장 경쟁이 붙고 있다.
+GPT-4가 1,300억 이상 소요한 학습을, DeepSeek는 약 80억 원으로 해냈다. 이로 인해 기존 모델들을 훨씬 싸게 경쟁력 있게 만드는 데 시장 경쟁이 붙고 있다. 다만 DeepSeek 쪽 수치는 최종 학습 런의 GPU 렌탈비 성격이고, GPT-4 쪽은 총비용 추정치이므로 직접 같은 범위의 비용 비교는 아니다.
 
 DeepSeek의 핵심 기법은 MoE(Mixture of Experts) 아키텍처다. 671B 파라미터지만 토큰당 37B만 활성화한다. 전체 파라미터를 다 돌리는 게 아니라 필요한 Expert만 선택적으로 돌려서 Compute 효율을 극적으로 올렸다.
 
@@ -123,7 +123,7 @@ On-Device는 Cloud 대비 세 가지 장점이 존재한다:
 자율주행은 Edge Inference의 대표 사례다:
 
 - 카메라 + 레이더가 약 30초마다 ~6GB의 데이터를 생성
-- 자율주행 자동차 1대 = DNN × 60Hz × 10개 카메라 = 시간당 21.6M 번의 Inference
+- 자율주행 자동차 1대 = 10개 DNN × 60Hz × 10개 카메라 = 시간당 21.6M 번의 Inference
 - 100만 대 기준 = 시간당 21.6조 번의 Inference
 - 프로토타입 컴퓨팅에만 2,500W 소모. 공랭 불가, 수냉/액침냉각 필요
 - 클라우드로 보내면 Latency 때문에 사고 위험

@@ -43,7 +43,7 @@ Most of the devices mentioned so far are NVIDIA products. So why do Google and A
 
 The bottom line is cost plus optimization. An NVIDIA GPU is general-purpose, designed to run everything beyond DNNs, but from Google's perspective most datacenter work is DNN inference/training, so building a chip tuned exactly for that yields far better performance per watt and per area (TOPS/W, TOPS/mm²).
 
-- Google TPU. v1 (2016) was inference-only, specialized for matrix multiplication with a 256×256 systolic array. v4 also supports training.
+- Google TPU. v1 (2016) was inference-only, specialized for matrix multiplication with a 256×256 systolic array. v2 (2017) and later also support training.
 - Amazon Inferentia/Trainium. Built to reduce the inference/training cost of the models running on AWS.
 - Domestically, companies like FuriosaAI and Rebellions are designing in the same direction.
 
@@ -62,7 +62,7 @@ In practice, yield, cooling, and price problems are so severe that it is not wid
 DNN-specific units go not only into datacenters but also into phone and laptop chips. This signals that the era of Edge Device AI is arriving.
 
 - Apple A11 (2017). The first to carry the ANE (Apple Neural Engine). For on-device inference such as FaceID and Animoji.
-- Apple M2 (2022). 16 Neural Engine cores. 26x faster than the A11. The fact that the speed is 26x with the same core count means the core architecture itself improved significantly from generation to generation.
+- Apple M2 (2022). 16 Neural Engine cores. The A11 Neural Engine had 2 cores, so the 26x speedup over the A11 combines both a higher core count and generation-to-generation architectural improvement.
 - Conditions under which the ANE runs well: a small, integer-quantized, pruned model. These are the practical constraints of on-device inference.
 
 ## Growth in Computing Energy Consumption (L01-8)
@@ -84,7 +84,7 @@ In the end the common principle is one: keep data as close to compute as possibl
 
 ## Computing Cost of ChatGPT (L01-12)
 
-GPT-3 has 96 layers, 175B parameters, and the total floating-point operations needed for training is 3.14×10²³ FLOPS.
+GPT-3 has 96 layers, 175B parameters, and the total floating-point operations needed for training is 3.14×10²³ FLOPs.
 - Running it on a single V100 takes 355 years
 - Running it in the cloud still costs about $4.6M (roughly 6 billion KRW)
 - GPT-4 is estimated at $100M+ (roughly 130 billion KRW or more)
@@ -93,7 +93,7 @@ GPT-3 has 96 layers, 175B parameters, and the total floating-point operations ne
 
 ![](2026-03-07-14-59-08.png)
 
-DeepSeek accomplished for about 8 billion KRW the training that cost GPT-4 more than 130 billion. As a result, market competition is heating up around making existing models far cheaper and more competitive.
+DeepSeek accomplished for about 8 billion KRW the training that cost GPT-4 more than 130 billion. As a result, market competition is heating up around making existing models far cheaper and more competitive. The caveat is that the DeepSeek figure is closer to final training-run GPU rental cost, while the GPT-4 figure is a broader total-cost estimate, so the two numbers are not the same scope.
 
 DeepSeek's core technique is the MoE (Mixture of Experts) architecture. It has 671B parameters but activates only 37B per token. Rather than running all parameters, it selectively runs only the experts it needs, dramatically raising compute efficiency.
 
@@ -123,7 +123,7 @@ On-Device has three advantages over Cloud:
 Autonomous driving is a representative case of Edge Inference:
 
 - Cameras plus radar generate roughly 6GB of data about every 30 seconds
-- One self-driving car = DNN × 60Hz × 10 cameras = 21.6M inferences per hour
+- One self-driving car = 10 DNNs × 60Hz × 10 cameras = 21.6M inferences per hour
 - At a scale of one million cars = 21.6 trillion inferences per hour
 - The prototype consumes 2,500W on compute alone. Air cooling is impossible; liquid cooling or immersion cooling is required
 - Sending it to the cloud risks accidents due to latency

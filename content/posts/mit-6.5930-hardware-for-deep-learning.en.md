@@ -5,11 +5,11 @@ draft: false
 tags: ["deep-learning", "hardware", "MIT", "lecture-notes"]
 categories: ["MIT 6.5930"]
 series: ["MIT 6.5930"]
-summary: "MIT EECS 6.5930 by Prof. Vivienne Sze, Hardware Architecture for Deep Learning"
+summary: "MIT EECS 6.5930 by Prof. Vivienne Sze and Prof. Joel Emer, Hardware Architecture for Deep Learning"
 ---
 
-> MIT EECS 6.5930, Prof. Vivienne Sze
+> MIT EECS 6.5930, Prof. Vivienne Sze and Prof. Joel Emer
 >
-> Course: https://MIT-6.5930.github.io
+> Course: https://csg.csail.mit.edu/6.5930/
 
 *Draft in progress.*
