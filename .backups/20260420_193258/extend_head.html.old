@@ -1,6 +1,0 @@
-{{- /* extend_head.html
-      이전 내용: 캔버스 애니메이션 배경 + 파란색 !important 스타일
-      scaling-book 스타일과 충돌하여 제거함.
-      백업: extend_head.html.bak2
-      복구 방법: cp extend_head.html.bak2 extend_head.html
-*/ -}}

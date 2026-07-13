@@ -8,3 +8,11 @@ resources/
 _session_backups/
 *.bak
 *.bak2
+
+# local-only files
+.backups/
+metal/
+__pycache__/
+*.bak
+hugo.yaml.v2bak
+/TRIA-CF1.txt
