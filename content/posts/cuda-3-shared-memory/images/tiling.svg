@@ -1,0 +1,55 @@
+<svg width="720" height="400" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrC" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M1 1L9 5L1 9Z" fill="#33c0e4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="720" height="400" rx="12" fill="#0d0e10" stroke="#22323a"/>
+
+  <!-- A matrix -->
+  <text x="95" y="34" font-size="14" fill="#9fdcec" text-anchor="middle">A (global)</text>
+  <rect x="35" y="46" width="120" height="120" rx="6" fill="#0f1319" stroke="#33c0e4" stroke-width="1.5"/>
+  <rect x="37" y="76" width="116" height="30" fill="#10333d"/>
+  <rect x="65" y="76" width="30" height="30" fill="#2b1229" stroke="#e46fd6" stroke-width="1.5"/>
+  <text x="95" y="185" font-size="12" fill="#8fb2bd" text-anchor="middle">T×T tile from the row band</text>
+
+  <!-- B matrix -->
+  <text x="255" y="34" font-size="14" fill="#9fdcec" text-anchor="middle">B (global)</text>
+  <rect x="195" y="46" width="120" height="120" rx="6" fill="#0f1319" stroke="#33c0e4" stroke-width="1.5"/>
+  <rect x="225" y="48" width="30" height="116" fill="#10333d"/>
+  <rect x="225" y="76" width="30" height="30" fill="#2b1229" stroke="#e46fd6" stroke-width="1.5"/>
+  <text x="255" y="185" font-size="12" fill="#8fb2bd" text-anchor="middle">T×T tile from the col band</text>
+
+  <!-- copy arrows -->
+  <line x1="110" y1="108" x2="110" y2="236" stroke="#33c0e4" stroke-width="1.5" marker-end="url(#arrC)"/>
+  <line x1="240" y1="108" x2="240" y2="236" stroke="#33c0e4" stroke-width="1.5" marker-end="url(#arrC)"/>
+  <text x="175" y="218" font-size="13" fill="#9fdcec" text-anchor="middle">copy once (coalesced)</text>
+
+  <!-- shared memory box -->
+  <rect x="45" y="240" width="260" height="98" rx="10" fill="#0f1319" stroke="#33c0e4" stroke-width="1.8"/>
+  <text x="175" y="262" font-size="13.5" fill="#33c0e4" text-anchor="middle">Shared memory (on the SM)</text>
+  <rect x="75" y="274" width="44" height="44" rx="4" fill="#2b1229" stroke="#e46fd6" stroke-width="1.5"/>
+  <text x="97" y="334" font-size="12" fill="#8fb2bd" text-anchor="middle">As[T][T]</text>
+  <rect x="225" y="274" width="44" height="44" rx="4" fill="#2b1229" stroke="#e46fd6" stroke-width="1.5"/>
+  <text x="247" y="334" font-size="12" fill="#8fb2bd" text-anchor="middle">Bs[T][T]</text>
+
+  <!-- reuse arrow -->
+  <line x1="310" y1="289" x2="420" y2="289" stroke="#33c0e4" stroke-width="1.5" marker-end="url(#arrC)"/>
+  <text x="365" y="276" font-size="13" fill="#e46fd6" text-anchor="middle">reuse ×T</text>
+
+  <!-- registers -->
+  <rect x="425" y="259" width="142" height="60" rx="10" fill="#0f1319" stroke="#33c0e4" stroke-width="1.5"/>
+  <text x="496" y="283" font-size="13.5" fill="#9fdcec" text-anchor="middle">acc (registers)</text>
+  <text x="496" y="303" font-size="12" fill="#8fb2bd" text-anchor="middle">per-thread accumulator</text>
+
+  <!-- C matrix -->
+  <line x1="571" y1="289" x2="600" y2="289" stroke="#33c0e4" stroke-width="1.5" marker-end="url(#arrC)"/>
+  <text x="648" y="34" font-size="14" fill="#9fdcec" text-anchor="middle">C (global)</text>
+  <rect x="588" y="46" width="120" height="120" rx="6" fill="#0f1319" stroke="#33c0e4" stroke-width="1.5"/>
+  <rect x="648" y="76" width="13" height="13" fill="#e46fd6"/>
+  <line x1="640" y1="285" x2="654" y2="95" stroke="#3f7f90" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrC)"/>
+  <text x="652" y="310" font-size="12" fill="#8fb2bd" text-anchor="middle">write once at the end</text>
+
+  <!-- bottom note -->
+  <text x="360" y="378" font-size="13" fill="#8fb2bd" text-anchor="middle">one load per tile element, reused in T partial products: logical A/B reads ≈ 1/T of naive</text>
+</svg>

@@ -1,0 +1,80 @@
+<svg width="720" height="370" viewBox="0 0 720 370" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="0" y="0" width="720" height="370" rx="12" fill="#0d0e10" stroke="#22323a"/>
+
+  <!-- v0: scattered lanes in one warp -->
+  <text x="30" y="34" font-size="13.5" fill="#9fdcec" font-weight="600">v0 · if (tid % (2*s) == 0): active lanes scatter inside the warp</text>
+
+  <!-- s=1: lanes 0,2,4..30 -->
+  <rect x="40" y="48" width="416" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+  <g fill="#e46fd6">
+    <rect x="41" y="50" width="11" height="16"/><rect x="67" y="50" width="11" height="16"/><rect x="93" y="50" width="11" height="16"/><rect x="119" y="50" width="11" height="16"/>
+    <rect x="145" y="50" width="11" height="16"/><rect x="171" y="50" width="11" height="16"/><rect x="197" y="50" width="11" height="16"/><rect x="223" y="50" width="11" height="16"/>
+    <rect x="249" y="50" width="11" height="16"/><rect x="275" y="50" width="11" height="16"/><rect x="301" y="50" width="11" height="16"/><rect x="327" y="50" width="11" height="16"/>
+    <rect x="353" y="50" width="11" height="16"/><rect x="379" y="50" width="11" height="16"/><rect x="405" y="50" width="11" height="16"/><rect x="431" y="50" width="11" height="16"/>
+  </g>
+  <text x="470" y="63" font-size="11" fill="#8fb2bd">s=1 · 0x55555555 · 16/32</text>
+
+  <!-- s=2: lanes 0,4,8..28 -->
+  <rect x="40" y="76" width="416" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+  <g fill="#e46fd6">
+    <rect x="41" y="78" width="11" height="16"/><rect x="93" y="78" width="11" height="16"/><rect x="145" y="78" width="11" height="16"/><rect x="197" y="78" width="11" height="16"/>
+    <rect x="249" y="78" width="11" height="16"/><rect x="301" y="78" width="11" height="16"/><rect x="353" y="78" width="11" height="16"/><rect x="405" y="78" width="11" height="16"/>
+  </g>
+  <text x="470" y="91" font-size="11" fill="#8fb2bd">s=2 · 0x11111111 · 8/32</text>
+
+  <!-- s=4: lanes 0,8,16,24 -->
+  <rect x="40" y="104" width="416" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+  <g fill="#e46fd6">
+    <rect x="41" y="106" width="11" height="16"/><rect x="145" y="106" width="11" height="16"/><rect x="249" y="106" width="11" height="16"/><rect x="353" y="106" width="11" height="16"/>
+  </g>
+  <text x="470" y="117" font-size="11" fill="#8fb2bd">s=4 · 4/32</text>
+
+  <text x="40" y="152" font-size="11.5" fill="#8fb2bd">the warp keeps issuing at every step; masked lanes do nothing</text>
+
+  <line x1="30" y1="172" x2="690" y2="172" stroke="#22323a"/>
+
+  <!-- v1: whole warps -->
+  <text x="30" y="202" font-size="13.5" fill="#9fdcec" font-weight="600">v1 · if (tid &lt; s): whole warps on or off (block = 256 threads = 8 warps)</text>
+
+  <!-- s=128: warps 0-3 -->
+  <g>
+    <rect x="40"  y="216" width="50" height="20" rx="3" fill="#e46fd6"/>
+    <rect x="94"  y="216" width="50" height="20" rx="3" fill="#e46fd6"/>
+    <rect x="148" y="216" width="50" height="20" rx="3" fill="#e46fd6"/>
+    <rect x="202" y="216" width="50" height="20" rx="3" fill="#e46fd6"/>
+    <rect x="256" y="216" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="310" y="216" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="364" y="216" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="418" y="216" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+  </g>
+  <text x="482" y="230" font-size="11" fill="#8fb2bd">s=128 · warps 0-3 work whole</text>
+
+  <!-- s=64: warps 0-1 -->
+  <g>
+    <rect x="40"  y="244" width="50" height="20" rx="3" fill="#e46fd6"/>
+    <rect x="94"  y="244" width="50" height="20" rx="3" fill="#e46fd6"/>
+    <rect x="148" y="244" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="202" y="244" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="256" y="244" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="310" y="244" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="364" y="244" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="418" y="244" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+  </g>
+  <text x="482" y="258" font-size="11" fill="#8fb2bd">s=64 · warps 0-1</text>
+
+  <!-- s=32: warp 0 -->
+  <g>
+    <rect x="40"  y="272" width="50" height="20" rx="3" fill="#e46fd6"/>
+    <rect x="94"  y="272" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="148" y="272" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="202" y="272" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="256" y="272" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="310" y="272" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="364" y="272" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+    <rect x="418" y="272" width="50" height="20" rx="3" fill="#0f1319" stroke="#3f7f90"/>
+  </g>
+  <text x="482" y="286" font-size="11" fill="#8fb2bd">s=32 · warp 0</text>
+
+  <text x="40" y="322" font-size="11.5" fill="#8fb2bd">no divergence until s &lt; 32; from there the last warp switches to shuffle</text>
+  <text x="360" y="352" font-size="12" fill="#8fb2bd" text-anchor="middle">magenta = active lanes / warps</text>
+</svg>

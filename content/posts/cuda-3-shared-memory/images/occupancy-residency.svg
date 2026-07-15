@@ -1,0 +1,29 @@
+<svg width="720" height="400" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="0" y="0" width="720" height="400" rx="12" fill="#0d0e10" stroke="#22323a"/>
+
+  <text x="185" y="34" font-size="14.5" fill="#9fdcec" font-weight="600" text-anchor="middle">tiled T=16 · 256-thread blocks</text>
+  <text x="535" y="34" font-size="14.5" fill="#9fdcec" font-weight="600" text-anchor="middle">tiled T=32 · 1024-thread blocks</text>
+
+  <!-- T=16 SM -->
+  <rect x="60" y="50" width="250" height="280" rx="10" fill="#0f1319" stroke="#33c0e4" stroke-width="1.8"/>
+  <g font-size="10.5" fill="#9fdcec" text-anchor="middle">
+    <rect x="80" y="62"  width="210" height="40" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="185" y="86">block · 256 threads</text>
+    <rect x="80" y="106" width="210" height="40" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="185" y="130">block · 256 threads</text>
+    <rect x="80" y="150" width="210" height="40" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="185" y="174">block · 256 threads</text>
+    <rect x="80" y="194" width="210" height="40" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="185" y="218">block · 256 threads</text>
+    <rect x="80" y="238" width="210" height="40" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="185" y="262">block · 256 threads</text>
+    <rect x="80" y="282" width="210" height="40" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="185" y="306">block · 256 threads</text>
+  </g>
+  <text x="185" y="352" font-size="12.5" fill="#33c0e4" text-anchor="middle">1536 / 1536 threads · achieved 99.5%</text>
+
+  <!-- T=32 SM -->
+  <rect x="410" y="50" width="250" height="280" rx="10" fill="#0f1319" stroke="#33c0e4" stroke-width="1.8"/>
+  <rect x="430" y="62" width="210" height="178" rx="4" fill="#2b1229" stroke="#e46fd6" stroke-width="1.5"/>
+  <text x="535" y="156" font-size="11.5" fill="#9fdcec" text-anchor="middle">block · 1024 threads</text>
+  <rect x="430" y="248" width="210" height="74" rx="4" fill="none" stroke="#3f7f90" stroke-dasharray="5 4"/>
+  <text x="535" y="280" font-size="10.5" fill="#8fb2bd" text-anchor="middle">512 slots empty</text>
+  <text x="535" y="297" font-size="10.5" fill="#8fb2bd" text-anchor="middle">(a second block does not fit)</text>
+  <text x="535" y="352" font-size="12.5" fill="#e46fd6" text-anchor="middle">1024 / 1536 threads · achieved 66.7%</text>
+
+  <text x="360" y="382" font-size="11.5" fill="#8fb2bd" text-anchor="middle">cc 8.9: 1536 resident threads per SM</text>
+</svg>

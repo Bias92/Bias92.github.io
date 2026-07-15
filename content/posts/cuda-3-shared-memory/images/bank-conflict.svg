@@ -1,0 +1,107 @@
+<svg width="720" height="610" viewBox="0 0 720 610" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="bank-bad" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9Z" fill="#e46fd6"/>
+    </marker>
+    <marker id="bank-good" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9Z" fill="#33c0e4"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="720" height="610" rx="12" fill="#0d0e10" stroke="#22323a"/>
+
+  <!-- Plain 32 x 32 tile. -->
+  <text x="28" y="31" font-size="14.5" fill="#9fdcec" font-weight="600">1. tile[32][32]: column access has stride 32 words</text>
+  <g font-size="11" fill="#9fdcec">
+    <rect x="28" y="47" width="126" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="61">tile[0][c] - lane 0</text>
+    <rect x="28" y="71" width="126" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="85">tile[1][c] - lane 1</text>
+    <rect x="28" y="95" width="126" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="109">tile[2][c] - lane 2</text>
+    <rect x="28" y="119" width="126" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="133">tile[3][c] - lane 3</text>
+    <text x="87" y="157" fill="#8fb2bd">... 32 lanes</text>
+  </g>
+
+  <text x="390" y="48" font-size="11.5" fill="#8fb2bd" text-anchor="middle">banks 0 ... 31 (example: c = 0)</text>
+  <g font-size="10" fill="#8fb2bd" text-anchor="middle">
+    <rect x="292" y="58" width="23" height="23" rx="3" fill="#2b1229" stroke="#e46fd6" stroke-width="1.5"/><text x="303.5" y="73" fill="#9fdcec">0</text>
+    <rect x="321" y="58" width="23" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="332.5" y="73">1</text>
+    <rect x="350" y="58" width="23" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="361.5" y="73">2</text>
+    <rect x="379" y="58" width="23" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="390.5" y="73">3</text>
+    <rect x="408" y="58" width="23" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="419.5" y="73">4</text>
+    <text x="450" y="73">...</text>
+    <rect x="466" y="58" width="28" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="480" y="73">31</text>
+  </g>
+  <line x1="154" y1="57" x2="290" y2="65" stroke="#e46fd6" stroke-width="1.3" marker-end="url(#bank-bad)"/>
+  <line x1="154" y1="81" x2="290" y2="68" stroke="#e46fd6" stroke-width="1.3" marker-end="url(#bank-bad)"/>
+  <line x1="154" y1="105" x2="290" y2="71" stroke="#e46fd6" stroke-width="1.3" marker-end="url(#bank-bad)"/>
+  <line x1="154" y1="129" x2="290" y2="74" stroke="#e46fd6" stroke-width="1.3" marker-end="url(#bank-bad)"/>
+  <g font-size="12.5" fill="#e46fd6">
+    <text x="520" y="101">bank = (32r + c) mod 32 = c</text>
+    <text x="520" y="121">32-way conflict</text>
+    <text x="520" y="141">split into 32 requests</text>
+  </g>
+
+  <line x1="28" y1="184" x2="692" y2="184" stroke="#22323a"/>
+
+  <!-- Padding. -->
+  <text x="28" y="215" font-size="14.5" fill="#9fdcec" font-weight="600">2. tile[32][33]: padding changes the stride to 33</text>
+  <g font-size="11" fill="#9fdcec">
+    <rect x="28" y="231" width="126" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="245">tile[0][c] - lane 0</text>
+    <rect x="28" y="255" width="126" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="269">tile[1][c] - lane 1</text>
+    <rect x="28" y="279" width="126" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="293">tile[2][c] - lane 2</text>
+    <rect x="28" y="303" width="126" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="317">tile[3][c] - lane 3</text>
+    <text x="87" y="341" fill="#8fb2bd">... 32 lanes</text>
+  </g>
+
+  <g font-size="10" fill="#9fdcec" text-anchor="middle">
+    <rect x="292" y="249" width="23" height="23" rx="3" fill="#10333d" stroke="#33c0e4"/><text x="303.5" y="264">0</text>
+    <rect x="321" y="249" width="23" height="23" rx="3" fill="#10333d" stroke="#33c0e4"/><text x="332.5" y="264">1</text>
+    <rect x="350" y="249" width="23" height="23" rx="3" fill="#10333d" stroke="#33c0e4"/><text x="361.5" y="264">2</text>
+    <rect x="379" y="249" width="23" height="23" rx="3" fill="#10333d" stroke="#33c0e4"/><text x="390.5" y="264">3</text>
+    <rect x="408" y="249" width="23" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="419.5" y="264">4</text>
+    <text x="450" y="264" fill="#8fb2bd">...</text>
+    <rect x="466" y="249" width="28" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="480" y="264">31</text>
+  </g>
+  <line x1="154" y1="241" x2="290" y2="256" stroke="#33c0e4" stroke-width="1.3" marker-end="url(#bank-good)"/>
+  <line x1="154" y1="265" x2="319" y2="259" stroke="#33c0e4" stroke-width="1.3" marker-end="url(#bank-good)"/>
+  <line x1="154" y1="289" x2="348" y2="261" stroke="#33c0e4" stroke-width="1.3" marker-end="url(#bank-good)"/>
+  <line x1="154" y1="313" x2="377" y2="263" stroke="#33c0e4" stroke-width="1.3" marker-end="url(#bank-good)"/>
+  <g font-size="12.5" fill="#33c0e4">
+    <text x="520" y="278">bank = (33r + c) mod 32</text>
+    <text x="520" y="298">= (r + c) mod 32</text>
+    <text x="520" y="318">conflict-free; costs +1 word/row</text>
+  </g>
+
+  <line x1="28" y1="368" x2="692" y2="368" stroke="#22323a"/>
+
+  <!-- XOR swizzle. -->
+  <text x="28" y="399" font-size="14.5" fill="#9fdcec" font-weight="600">3. tile[32][32] with XOR swizzle: permute columns</text>
+  <g font-size="11" fill="#9fdcec">
+    <rect x="28" y="415" width="158" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="429">tile[0][c xor 0] - lane 0</text>
+    <rect x="28" y="439" width="158" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="453">tile[1][c xor 1] - lane 1</text>
+    <rect x="28" y="463" width="158" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="477">tile[2][c xor 2] - lane 2</text>
+    <rect x="28" y="487" width="158" height="20" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="36" y="501">tile[3][c xor 3] - lane 3</text>
+    <text x="103" y="525" fill="#8fb2bd">... 32 lanes</text>
+  </g>
+
+  <g font-size="10" fill="#9fdcec" text-anchor="middle">
+    <rect x="292" y="433" width="23" height="23" rx="3" fill="#10333d" stroke="#33c0e4"/><text x="303.5" y="448">0</text>
+    <rect x="321" y="433" width="23" height="23" rx="3" fill="#10333d" stroke="#33c0e4"/><text x="332.5" y="448">1</text>
+    <rect x="350" y="433" width="23" height="23" rx="3" fill="#10333d" stroke="#33c0e4"/><text x="361.5" y="448">2</text>
+    <rect x="379" y="433" width="23" height="23" rx="3" fill="#10333d" stroke="#33c0e4"/><text x="390.5" y="448">3</text>
+    <rect x="408" y="433" width="23" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="419.5" y="448">4</text>
+    <text x="450" y="448" fill="#8fb2bd">...</text>
+    <rect x="466" y="433" width="28" height="23" rx="3" fill="#0f1319" stroke="#3f7f90"/><text x="480" y="448">31</text>
+  </g>
+  <line x1="186" y1="425" x2="290" y2="440" stroke="#33c0e4" stroke-width="1.3" marker-end="url(#bank-good)"/>
+  <line x1="186" y1="449" x2="319" y2="443" stroke="#33c0e4" stroke-width="1.3" marker-end="url(#bank-good)"/>
+  <line x1="186" y1="473" x2="348" y2="445" stroke="#33c0e4" stroke-width="1.3" marker-end="url(#bank-good)"/>
+  <line x1="186" y1="497" x2="377" y2="447" stroke="#33c0e4" stroke-width="1.3" marker-end="url(#bank-good)"/>
+  <g font-size="12.5" fill="#33c0e4">
+    <text x="520" y="462">bank = (r xor c)</text>
+    <text x="520" y="482">all 32 banks used once</text>
+    <text x="520" y="502">conflict-free; no extra shared bytes</text>
+  </g>
+
+  <text x="360" y="575" font-size="12" fill="#8fb2bd" text-anchor="middle">Padding spends 128 B per tile; swizzling spends address arithmetic and layout complexity.</text>
+  <text x="360" y="594" font-size="11.5" fill="#8fb2bd" text-anchor="middle">Both measured the same on this 32 x 32 float transpose.</text>
+</svg>

@@ -79,7 +79,7 @@ Apple A11은 2017년에 처음으로 2코어 ANE를 탑재했다. Face ID와 Ani
 
 여기서 연산 자체보다 data movement가 비싸다는 사실이 중요하다. 슬라이드의 65nm 기준 수치에서는 DRAM 접근 한 번이 ALU 연산보다 약 200배 많은 에너지를 먹는다. 연산기를 빠르게 만드는 것만으로는 부족하다. 데이터를 멀리 보내는 횟수부터 줄여야 한다.
 
-그래서 Cerebras는 온칩 SRAM을 크게 만들었고, FlashAttention은 전체 attention matrix를 HBM에 쓰지 않도록 타일 단위로 계산한다. 일반적인 accelerator도 register file, local buffer, global buffer, DRAM 순서로 메모리 계층을 두고 가까운 곳의 데이터를 최대한 재사용한다.
+그래서 Cerebras는 온칩 SRAM을 크게 만들었다. 일반적인 accelerator도 register file, local buffer, global buffer, DRAM 순서로 메모리 계층을 두고 가까운 곳의 데이터를 최대한 재사용한다.
 
 ## Computing Cost of ChatGPT (L01-12)
 
@@ -265,7 +265,7 @@ L01-30의 baseline에서는 BERT, TrXL, T5, XLM 모두 시퀀스 길이 1K부터
 | Global Buffer에서 ALU | 6× |
 | DRAM에서 ALU | 200× |
 
-DRAM 접근 한 번이 실제 연산보다 200배 비싸다. FlashAttention이 HBM 대신 SRAM에서 타일링하고, Cerebras가 18GB SRAM을 넣은 이유가 같은 표에서 나온다.
+DRAM 접근 한 번이 실제 연산보다 200배 비싸다. Cerebras가 18GB SRAM을 넣은 이유도 같은 표에서 나온다.
 
 "Farther and larger memories consume more power."
 
@@ -309,28 +309,3 @@ Roofline Model은 성능이 연산량에 막혔는지 메모리 대역폭에 막
 | Step 7 | 순간 bandwidth 부족 | 없음 |
 
 제약을 하나씩 반영할수록 roofline이 아래로 조여진다. 처음부터 실제 성능을 하나의 숫자로 찍는 대신 어디에서 얼마가 깎였는지 분리해서 볼 수 있다.
-
-### 로컬 FlashAttention 커널을 Nsight Compute로 재봤다
-
-수업 슬라이드만 옮겨 적으면 여기서 글이 끝난다. 실제 GPU에서도 같은 식으로 읽히는지 확인하려고 로컬의 FlashAttention forward 커널을 다시 프로파일링했다.
-
-장비는 RTX 4060 Ti 8GB, compute capability 8.9다. CUDA 13.0으로 `sm_89` 타깃을 빌드했고 Nsight Compute 2025.3.1의 detailed set을 사용했다. 입력은 `batch_heads=4`, `N=1024`, `D=128`이다. block은 128 threads, grid는 64 blocks다.
-
-| 측정 항목 | 값 |
-|----------|----|
-| 프로파일러 없이 잰 평균 kernel time | 17.25 ms |
-| Nsight 계측 중 kernel duration | 20.56 ms |
-| Compute (SM) Throughput | 8.23% |
-| DRAM Throughput | 1.10% |
-| L1/TEX Cache Throughput | 91.33% |
-| Achieved Occupancy | 8.33% |
-| Dynamic Shared Memory | 98.82 KB/block |
-| Registers | 40/thread |
-
-DRAM throughput이 1.10%라고 해서 이 커널이 잘 최적화됐다는 뜻은 아니다. SM throughput도 8.23%에 그쳤고 FP32 peak의 약 1%만 썼다. 대신 L1/TEX 쪽은 91.33%까지 찼다.
-
-occupancy가 낮은 이유도 바로 보였다. block 하나가 dynamic shared memory를 98.82KB 써서 SM당 block limit이 1로 걸렸다. 그 결과 SM에 active warp가 4개만 남았고 achieved occupancy가 8.33%에 멈췄다.
-
-Nsight는 shared memory access에서 excessive wavefront가 전체의 95%라고 경고했다. 지금 커널의 병목은 HBM 대역폭이 아니라 shared memory 용량과 access pattern이다. DRAM 숫자 하나만 보고 FlashAttention답게 IO를 줄였다고 끝냈으면 완전히 반만 본 셈이다.
-
-여기서 수업의 roofline과 실제 프로파일링이 연결된다. 수업은 PE array와 buffer 관점에서 제약을 좁혀가고, Nsight Compute는 SM, warp, shared memory, cache 관점에서 같은 작업을 한다. 이름은 달라도 peak에서 실제 성능까지 무엇이 깎아먹는지 하나씩 찾는다는 점은 같다.

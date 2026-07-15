@@ -79,7 +79,7 @@ Models keep growing and power is not unlimited. That is how finishing the same c
 
 What matters here is that data movement costs more than the computation itself. In the slide's 65nm numbers, one DRAM access consumes about 200x the energy of an ALU operation. Making the arithmetic units faster is not enough. The number of long-distance data trips has to come down first.
 
-That is why Cerebras made its on-chip SRAM huge, and why FlashAttention computes attention in tiles so the full attention matrix never gets written to HBM. Ordinary accelerators do the same thing with a memory hierarchy of register file, local buffer, global buffer, and DRAM, reusing data from the near end as much as possible.
+That is why Cerebras made its on-chip SRAM huge. Ordinary accelerators follow the same principle with a memory hierarchy of register file, local buffer, global buffer, and DRAM, reusing data from the near end as much as possible.
 
 ## Computing Cost of ChatGPT (L01-12)
 
@@ -265,7 +265,7 @@ The slide's normalized energy cost at 65nm:
 | Global Buffer to ALU | 6× |
 | DRAM to ALU | 200× |
 
-One DRAM access costs 200x the actual computation. The same table explains why FlashAttention tiles in SRAM instead of HBM and why Cerebras put in 18GB of SRAM.
+One DRAM access costs 200x the actual computation. The same table explains why Cerebras put in 18GB of SRAM.
 
 "Farther and larger memories consume more power."
 
@@ -309,28 +309,3 @@ Steps 1 through 7 on the slide show how much the theoretical peak gets shaved as
 | Step 7 | Insufficient instantaneous bandwidth | none |
 
 Each constraint added tightens the roofline downward. Instead of stamping actual performance as a single number from the start, you can separate out where and how much got shaved.
-
-### Profiling My Local FlashAttention Kernel with Nsight Compute
-
-If I only transcribed the lecture slides, the post would end here. To check whether a real GPU reads the same way, I re-profiled my local FlashAttention forward kernel.
-
-The machine is an RTX 4060 Ti 8GB, compute capability 8.9. I built for the `sm_89` target with CUDA 13.0 and used the detailed set of Nsight Compute 2025.3.1. The input is `batch_heads=4`, `N=1024`, `D=128`. Blocks are 128 threads, the grid is 64 blocks.
-
-| Metric | Value |
-|----------|----|
-| Average kernel time without the profiler | 17.25 ms |
-| Kernel duration under Nsight instrumentation | 20.56 ms |
-| Compute (SM) Throughput | 8.23% |
-| DRAM Throughput | 1.10% |
-| L1/TEX Cache Throughput | 91.33% |
-| Achieved Occupancy | 8.33% |
-| Dynamic Shared Memory | 98.82 KB/block |
-| Registers | 40/thread |
-
-A DRAM throughput of 1.10% does not mean the kernel is well optimized. SM throughput also stopped at 8.23%, using about 1% of FP32 peak. The L1/TEX side, meanwhile, filled up to 91.33%.
-
-The reason for the low occupancy was immediately visible. One block uses 98.82KB of dynamic shared memory, so the per-SM block limit lands at 1. That leaves 4 active warps per SM and achieved occupancy stops at 8.33%.
-
-Nsight warned that excessive wavefronts make up 95% of shared memory accesses. The bottleneck of this kernel right now is not HBM bandwidth but shared memory capacity and access pattern. If I had looked at the single DRAM number and concluded the kernel reduces IO the FlashAttention way, I would have seen exactly half the picture.
-
-This is where the course's roofline connects to actual profiling. The course narrows down constraints from the PE array and buffer point of view; Nsight Compute does the same job from the SM, warp, shared memory, and cache point of view. The names differ, but hunting down one by one what eats the gap between peak and actual performance is the same work.

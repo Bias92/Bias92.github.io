@@ -1,0 +1,94 @@
+<svg width="720" height="505" viewBox="0 0 720 505" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow-c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9Z" fill="#33c0e4"/>
+    </marker>
+    <marker id="arrow-m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9Z" fill="#e46fd6"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="720" height="505" rx="12" fill="#0d0e10" stroke="#22323a"/>
+
+  <!-- Aligned, consecutive float access. -->
+  <text x="28" y="30" font-size="14.5" fill="#9fdcec" font-weight="600">1. aligned consecutive float access</text>
+  <text x="28" y="50" font-size="11.5" fill="#8fb2bd">address(lane) = base + 4 x lane, base mod 32 = 0</text>
+
+  <g font-size="10.5" fill="#9fdcec" text-anchor="middle">
+    <rect x="28" y="66" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="47" y="81">L0</text>
+    <rect x="72" y="66" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="91" y="81">L1</text>
+    <rect x="116" y="66" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="135" y="81">L2</text>
+    <rect x="160" y="66" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="179" y="81">L3</text>
+    <rect x="204" y="66" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="223" y="81">L4</text>
+    <rect x="248" y="66" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="267" y="81">L5</text>
+    <text x="323" y="81" fill="#8fb2bd">... L31</text>
+  </g>
+
+  <line x1="360" y1="77" x2="407" y2="77" stroke="#33c0e4" stroke-width="1.5" marker-end="url(#arrow-c)"/>
+  <g font-size="10.5" fill="#9fdcec" text-anchor="middle">
+    <rect x="420" y="62" width="58" height="28" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="449" y="80">32 B</text>
+    <rect x="482" y="62" width="58" height="28" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="511" y="80">32 B</text>
+    <rect x="544" y="62" width="58" height="28" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="573" y="80">32 B</text>
+    <rect x="606" y="62" width="58" height="28" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="635" y="80">32 B</text>
+  </g>
+  <text x="542" y="112" font-size="12.5" fill="#33c0e4" text-anchor="middle">4 sectors</text>
+  <text x="542" y="131" font-size="11.5" fill="#8fb2bd" text-anchor="middle">128 B useful / 128 B transferred</text>
+
+  <line x1="28" y1="153" x2="692" y2="153" stroke="#22323a"/>
+
+  <!-- Misaligned by one float. -->
+  <text x="28" y="181" font-size="14.5" fill="#9fdcec" font-weight="600">2. same pattern, shifted by one float</text>
+  <text x="28" y="201" font-size="11.5" fill="#8fb2bd">address(lane) = base + 4 + 4 x lane</text>
+
+  <g font-size="10.5" fill="#9fdcec" text-anchor="middle">
+    <rect x="28" y="217" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="47" y="232">L0</text>
+    <rect x="72" y="217" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="91" y="232">L1</text>
+    <rect x="116" y="217" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="135" y="232">L2</text>
+    <rect x="160" y="217" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="179" y="232">L3</text>
+    <rect x="204" y="217" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="223" y="232">L4</text>
+    <rect x="248" y="217" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="267" y="232">L5</text>
+    <text x="323" y="232" fill="#8fb2bd">... L31</text>
+  </g>
+
+  <line x1="360" y1="228" x2="393" y2="228" stroke="#e46fd6" stroke-width="1.5" marker-end="url(#arrow-m)"/>
+  <g font-size="10" fill="#9fdcec" text-anchor="middle">
+    <rect x="404" y="213" width="50" height="28" rx="4" fill="#2b1229" stroke="#e46fd6"/><text x="429" y="231">partial</text>
+    <rect x="458" y="213" width="50" height="28" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="483" y="231">32 B</text>
+    <rect x="512" y="213" width="50" height="28" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="537" y="231">32 B</text>
+    <rect x="566" y="213" width="50" height="28" rx="4" fill="#10333d" stroke="#33c0e4"/><text x="591" y="231">32 B</text>
+    <rect x="620" y="213" width="50" height="28" rx="4" fill="#2b1229" stroke="#e46fd6"/><text x="645" y="231">partial</text>
+  </g>
+  <text x="537" y="263" font-size="12.5" fill="#e46fd6" text-anchor="middle">5 sectors</text>
+  <text x="537" y="282" font-size="11.5" fill="#8fb2bd" text-anchor="middle">128 B useful / 160 B transferred (80%)</text>
+
+  <line x1="28" y1="304" x2="692" y2="304" stroke="#22323a"/>
+
+  <!-- One sector per lane. -->
+  <text x="28" y="332" font-size="14.5" fill="#9fdcec" font-weight="600">3. stride at least eight floats</text>
+  <text x="28" y="352" font-size="11.5" fill="#8fb2bd">each lane lands in a different 32 B sector</text>
+
+  <g font-size="10.5" fill="#9fdcec" text-anchor="middle">
+    <rect x="28" y="368" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="47" y="383">L0</text>
+    <rect x="72" y="368" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="91" y="383">L1</text>
+    <rect x="116" y="368" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="135" y="383">L2</text>
+    <rect x="160" y="368" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="179" y="383">L3</text>
+    <rect x="204" y="368" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="223" y="383">L4</text>
+    <rect x="248" y="368" width="38" height="22" rx="4" fill="#0f1319" stroke="#33c0e4"/><text x="267" y="383">L5</text>
+    <text x="323" y="383" fill="#8fb2bd">... L31</text>
+  </g>
+
+  <line x1="360" y1="379" x2="405" y2="379" stroke="#e46fd6" stroke-width="1.5" marker-end="url(#arrow-m)"/>
+  <g fill="#2b1229" stroke="#e46fd6">
+    <rect x="418" y="357" width="24" height="16" rx="3"/><rect x="448" y="357" width="24" height="16" rx="3"/>
+    <rect x="478" y="357" width="24" height="16" rx="3"/><rect x="508" y="357" width="24" height="16" rx="3"/>
+    <rect x="538" y="357" width="24" height="16" rx="3"/><rect x="568" y="357" width="24" height="16" rx="3"/>
+    <rect x="418" y="379" width="24" height="16" rx="3"/><rect x="448" y="379" width="24" height="16" rx="3"/>
+    <rect x="478" y="379" width="24" height="16" rx="3"/><rect x="508" y="379" width="24" height="16" rx="3"/>
+    <rect x="538" y="379" width="24" height="16" rx="3"/><rect x="568" y="379" width="24" height="16" rx="3"/>
+  </g>
+  <text x="632" y="382" font-size="12" fill="#8fb2bd">... x32</text>
+  <text x="525" y="421" font-size="12.5" fill="#e46fd6" text-anchor="middle">32 sectors</text>
+  <text x="525" y="440" font-size="11.5" fill="#8fb2bd" text-anchor="middle">128 B useful / 1024 B transferred (12.5%)</text>
+
+  <text x="360" y="482" font-size="12" fill="#8fb2bd" text-anchor="middle">Count the distinct 32 B sectors touched by active lanes; 4 is not a universal constant.</text>
+</svg>
