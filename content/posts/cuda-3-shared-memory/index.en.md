@@ -2,11 +2,11 @@
 title: "03 CUDA Shared Memory: Tiling, Bank Conflicts, and Reduction"
 date: 2026-07-14
 draft: false
-tags: ["CUDA", "GPU Programming", "Shared Memory", "Parallel Programming", "Reduction", "Nsight Compute"]
+tags: ["CUDA", "GPU Programming", "Shared Memory", "Warp Divergence", "Parallel Programming", "Reduction", "Nsight Compute"]
 categories: ["CUDA"]
 series: ["CUDA C"]
 math: true
-summary: "Tiled GEMM, transpose, and reduction implemented and measured on an RTX 4060 Ti with Nsight Compute counters. The sector rules of coalescing, padding and swizzle fixes for bank conflicts, occupancy limits, a four-step reduction and a CUB comparison. Full sources and reproduction commands included."
+summary: "Tiled GEMM, transpose, and reduction measured on an RTX 4060 Ti: coalescing sectors, bank conflicts, warp divergence and predication, occupancy limits, four reduction stages, and a CUB comparison."
 ---
 
 This post implements and measures three kernels that use shared memory: tiled GEMM, transpose, and reduction. Unlike a cache, shared memory leaves loading and replacement to the kernel. Each section checks what that buys (control over reuse) and what it newly breaks (barrier rules, bank conflicts, lower occupancy) with code and Nsight Compute counters. The roofline and occupancy formulas come straight from the [CUDA C post](../cuda-c-basics/). Full sources and reproduction commands are at the end.
@@ -193,6 +193,125 @@ T=32 runs 1024-thread blocks, and with cc 8.9's limit of 1536 resident threads p
 
 Occupancy dropped 33 points; the performance difference is much smaller. T=32 has half the sectors, which buys back part of the lost parallelism. Occupancy is an upper bound on how many warps the scheduler can choose from, not a share of runtime, and there is no universal target. The reduction v2 below has the lowest occupancy of its group at 76% and is the fastest. The tuning order is to look at eligible warps and issue slots first, and only then find what limits resident warps.
 
+## Warp Divergence
+
+A warp issues 32 lanes as one group. Let \(\ell \in \{0,\ldots,31\}\) be the lane index and \(p_\ell\) a branch predicate. The true and false lane sets are
+
+$$
+A = \{\ell \mid p_\ell = 1\}, \qquad
+B = \{\ell \mid p_\ell = 0\}.
+$$
+
+Because \(B\) is the complement of \(A\) within the warp, the divergence condition is
+
+$$
+0 < |A| < 32
+\quad\Longleftrightarrow\quad
+A \neq \varnothing \ \land\ B \neq \varnothing.
+$$
+
+At the source level, this is a warp-nonuniform branch. If the branch remains in the machine code, the warp runs path A under A's active mask and path B under B's active mask.
+
+```cpp
+int lane = threadIdx.x & 31;
+
+if (lane < 16)
+    A();
+else
+    B();
+```
+
+In every warp, lanes 0--15 choose A and lanes 16--31 choose B. The active mask is `0x0000ffff` on A and `0xffff0000` on B.
+
+Suppose paths A and B compile to \(n_A\) and \(n_B\) warp instructions, excluding branch and reconvergence instructions. A warp selecting one path issues \(n_A\) instructions in this region, while a warp selecting both paths issues
+
+$$
+I_{\text{diverged}} = n_A + n_B.
+$$
+
+This follows directly from the active masks. Since A is nonempty, each of its \(n_A\) instructions issues once; since B is nonempty, each of its \(n_B\) instructions also issues once. The lane count does not multiply the number of warp instructions. A 16:16 split and a 31:1 split therefore issue the same number of warp instructions when \(n_A\) and \(n_B\) are unchanged.
+
+Let \(\eta\) be the fraction of issued lane slots that are active:
+
+$$
+\eta =
+\frac{|A|n_A + |B|n_B}
+     {32(n_A+n_B)}.
+$$
+
+For equal path lengths, \(n_A=n_B=n\), this becomes
+
+$$
+\eta =
+\frac{(|A|+|B|)n}{64n}
+= \frac{32n}{64n}
+= \frac{1}{2}.
+$$
+
+The average lane utilization over this region is therefore 50% for either a 16:16 or a 31:1 split when the two paths have equal length.
+
+Align the condition to warp boundaries and different warps may run different code without divergence.
+
+```cpp
+int warp = threadIdx.x >> 5;
+
+if ((warp & 1) == 0)
+    A();
+else
+    B();
+```
+
+Every lane in an even warp chooses A; every lane in an odd warp chooses B. The condition is uniform within each warp.
+
+Let \(T_A\) and \(T_B\) denote the time during which each path's warp instruction sequence is issued. Ignoring latency hiding by other warps and memory overlap between paths, the two paths execute serially under different active masks, giving
+
+$$
+T_{\text{diverged}}
+\approx T_{\text{branch}} + T_A + T_B + T_{\text{reconverge}}.
+$$
+
+For a warp in which every lane selects A,
+
+$$
+T_{\text{uniform}}
+\approx T_{\text{branch}} + T_A.
+$$
+
+Relative to the same A path, the added time is
+
+$$
+\Delta T
+= T_{\text{diverged}} - T_{\text{uniform}}
+\approx T_B + T_{\text{reconverge}}.
+$$
+
+If an actual branch remains and both A and B are selected, the warp issues instructions from both paths. While one path runs, lanes belonging to the other path are absent from the active mask. The added cost is an increase in the warp's dynamic instruction count, not a fixed divergence penalty measured in cycles. Elapsed time depends on the instruction mix and dependencies on each path, memory stalls, and how much latency other warps hide.
+
+A split source-level `if` does not guarantee an actual divergent branch either. The compiler may replace a short body with predicated instructions.
+
+```cpp
+float y = x;
+if (lane < 16)
+    y = 2.0f * x;
+```
+
+Its schematic SASS form is shown below. Exact opcodes and registers depend on the architecture and compiler version.
+
+```text
+ISETP.LT ... P0, lane, 16
+@P0 FMUL  y, x, 2.0
+```
+
+The warp does not split into two program counters here. `FMUL` issues once and only lanes with a true predicate write a result. There is no control-flow divergence, but lanes with a false predicate do no useful work on that instruction. Divergent branches and predication can both reduce active-lane utilization, but they are not the same event.
+
+For this `FMUL`, \(|A|=16\) and the predicated lane utilization is
+
+$$
+\eta_{\text{predicated}} = \frac{|A|}{32} = \frac{16}{32} = \frac{1}{2}.
+$$
+
+Determine which one occurred from generated SASS and instruction-level counters, not from the number of `if` statements in the source. Check whether lane-dependent branch targets remain in SASS, then inspect `Divergent Branches` (`smsp__branch_targets_threads_divergent`) and `Avg. Predicated-On Threads Executed` on the Nsight Compute Source page. A kernel-wide average can bury a short divergent region under the rest of the full-warp execution.
+
 ## Reduction
 
 Reduction collapses N array elements into one value. Sums, maxima, means; it recurs inside ML kernels as softmax's max and denominator sum, or layernorm's mean and variance.
@@ -213,7 +332,7 @@ for (int s = 1; s < blockDim.x; s *= 2) {
 }
 ```
 
-Two things make it slow. First, divergence. When a branch splits inside a warp, the scheduler issues each path in turn with an active mask enabling only its lanes. At s=1 the active mask is `0x55555555`, at s=2 `0x11111111`; the working lanes shrink to 16, 8, 4, ... while the warp instructions keep issuing, so the tax is paid at every step. Second, the `%` operation. The divisor `2 * s` changes every loop, so the compiler cannot fold it into a constant bit mask, and the sm_89 SASS keeps the full remainder sequence `IABS → I2F → MUFU.RCP → F2I → IMAD.HI` (checked with `cuobjdump --dump-sass`). Version 1's SASS has none of it.
+Two things make it slow. First, the active lanes are scattered. The condition produces `0x55555555` at s=1 and `0x11111111` at s=2; the working lanes shrink to 16, 8, 4, ... while the corresponding warp instructions still issue. If the compiler predicates this short body, there is no actual branch divergence, but the low lane utilization remains. Second, the `%` operation. The divisor `2 * s` changes every loop, so the compiler cannot fold it into a constant bit mask, and the sm_89 SASS keeps the full remainder sequence `IABS → I2F → MUFU.RCP → F2I → IMAD.HI` (checked with `cuobjdump --dump-sass`). Version 1's SASS has none of it.
 
 Version 1, sequential addressing.
 
@@ -225,11 +344,59 @@ for (int s = blockDim.x / 2; s > 0; s >>= 1) {
 }
 ```
 
-Packing the working threads to the front, at s=128 the first four warps work whole, at s=64 two, at s=32 one. Idle warps skip the branch entirely, which is not divergence; divergence only arises when the choice splits inside one warp. `buf[tid]` and `buf[tid + s]` are consecutive, so no bank conflicts, and the `%` is gone. Same number of barriers as version 0, 1.63x faster. Version 0's cost was indexing, not synchronization.
+Both versions reduce 256 elements in eight stages. At stage \(j \in \{0,\ldots,7\}\), the number of threads performing additions is
+
+$$
+a_j = \frac{256}{2^{j+1}},
+$$
+
+and the total number of additions is
+
+$$
+\sum_{j=0}^{7} a_j
+= 128 + 64 + \cdots + 1
+= 255.
+$$
+
+The arithmetic work is identical. The difference is how many warps contain those \(a_j\) active threads.
+
+In v0, active threads are scattered across the block. The number of warps containing at least one true predicate is
+
+$$
+W_j^{(0)} = \min(8, a_j),
+$$
+
+so
+
+$$
+\left(W_j^{(0)}\right)_{j=0}^{7}
+= (8,8,8,8,8,4,2,1),
+\qquad
+\sum_{j=0}^{7} W_j^{(0)} = 47.
+$$
+
+In v1, active threads are packed contiguously at the front of the block:
+
+$$
+W_j^{(1)} = \left\lceil \frac{a_j}{32} \right\rceil,
+$$
+
+and therefore
+
+$$
+\left(W_j^{(1)}\right)_{j=0}^{7}
+= (4,2,1,1,1,1,1,1),
+\qquad
+\sum_{j=0}^{7} W_j^{(1)} = 12.
+$$
+
+If an actual branch remains and its body contains \(m\) warp instructions, the body accounts for \(47m\) and \(12m\) issued warp instructions, respectively. If the compiler uses predication, this derivation proves only the spatial distribution of active threads; the issued instruction count must be read from SASS.
+
+In v1, the first four warps work whole at s=128, two at s=64, and one at s=32. The condition is warp-uniform for these stages. From s=16 it splits inside the first warp, but the active lanes stay contiguous from the front. `buf[tid]` and `buf[tid + s]` are consecutive too, so there are no bank conflicts and the `%` is gone. The barrier count matches v0 and the measured speedup is 1.63x. It is not \(47/12\) because global loads, loop guards, barriers, and the modulo sequence remain in the total, and the branch may be predicated.
 
 ![In v0 the active lanes scatter inside the warp; in v1 whole warps pack to the front](images/reduction-lanes.svg)
 
-Version 2, warp shuffle. From s=16 only half of the first warp stays on and divergence returns. From that boundary the fold can run in registers, without shared memory or `__syncthreads()`.
+Version 2, warp shuffle. From s=16 the condition splits inside the first warp and the active lane count halves at every step. From that boundary the fold can run in registers, without shared memory or `__syncthreads()`.
 
 ```cpp
 if (tid < 32) {
@@ -248,7 +415,7 @@ Summing 2²⁴ elements (64MB), with CUB's `DeviceReduce::Sum` as the baseline:
 
 | Version | median | effective GB/s | vs theoretical peak | achieved occupancy |
 | --- | --- | --- | --- | --- |
-| v0 divergent indexing | 0.625 ms | 107.3 | 37% | 93.6% |
+| v0 interleaved + modulo | 0.625 ms | 107.3 | 37% | 93.6% |
 | v1 sequential | 0.383 ms | 175.2 | 61% | 88.9% |
 | v2 + warp shuffle | 0.256 ms | 262.1 | 91% | 76.3% |
 | v3 + one atomic per block | 0.252 ms | 266.4 | 92% | 78.1% |
@@ -256,7 +423,7 @@ Summing 2²⁴ elements (64MB), with CUB's `DeviceReduce::Sum` as the baseline:
 
 From v2 the effective bandwidth sits in the 90% range of theoretical peak and there is little left to cut. With one FLOP per element this is a pure bandwidth problem, and the ceiling for a good reduction is memcpy speed. v3 reaches the same band as CUB. CUB delivers that across arbitrary types and sizes while v3 is pinned to one float array and one block size, so read the table as: same conditions, same bandwidth band.
 
-One counter caveat. The divergence improvement (v0 → v1) does not appear in the kernel-wide average metric. `smsp__average_thread_inst_executed_per_inst_executed` reads v0 = 31.93, v1 = 31.81, nearly identical. Most of the run is the global load phase where all 32 lanes are active, so the divergence in the tree phase dissolves into the average. The difference has to be confirmed in time and SASS. Aggregate metrics can hide phase-local problems.
+One counter caveat. `smsp__average_thread_inst_executed_per_inst_executed` reads v0 = 31.93 and v1 = 31.81, nearly identical. It counts executed thread instructions regardless of whether their predicate is true, so it does not establish actual branch divergence. Most of the run is also a full-warp global load, which buries the short tree phase in the kernel average. Separate actual branches with the instruction-level divergent-target counter and SASS described above; the v0 → v1 result here rests on time and removal of the `%` instruction sequence.
 
 Kernel fusion across kernel boundaries and overlapping transfers with compute using streams come in the next post; Tensor Cores and CUTLASS in the one after.
 
@@ -279,8 +446,8 @@ The counters in this post were collected with the Nsight Compute CLI. The full p
 
 ## References
 
-- [CUDA C++ Best Practices Guide](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/): the reference document for coalescing, shared memory, bank conflicts, occupancy
-- [CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/): the precise meaning of divergence, synchronization, atomics, warp intrinsics
+- [CUDA C++ Best Practices Guide](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/): the reference document for coalescing, shared memory, bank conflicts, occupancy, and branch predication
+- [CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/): the precise meaning of SIMT divergence, synchronization, atomics, and warp intrinsics
 - [Mark Harris, An Efficient Matrix Transpose in CUDA C/C++](https://developer.nvidia.com/blog/efficient-matrix-transpose-cuda-cc/): coalescing, shared tile, and padding in one experiment
 - [Andreas Holt, Shared-Memory Tiled Matrix Multiplication](https://andreasholt.com/posts/shared-tiled-matmul/): tiled GEMM with diagrams and boundary handling
 - [Lei Mao, CUDA Shared Memory Bank](https://leimao.github.io/blog/CUDA-Shared-Memory-Bank/): bank address mapping in detail

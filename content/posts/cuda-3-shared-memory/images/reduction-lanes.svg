@@ -75,6 +75,6 @@
   </g>
   <text x="482" y="286" font-size="11" fill="#8fb2bd">s=32 · warp 0</text>
 
-  <text x="40" y="322" font-size="11.5" fill="#8fb2bd">no divergence until s &lt; 32; from there the last warp switches to shuffle</text>
+  <text x="40" y="322" font-size="11.5" fill="#8fb2bd">warp-uniform until s &lt; 32; from there the last warp switches to shuffle</text>
   <text x="360" y="352" font-size="12" fill="#8fb2bd" text-anchor="middle">magenta = active lanes / warps</text>
 </svg>

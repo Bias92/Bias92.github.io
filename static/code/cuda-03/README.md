@@ -31,7 +31,8 @@ the post's conclusions are ratios between variants.
 NCU="/c/Program Files/NVIDIA Corporation/Nsight Compute 2025.3.1/target/windows-desktop-win7-x64/ncu.exe"
 ```
 
-Reduction (occupancy, divergence average, duration; run per kernel):
+Reduction (occupancy, predicate-agnostic thread-instruction average, duration;
+run per kernel):
 
 ```
 for k in reduce_v0 reduce_v1 reduce_v2; do
@@ -88,3 +89,9 @@ cuobjdump --dump-sass reduce_bench.exe
 In `_Z9reduce_v0PKfPfi`, the changing `tid % (2*s)` divisor lowers to the
 `IABS -> I2F -> MUFU.RCP -> F2I -> IMAD.HI` remainder sequence rather than a
 single constant bit mask.
+
+The source condition is warp-nonuniform, but that alone does not prove that the
+short body remained an actual divergent branch after compilation. Inspect SASS
+and the Nsight Compute Source-page `Divergent Branches` counter
+(`smsp__branch_targets_threads_divergent`) to distinguish a branch from
+predicated instructions.
