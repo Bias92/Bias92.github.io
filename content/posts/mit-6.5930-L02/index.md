@@ -5,115 +5,182 @@ tags: ["MLSys", "DNN-Accelerator", "Einsum", "CNN", "MIT-6.5930"]
 categories: ["MIT 6.5930"]
 series: ["MIT 6.5930"]
 math: true
-summary: "Einsum으로 workload를 쓰고 iteration space, memory traffic, compute intensity를 계산한다. 같은 수식도 mapping에 따라 왜 3배 가까이 달라지는지 본 뒤 CNN과 FC를 tensor 연산으로 내린다."
+summary: "L02 전체: accelerator 설계 절차, tensor와 Einsum, iteration space, memory traffic, compute intensity, Roofline, CNN convolution, FC의 GEMV/GEMM 변환."
 draft: false
 ---
 
 > 기준 자료: MIT 6.5930/1 Spring 2026, [L02 - Overview of Deep Neural Network Components](https://csg.csail.mit.edu/6.5930/lectures/L02-Overview_on_DNN_components.pdf)
 
-L01에서 가장 자주 나온 말은 data movement였다. DRAM 접근이 비싸다, 가까운 메모리에서 재사용해야 한다, PE를 많이 넣어도 utilization이 안 나오면 소용없다. 전부 맞는 말인데 아직은 구호에 가깝다. 얼마나 비싼지, 어떤 구현이 더 나은지는 계산하지 않았다.
+L01은 data movement가 비싸다는 얘기까지 갔다. L02에서는 그 말을 실제 숫자로 바꾼다. Matrix-vector multiply 하나를 잡고 연산 수, 최소 memory traffic, 특정 loop order에서 발생하는 traffic을 차례로 계산한다. Best-case compute intensity는 0.99인데 간단한 구현은 0.33밖에 못 얻는다. 같은 식을 계산하면서 데이터를 세 배 가까이 옮긴 셈이다.
 
-L02는 작은 matrix-vector multiply 하나를 붙잡고 그 계산을 한다. 수식은 같은데 loop order를 정하는 순간 memory traffic이 달라지고, best-case compute intensity가 0.99인데 실제 구현은 0.33까지 떨어진다. 이 차이가 앞으로 나올 mapping과 dataflow의 출발점이다.
+강의 후반은 CNN과 fully connected layer를 다룬다. 일반적인 딥러닝 입문처럼 모델 정확도나 학습법을 설명하려는 구간은 아니다. Layer를 tensor 식으로 쓰고, rank와 shape를 붙이고, 마지막에는 7중 loop와 matrix multiplication으로 내린다. 앞으로 accelerator mapping을 이야기하려면 workload가 먼저 이 모양이어야 한다.
 
-강의 후반의 CNN, fully connected layer 설명도 같은 맥락으로 읽으면 덜 교과서적이다. CNN 구조를 복습하려는 게 아니라, 모델의 layer를 accelerator가 다룰 수 있는 **tensor 식과 iteration space**로 번역하는 과정이다.
+PDF는 102장이지만 화면의 점이나 partial sum이 한 단계씩 진행되는 animation frame이 많이 포함돼 있다. 그런 연속 프레임은 완성된 한 장으로 묶었다. 개념 범위는 L02-1부터 L02-102까지 전부 따라간다.
 
-## Workload와 hardware 사이에 있는 것
+## Accelerator Design Methodology
 
-Accelerator 설계 과정을 아주 거칠게 적으면 다음과 같다.
+![Accelerator design methodology](images/L02-04-design-methodology.png)
 
-1. hardware architecture를 정한다. PE, register, buffer, DRAM과 연결 구조를 고른다.
-2. workload를 tensor 식으로 쓴다.
-3. 그 식을 어떤 순서로 계산하고, 데이터는 어떤 format으로 저장하며, 실제 자원 어디에 붙일지 정한다.
-4. compute 수와 traffic, throughput을 계산한다.
-5. 다른 구현과 비교하면서 병목을 옮긴다.
+TeAAL이 제시하는 설계 절차는 다섯 단계다.
 
-두 번째와 세 번째 사이가 생각보다 넓다. 같은 matrix multiplication도 loop 순서, tile 크기, spatial parallelism에 따라 전혀 다른 하드웨어 동작이 된다.
+1. Architecture description
+2. Workload development
+3. Workload evaluation
+4. Implementation comparison
+5. Design optimization
+
+순서가 평범해 보이지만, 2번과 3번 사이에 이 수업의 대부분이 들어간다. `matrix multiplication을 처리한다`는 설명만으로는 traffic도 throughput도 계산할 수 없다. Tensor를 어떤 순서로 순회하는지, 어디에 보관하는지, 어떤 PE가 어느 iteration을 맡는지까지 정해야 hardware 동작이 생긴다.
+
+강의는 일부러 아주 작은 architecture부터 시작한다.
+
+![Simple PE and DRAM architecture](images/L02-06-simple-architecture.png)
+*ALU와 local register를 가진 PE 하나, global storage인 DRAM 하나.*
+
+PE에는 multiplier, adder, register가 있고 바깥에 DRAM이 있다. Cache도 global buffer도 NoC도 없다. 현실적인 accelerator라기보다 mapping 하나가 traffic에 미치는 영향을 숨김없이 보기 위한 최소 모델이다.
+
+Architecture를 정한 뒤 workload 쪽에는 네 종류의 specification이 붙는다.
 
 ![TeAAL separation of concerns](images/L02-08-separation-of-concerns.png)
-*Einsum은 계산의 내용만 쓴다. 아래로 내려갈수록 구현 결정이 붙는다.*
 
-TeAAL은 이걸 Cascade of Einsums, Mapping, Format, Binding으로 나눈다. 위쪽은 짧고 추상적이다. 아래로 갈수록 실제 구현에 가까워진다.
+- **Cascade of Einsums**: 어떤 tensor 연산들을 어떤 의존관계로 실행하는가
+- **Mapping**: iteration space를 어떤 순서로 순회하고 어떻게 tile·parallelize하는가
+- **Format**: dense, CSR, COO 같은 어떤 표현으로 tensor를 저장하는가
+- **Binding**: 계산과 데이터를 실제 PE, register, buffer, network 어디에 할당하는가
 
-- **Cascade of Einsums**: 어떤 tensor 계산들을 어떤 의존관계로 실행하는가
-- **Mapping**: iteration space를 어떤 순서로 순회하고, tile과 병렬 처리를 어떻게 잡는가
-- **Format**: dense인지 sparse인지, sparse라면 어떤 압축 표현을 쓰는가
-- **Binding**: 계산과 데이터를 구체적인 PE, register, buffer, network에 어떻게 할당하는가
+위로 갈수록 설명이 짧고, 아래로 갈수록 구현 결정이 많다. Einsum은 계산 내용만 정한다. Loop order나 dataflow는 아직 없다.
 
-Einsum 하나만 보고 accelerator 성능을 말할 수 없는 이유가 이 피라미드에 다 들어 있다.
+평가 단계에서는 compute count, memory traffic, compute intensity를 뽑는다. 다른 구현과 비교할 때는 PE 수, storage 용량, bitwidth 같은 hardware 조건을 맞춰야 한다. 그다음 병목이 있는 specification만 바꾸고 다시 평가한다. TeAAL이 노리는 것도 이 반복 작업이다. 완성된 accelerator 그림을 통째로 비교하지 않고, 차이가 compute·mapping·format·binding 중 어디서 생겼는지 분리한다.
 
-## Einsum은 수식이면서 iteration space다
+## Tensor Terminology
 
-Tensor는 다차원 배열이다. scalar는 0차원, vector는 1차원, matrix는 2차원이다. 이 수업은 각 차원을 `rank`라고 부른다. 선형대수에서 말하는 matrix rank와는 다른 용법이라 처음엔 조금 거슬린다. 여기서는 그냥 axis 또는 dimension으로 읽으면 된다.
+![Tensor rank, shape, and size](images/L02-10-tensor-terminology.png)
 
-Matrix-vector multiply를 예로 잡자.
+Tensor는 다차원 배열이다. Scalar는 0차원, vector는 1차원, matrix는 2차원, cube는 3차원이다.
 
-$$
-Z_m = A_{k,m} \times B_k
-$$
+이 수업은 dimension을 `rank`라고 부른다. 선형대수의 matrix rank와는 다른 용법이다.
 
-오른쪽에는 \(k\)가 있는데 왼쪽에는 없다. 이 rank는 reduction 대상이다. 합 기호를 생략했을 뿐 실제 뜻은 아래와 같다.
+- **Number of ranks**: dimension 개수
+- **Rank shape**: 각 dimension의 원소 수
+- **Tensor shape**: rank shape를 순서대로 적은 목록
+- **Tensor size**: 모든 rank shape의 곱, 즉 전체 원소 수
 
-$$
-Z_m = \sum_k A_{k,m} B_k
-$$
+예를 들어 \(B[N,K]\)는 rank-2 tensor다. Rank 이름은 \(N,K\), shape는 \([N,K]\), size는 \(NK\)다. Rank 이름은 단순한 숫자 위치보다 의미를 더 많이 담는다. \(N\)은 batch, \(C\)는 input channel처럼 workload 안에서 역할을 가진다.
 
-표기가 짧다는 것보다 더 중요한 성질이 있다. 이 식은 **계산 순서를 정하지 않는다.**
+![Matrix multiplication tensor shapes](images/L02-11-matmul-shapes.png)
 
-![Operational definition of an Einsum and its iteration space](images/L02-18-iteration-space.png)
-*식이 만드는 공간은 \(K \times M\). 어느 방향부터 훑을지는 아직 비어 있다.*
-
-TeAAL의 operational definition으로 Einsum은 세 가지를 정한다.
-
-1. input과 output tensor, 그리고 각 tensor가 쓰는 rank
-2. 수행해야 할 모든 계산점으로 이뤄진 iteration space
-3. 각 점에서 실행할 연산
-
-위 식의 iteration space는 \(K \times M\)이다. 점 \((k,m)\) 하나를 방문하면 \(A_{k,m}\)과 \(B_k\)를 읽어 곱하고 \(Z_m\)에 더한다. 모든 점을 한 번씩 처리하면 계산이 끝난다. \(k\)부터 돌든 \(m\)부터 돌든, tile로 잘라 병렬 PE에 뿌리든 수학적으로는 같은 답이다.
-
-그 자유도가 mapping의 설계 공간이다.
-
-## 계산량은 식에서 바로 나온다
-
-\(K \times M\)개의 iteration point마다 multiply를 한 번 하므로 multiplication 수는 \(KM\)이다. \(Z_m\) 하나를 만들 때 \(K\)개 값을 더하니 addition은 정확히 세면 \((K-1)M\)번이다.
-
-여기까지는 구현과 무관하다. 순서를 바꿔도 필요한 유효 연산 수는 같다. 달라지는 건 데이터를 몇 번 움직이느냐다.
-
-### 이론적으로 가장 적게 옮긴다면
-
-![Best-case compute intensity and the memory hierarchy](images/L02-23-compute-intensity.png)
-
-강의는 보통의 FLOPs/byte 대신 `multiplications/value`로 compute intensity를 정의한다.
+강의의 matrix multiplication 그림은 \(A[K,M]\), \(B[K,N]\), \(Z[M,N]\)를 사용한다.
 
 $$
-\text{CI} = \frac{\text{number of multiplications}}
+Z_{m,n} = \sum_k A_{k,m} B_{k,n}
+$$
+
+\(K\)는 두 input이 공유하고 reduction되는 rank다. \(M,N\)은 output에 남는다. 일반적인 \(C=A B\) 표기와 rank 순서가 달라 보여도 계산 자체는 matrix multiplication이다. Einsum에서는 rank 이름이 연결 관계를 정하고, 메모리에 rank를 어떤 순서로 놓는지는 별도 결정이다.
+
+## Einsum and Operational Definition
+
+Einstein summation notation은 양변의 index를 보고 reduction을 암시한다.
+
+$$
+Z_{m,n} = A_{k,m} B_{k,n}
+$$
+
+오른쪽에만 있는 \(k\)는 합쳐진다. \(\sum_k\)를 쓰지 않아도 같은 뜻이다. Matrix-vector multiply로 줄이면 식이 더 단순해진다.
+
+$$
+Z_m = A_{k,m} B_k
+$$
+
+이 한 줄에는 input tensor \(A,B\), output tensor \(Z\), point마다 실행할 multiplication과 reduction이 들어 있다. 빠진 것도 있다. **계산 순서**다.
+
+![Einsum iteration space](images/L02-18-iteration-space.png)
+
+TeAAL의 Operational Definition of an Einsum은 식을 세 부분으로 읽는다.
+
+1. Input·output tensor와 rank
+2. 모든 합법적인 coordinate의 Cartesian product인 iteration space
+3. 각 iteration point에서 실행하는 operation
+
+위 matrix-vector multiply의 iteration space는 \(K \times M\)이다. \(K=8\), \(M=6\)이면 48개의 점이 생긴다. 점 \((4,2)\)는 \(A_{4,2}\)와 \(B_4\)를 곱해 \(Z_2\)에 더하는 작업 하나다.
+
+![Operational definition at one iteration point](images/L02-19-ode.png)
+
+각 point에서 하는 일은 고정돼 있다.
+
+1. \(A_{k,m}\)과 \(B_k\) 선택
+2. 두 값 multiplication
+3. \(Z_m\) update
+4. 같은 \(m\)에 여러 \(k\)가 들어오므로 addition reduction
+
+Iteration space의 모든 점을 방문해야 한다. 하지만 \(k\)를 먼저 훑을지 \(m\)을 먼저 훑을지, 몇 개씩 tile로 묶을지, 서로 다른 PE에 어느 rank를 펼칠지는 식에 없다.
+
+Einsum이 algorithm이고 mapping이 execution order라는 구분을 여기서 잡아두면 뒤의 dataflow가 덜 헷갈린다.
+
+## Workload Analysis
+
+### Operation Count
+
+\(K \times M\)개의 point마다 multiplication이 한 번 있으므로
+
+$$
+N_{\text{mul}} = KM
+$$
+
+이다. Output \(Z_m\) 하나는 \(K\)개 product의 합이다. 정확한 addition 수는
+
+$$
+N_{\text{add}} = (K-1)M
+$$
+
+이다. 첫 product는 빈 partial sum에 들어가고 나머지 \(K-1\)개가 addition을 만든다고 센 결과다.
+
+이 숫자는 processing order와 무관하다. Dense input에서 zero skipping 같은 algorithmic optimization을 하지 않는 한 어느 mapping도 \(KM\)개의 유효 multiplication을 피할 수 없다.
+
+### Best-case Memory Traffic
+
+![Compute intensity and memory hierarchy](images/L02-23-compute-intensity.png)
+
+강의는 compute intensity를 `multiplications/value`로 정의한다.
+
+$$
+\text{CI} =
+\frac{\text{number of multiplications}}
 {\text{number of values moved}}
 $$
 
-MAC을 연산 한 번으로 셀지 두 번으로 셀지, 값 하나가 FP32인지 INT8인지 같은 문제를 잠시 치워두려는 정의다. 실제 Roofline 분석에서는 FLOPs/byte로 다시 단위를 맞추면 된다.
+일반적인 Roofline은 FLOPs/byte를 쓴다. 여기서는 MAC을 operation 하나로 셀지 둘로 셀지, value가 FP32인지 INT8인지에 따른 단위 차이를 잠시 없앤다. Workload reuse만 보기 좋은 정의다.
 
-각 값을 필요한 최소 횟수만 DRAM에서 가져온다고 해보자.
+각 tensor 원소를 DRAM에서 필요한 최소 횟수만 가져온다면 traffic은 다음과 같다.
 
-- \(A\): 원소가 \(KM\)개이므로 \(KM\) loads
-- \(B\): 원소가 \(K\)개이므로 \(K\) loads
-- \(Z\): 결과가 \(M\)개이므로 \(M\) stores
-
-따라서 best-case traffic과 CI는
+- \(A\): \(KM\) values load
+- \(B\): \(K\) values load
+- \(Z\): \(M\) values store
 
 $$
 T_{\text{best}} = KM + K + M
 $$
 
 $$
-\text{CI}_{\text{best}} = \frac{KM}{KM + K + M}
+\text{CI}_{\text{best}} =
+\frac{KM}{KM+K+M}
 $$
 
-이다. \(A\)는 계산마다 다른 원소를 쓰므로 재사용이 없다. 대신 \(B_k\) 하나는 모든 \(m\)에서 재사용하고, \(Z_m\)은 \(k\) 방향 reduction이 끝날 때까지 가까운 저장소에 붙잡아둬야 이 traffic이 나온다.
+\(A_{k,m}\)는 iteration point마다 다른 원소라 이 식 안에서 reuse가 없다. \(B_k\)는 모든 \(m\)에 걸쳐 \(M\)번 재사용된다. \(Z_m\)은 모든 \(k\)의 reduction이 끝날 때까지 local storage에 남아 있어야 한다.
 
-그런데 `붙잡아둔다`는 말에 이미 hardware 조건이 숨어 있다. \(B\)와 \(Z\)의 live set을 담을 register나 SRAM이 있어야 하고, mapping도 그 reuse를 깨지 않는 순서여야 한다.
+Best case는 이 reuse를 전부 살릴 수 있다고 가정한다. 아직 register 수나 처리 순서를 넣지 않은 workload 상한이다.
 
-## Loop를 쓰는 순간 reuse가 결정된다
+## Mapping and Data Reuse
 
-Einsum에 순서를 하나 부여해보자.
+Iteration space는 여러 방향으로 순회할 수 있다. 가장 직접적인 loop nest는 \(k\)를 바깥에 두는 형태다.
+
+![Iteration-space traversal with loop nests](images/L02-30-loop-nest.png)
+
+```python
+for k in range(K):
+    for m in range(M):
+        Z[m] += A[k, m] * B[k]
+```
+
+Simple architecture에는 register 하나만 있다. 실제 load와 store를 드러내면 아래처럼 된다.
 
 ```python
 for k in range(K):
@@ -125,9 +192,11 @@ for k in range(K):
         Z[m] = z_reg
 ```
 
-`k`를 바깥에 두면 \(B_k\)는 register에 한 번 올린 뒤 \(M\)번 쓸 수 있다. \(B\) stationary mapping이다. 대신 \(Z_m\)은 \(k\)가 바뀔 때마다 다시 읽고 써야 한다. 한 개짜리 `z_reg`가 모든 \(M\)개의 partial sum을 다음 \(k\)까지 보관할 수는 없기 때문이다.
+\(B_k\)는 outer loop가 바뀔 때 한 번 load하고 inner \(m\) loop에서 \(M\)번 쓴다. \(B\) stationary다. 반면 \(Z_m\)은 현재 \(k\)의 update가 끝나면 DRAM으로 돌아간다. Register 하나로 \(M\)개의 partial sum을 다음 \(k\)까지 들고 갈 수 없어서다.
 
-이 구현의 traffic은 다음처럼 나온다.
+![Achieved traffic for the k-m loop order](images/L02-38-achieved-traffic.png)
+
+이 mapping의 traffic은 다음과 같다.
 
 $$
 \begin{aligned}
@@ -138,123 +207,299 @@ Z\text{ stores} &= KM
 \end{aligned}
 $$
 
-첫 번째 \(k\)에서는 \(Z\)를 0으로 시작한다고 보면 load가 필요 없어서 \((K-1)M\)이다. 전부 더하면
+첫 \(k\)에서는 \(Z\)를 0으로 시작한다고 놓아 load를 생략한다. 그래서 \(Z\) load가 \(KM\)이 아니라 \((K-1)M\)이다.
 
 $$
-T_{\text{achieved}} = 3KM - M + K
+T_{\text{achieved}} = 3KM-M+K
+$$
+
+$$
+\text{CI}_{\text{achieved}} =
+\frac{KM}{3KM-M+K}
+$$
+
+![Best-case and achieved compute intensity](images/L02-41-best-vs-achieved-ci.png)
+
+\(K=250\), \(M=100\)이면
+
+$$
+\text{CI}_{\text{best}}
+=
+\frac{250 \times 100}
+{250 \times 100 + 250 + 100}
+\approx 0.99
 $$
 
 이고,
 
 $$
-\text{CI}_{\text{achieved}} =
-\frac{KM}{3KM - M + K}
+\text{CI}_{\text{achieved}}
+=
+\frac{250 \times 100}
+{3(250 \times 100)-100+250}
+\approx 0.33
 $$
 
-가 된다.
+이다. 25,000번의 multiplication은 양쪽이 같다. 차이는 \(Z\) partial sum을 계속 DRAM에 내보냈다가 가져오는 traffic이다.
 
-![Best-case and achieved compute intensity](images/L02-41-best-vs-achieved-ci.png)
-*\(K=250, M=100\)에서 0.99 대 0.33. 연산식은 한 글자도 안 바뀌었다.*
+Loop를 바꿔 \(m\)을 outer에 두면 \(Z_m\)은 register에 유지할 수 있다.
 
-\(K=250\), \(M=100\)을 넣으면 best case는 약 0.99 multiplications/value, 이 mapping은 약 0.33이다. 같은 \(KM=25{,}000\)번의 multiplication을 하면서 데이터를 거의 세 배 옮긴다.
+```python
+for m in range(M):
+    z_reg = 0
+    for k in range(K):
+        z_reg += A[k, m] * B[k]
+    Z[m] = z_reg
+```
 
-`m`을 바깥 loop로 바꾸면 반대 trade-off가 생긴다. \(Z_m\) partial sum은 register에 오래 둘 수 있지만, 이번에는 \(B_k\)를 \(m\)마다 다시 읽는다. 둘 다 충분히 재사용하려면 더 큰 local storage, tiling, 여러 PE 사이의 multicast 같은 구조가 필요하다. loop interchange 한 줄에서 시작한 문제가 그대로 accelerator architecture 문제가 된다.
+이번에는 output-stationary에 가깝다. 대신 cache나 별도 buffer가 없다면 \(B_k\)를 \(m\)마다 다시 읽는다. 하나의 작은 register로 \(B\) reuse와 \(Z\) reuse를 동시에 잡을 수는 없다.
 
-이 예제가 L02의 중심이다. **best-case CI는 workload의 잠재력이고, achieved CI는 architecture와 mapping이 실제로 건져낸 reuse다.**
+둘 다 잡으려면 storage가 더 필요하다. \(Z\) tile 여러 개를 local buffer에 두거나, \(B\) tile을 여러 PE에 multicast하거나, \(K\)와 \(M\)을 block으로 나눠 두 reuse가 만나는 구간을 만든다. Mapping은 단순한 loop reorder가 아니라 architecture의 storage·network 조건 아래에서 가능한 reuse를 고르는 작업이다.
 
-## Roofline에서 오른쪽으로 가는 법
+## Roofline Model
 
 ![Roofline model](images/L02-42-roofline.png)
 
-Roofline의 식은 간단하다.
+Roofline은 throughput 상한을 두 식의 최솟값으로 쓴다.
 
 $$
-\text{Throughput} \le
-\min(P_{\text{peak}},\; BW \times \text{CI})
+\text{Throughput}
+\le
+\min(P_{\text{peak}}, BW \times \text{CI})
 $$
 
-\(P_{\text{peak}}\)는 연산기가 낼 수 있는 최대 throughput, \(BW\)는 memory bandwidth다. CI가 낮으면 \(BW \times \text{CI}\)가 먼저 한계가 되어 그래프의 사선 구간에 놓인다. memory-bound다. CI가 충분히 높아지면 평평한 compute roof에 닿고, 그때부터 compute-bound가 된다.
+- \(P_{\text{peak}}\): compute hardware가 낼 수 있는 최대 throughput
+- \(BW\): memory bandwidth
+- \(\text{CI}\): 한 value를 이동할 때 수행하는 multiplication 수
 
-이 그림이 유용한 이유는 최적화 방향을 바로 거르기 때문이다.
+CI가 낮으면 \(BW \times \text{CI}\)가 먼저 걸린다. 그래프의 사선 구간, memory-bound 영역이다. CI가 충분히 높아지면 \(P_{\text{peak}}\)의 수평선에 닿고 compute-bound가 된다.
 
-Memory-bound인 점에서 MAC lane을 두 배로 늘리면 평평한 지붕만 올라간다. 현재 점은 그대로다. 반대로 reuse를 살려 CI를 높이면 점이 오른쪽으로 움직이고, bandwidth를 늘리면 사선의 기울기가 커진다. “병렬성을 더 주면 빨라진다”는 말은 compute-bound 근처에서만 온전히 맞는다.
+슬라이드 예시의 compute roof는 8 MACs/cycle이다. Memory-bound인 점에서 lane을 8개에서 16개로 늘려도 현재 throughput은 안 오른다. 수평 roof만 위로 이동한다. 반대로 reuse를 늘려 CI를 0.33에서 0.99로 옮기면 같은 bandwidth에서도 처리량이 올라간다.
 
-앞의 matrix-vector multiply에서 0.33을 0.99로 끌어올리는 일은 단순히 traffic을 줄이는 데서 끝나지 않는다. Roofline 위에서는 같은 bandwidth로 낼 수 있는 throughput을 세 배 가까이 키우는 이동이다.
+![Roofline interpretation and design choices](images/L02-43-roofline-guide.png)
 
-## CNN을 tensor 식으로 내리기
+Roofline은 세 질문에 답한다.
 
-강의 후반은 CNN 구성요소를 빠르게 훑는다. convolution, activation, optional한 pooling과 normalization, 마지막의 fully connected layer. 고전적인 vision CNN에서는 convolution이 전체 계산의 90% 이상을 차지하는 경우가 흔해서 accelerator 분석도 CONV부터 시작한다.
+1. 현재 구현이 compute와 memory 중 어디에 막혔는가
+2. Parallelism과 bandwidth 중 어느 쪽을 늘려야 하는가
+3. 현재 점이 주어진 roof에서 얼마나 떨어져 있는가
 
-![A conventional deep CNN](images/L02-47-cnn-overview.png)
+Roof 아래에 점이 멀리 떨어져 있으면 peak와 bandwidth 외의 손실이 있다는 뜻이다. Pipeline stall, instruction overhead, mapping limitation, load imbalance가 후보가 된다.
 
-초기 layer는 edge나 corner 같은 local feature를 잡고, 깊은 layer로 갈수록 더 넓은 receptive field를 보며 고수준 feature를 만든다. ML 관점에서는 익숙한 얘기다. Hardware 쪽에서 중요한 건 각 layer가 정확히 몇 번 곱하고, 어떤 activation과 weight를 반복해 쓰는가다.
+여기까지가 강의 앞부분의 설계 loop다. Workload의 best-case CI를 구하고, mapping의 achieved CI를 구하고, Roofline에서 병목을 본다. Architecture나 mapping을 바꾼 뒤 같은 분석을 다시 한다.
 
-### 먼저 2D 한 장
+## CNN Workload Overview
 
-![2D convolution example with a 3 by 3 filter](images/L02-57-conv-example.png)
+CNN은 image classification 외에도 speech spectrogram, medical imaging, game play에 쓰인다. Input 형태는 달라도 local pattern을 filter로 훑고 feature hierarchy를 쌓는 구조는 같다.
 
-\(H \times W\) input에 \(R \times S\) filter를 stride \(U\)로 움직이면, padding이 없을 때 output 크기는
+![Conventional CNN pipeline](images/L02-47-cnn-overview.png)
+
+초기 convolution layer는 edge나 texture 같은 low-level feature를 잡는다. 깊은 layer로 갈수록 여러 pixel과 앞 layer의 feature가 합쳐져 object part나 class에 가까운 표현이 된다. 현대 CNN은 수십에서 수백 layer, 일부는 1,000 layer 가까이 깊어진다.
+
+기본 block은 convolution 뒤 activation이다. Activation은 ReLU 같은 비선형 함수다. Fully connected layer도 linear operation 뒤 activation을 붙인다. 중간에는 normalization과 pooling이 선택적으로 들어간다.
+
+![Convolution, normalization, pooling, and fully connected layers](images/L02-51-cnn-layers.png)
+
+- **Convolution**: local receptive field에서 weighted sum
+- **Activation**: element-wise nonlinearity
+- **Normalization**: activation distribution 또는 channel 간 scale 조정
+- **Pooling**: 공간 해상도 축소와 local aggregation
+- **Fully connected**: 모든 input activation과 output neuron 사이의 dense connection
+
+고전적인 deep CNN에서는 convolution이 전체 연산의 90% 이상을 차지하는 경우가 많다.
+
+![Convolution dominates CNN computation](images/L02-52-conv-dominates.png)
+
+Pooling이나 activation도 실행해야 하지만 multiplication count, runtime, energy를 지배하는 쪽은 CONV다. L02가 convolution을 길게 다루고 나머지 layer를 짧게 넘기는 배경이다.
+
+## 2D Convolution
+
+### Element-wise Product and Partial Sum
+
+가장 작은 경우부터 보면 input feature map 한 장과 filter 한 장이 있다. Input은 \(H \times W\), filter는 \(R \times S\)다.
+
+![Convolution window, element-wise products, and partial-sum accumulation](images/L02-55-conv-output.png)
+
+Filter를 input의 한 위치에 겹친 뒤 대응하는 원소끼리 곱한다. \(RS\)개의 product를 더하면 output activation 하나가 나온다. 이때 더해지는 중간값이 partial sum, 보통 `psum`으로 적는 값이다.
+
+Filter window를 가로와 세로로 이동하면 output feature map이 채워진다. Filter가 보는 \(R \times S\) 영역은 그 output activation의 receptive field다.
+
+![2D convolution example](images/L02-57-conv-example.png)
+
+슬라이드 예시는 5×5 input과 3×3 filter를 사용한다. Stride 1, padding 0이면 output은 3×3이다.
+
+![Completed stride-1 convolution](images/L02-64-stride1-output.png)
+
+Output shape는
 
 $$
-P = \left\lfloor \frac{H-R}{U} \right\rfloor + 1,\qquad
-Q = \left\lfloor \frac{W-S}{U} \right\rfloor + 1
+P =
+\left\lfloor
+\frac{H-R}{U}
+\right\rfloor + 1,
+\qquad
+Q =
+\left\lfloor
+\frac{W-S}{U}
+\right\rfloor + 1
 $$
 
-이다.
+이다. \(U\)는 stride다.
 
-슬라이드의 5×5 input과 3×3 filter에서 stride 1이면 output은 3×3이다. output point 하나마다 9번 곱하므로 총 81 multiplications다. Filter에 0이 있어도 sparse skipping을 지원하지 않는 구현은 그대로 9번 계산한다.
-
-![Stride as downsampling](images/L02-71-stride.png)
-
-Stride 2면 output이 2×2로 줄고 36번, stride 3이면 1×1과 9번이 된다. Stride를 키우는 건 stride 1 결과를 일정 간격으로 downsample하는 것과 같다. Padding \(D\)를 양쪽에 주면 식은
+각 output point는 \(RS=9\) multiplications를 사용하고 output point는 \(PQ=9\)개이므로 총 multiplication은
 
 $$
-P = \left\lfloor \frac{H+2D-R}{U} \right\rfloor + 1
+PQRS = 3 \times 3 \times 3 \times 3 = 81
 $$
 
-로 바뀐다. 3×3 filter, stride 1에서 \(D=1\)을 주는 흔한 `same` convolution은 input과 output의 공간 크기를 유지한다.
+이다. Filter 안에 0이 있어도 hardware가 sparse zero skipping을 지원하지 않으면 multiplication 수에는 그대로 포함된다.
 
-참고로 딥러닝 프레임워크가 `convolution`이라고 부르는 연산은 보통 filter를 뒤집지 않는 cross-correlation이다. 슬라이드의 index 식과 naïve loop도 그 형태다. 학습이 filter 값을 알아서 맞추므로 모델 사용에서는 문제가 없지만, 신호처리의 convolution 정의와 코드를 비교할 때는 구분해야 한다.
+슬라이드 L02-58부터 L02-63은 window가 한 칸씩 움직이며 3×3 output을 채우는 animation이다. 위의 완성된 L02-64가 그 여섯 frame의 결과다.
 
-### Batch와 channel까지 펼치면 7중 loop가 된다
+### Stride
+
+![Output maps for stride 1, 2, and 3](images/L02-71-stride.png)
+
+Stride는 filter window가 한 번에 움직이는 칸 수다.
+
+- \(U=1\): output 3×3, 81 multiplications
+- \(U=2\): output 2×2, 36 multiplications
+- \(U=3\): output 1×1, 9 multiplications
+
+Stride 2와 3의 결과는 stride 1 output을 각각 두 칸, 세 칸 간격으로 downsample한 것과 같다. L02-65부터 L02-70은 이 window 이동을 단계별로 보여주는 animation이다.
+
+Stride가 커지면 output activation 수와 compute가 줄지만 spatial information도 더 거칠게 샘플링한다. Hardware 관점에서는 \(P,Q\)가 작아져 iteration space와 input reuse pattern이 함께 바뀐다.
+
+### Zero Padding
+
+Padding이 없으면 convolution을 지날 때마다 spatial size가 줄어든다.
+
+![Zero padding around the input feature map](images/L02-72-zero-padding.png)
+
+Input 둘레에 \(D\)칸의 zero padding을 넣으면 output shape는
+
+$$
+P =
+\left\lfloor
+\frac{H+2D-R}{U}
+\right\rfloor + 1,
+\qquad
+Q =
+\left\lfloor
+\frac{W+2D-S}{U}
+\right\rfloor + 1
+$$
+
+이 된다.
+
+3×3 filter, stride 1에서 \(D=1\)이면 input과 output의 \(H,W\)가 같다. PyTorch의 `Conv2d`는 padding 기본값이 0이다. Integer 하나를 주면 상하좌우에 같은 padding을, tuple을 주면 height와 width 방향 값을 따로 지정한다.
+
+Padding된 0도 dense implementation에서는 일반 input처럼 읽고 계산할 수 있다. Boundary condition을 별도로 처리하거나 zero를 암묵적으로 생성하면 불필요한 memory traffic을 줄일 수 있지만, control이 복잡해진다.
+
+### Receptive Field
+
+![Receptive field growth with network depth](images/L02-75-receptive-field.png)
+
+Layer가 깊어질수록 output activation 하나에 영향을 주는 원본 input 영역이 넓어진다. 3×3 filter, stride 1, dilation 1만 쌓으면 receptive field 변은 layer마다 2씩 늘어난다.
+
+$$
+r_L = 1 + 2L
+$$
+
+Layer 1은 3×3, layer 2는 5×5, layer 3은 7×7 영역을 본다. Stride나 dilation이 들어가면 증가 폭은 앞 layer의 sampling jump까지 곱해 계산해야 한다.
+
+이 구조가 low-level feature에서 high-level feature로 올라가는 CNN 설명의 공간적 근거다. 동시에 accelerator 입장에서는 같은 input activation이 여러 이웃 output과 여러 layer에서 재사용될 가능성을 만든다.
+
+딥러닝 library에서 `convolution`이라고 부르는 연산은 보통 filter를 뒤집지 않는 cross-correlation이다. 슬라이드의 index 식과 naïve loop도 그렇다. Filter가 학습되므로 모델 동작에는 문제가 없지만, 신호처리의 convolution 식과 코드를 비교할 때는 구분해야 한다.
+
+## Multi-channel Convolution
+
+### Tensor Shapes
+
+실제 CNN input은 feature map 한 장이 아니다. RGB image부터 channel이 세 개이고, 중간 layer는 수십에서 수천 channel을 가진다.
+
+한 output channel을 만들 때 filter는 모든 \(C\) input channel을 가로지른다. Output channel이 \(M\)개라면 그런 filter가 \(M\)개 있다.
 
 ![Input channels, filters, and output channels](images/L02-77-channels.png)
 
-실제 CONV에는 input channel과 output channel, batch가 붙는다.
+Batch까지 붙으면 같은 filter set을 \(N\)개의 input feature map에 적용한다.
 
-| 기호 | 뜻 |
+![Batch dimension in convolution](images/L02-78-batch.png)
+
+강의의 symbol은 다음과 같다.
+
+![CNN decoder ring](images/L02-79-decoder-ring.png)
+
+| Symbol | Rank shape |
 | --- | --- |
-| \(N\) | batch size |
-| \(C\) | input channels |
-| \(H,W\) | input height, width |
-| \(R,S\) | filter height, width |
-| \(M\) | output channels, 즉 filter 수 |
-| \(P,Q\) | output height, width |
-| \(U\) | stride |
+| \(N\) | Batch size |
+| \(C\) | Input channels |
+| \(H,W\) | Input height, width |
+| \(R,S\) | Filter height, width |
+| \(M\) | Output channels, filter 수 |
+| \(P,Q\) | Output height, width |
+| \(U\) | Stride |
 
-Weight tensor는 \(F[M,C,R,S]\), input activation은 \(I[N,C,H,W]\), output은 \(O[N,M,P,Q]\)다. 식 하나로 적으면
+Tensor shape로 묶으면
+
+$$
+I[N,C,H,W]
+$$
+
+$$
+F[M,C,R,S]
+$$
+
+$$
+O[N,M,P,Q]
+$$
+
+$$
+B[M]
+$$
+
+이다. \(I\)는 input activation, \(F\)는 filter weight, \(O\)는 output activation, \(B\)는 output channel마다 하나씩 붙는 bias다.
+
+![CONV layer tensors and shape parameters](images/L02-81-conv-tensors.png)
+
+Weight size는 \(MCRS\), input activation size는 \(NCHW\), output activation size는 \(NMPQ\)다. 이 세 크기는 compute뿐 아니라 각 memory level에 필요한 capacity를 정한다.
+
+### Convolution Einsum
+
+전체 convolution은 한 줄로 쓸 수 있다.
 
 $$
 O_{n,m,p,q}
-= B_m +
+=
+B_m +
 I_{n,c,Up+r,Uq+s}
-\times F_{m,c,r,s}
+F_{m,c,r,s}
 $$
 
-가 된다. \(c,r,s\)가 오른쪽에만 있으므로 셋 모두 reduction rank다.
+\(n,m,p,q\)는 output에 남고 \(c,r,s\)는 reduction된다. Input의 spatial coordinate가 단순 \(p,q\)가 아니라 \(Up+r,Uq+s\)인 부분에 stride와 sliding window가 들어 있다.
 
 ![Convolution written as an Einsum](images/L02-82-conv-einsum.png)
-*이 한 줄은 계산 내용은 정하지만 \(n,m,p,q,c,r,s\)를 어떤 순서로 돌지는 말하지 않는다.*
 
-Iteration space 크기와 multiplication 수는
+Multiplication count는 iteration space의 크기와 같다.
 
 $$
-N \times M \times P \times Q \times C \times R \times S
+N_{\text{mul}} = NMPQCRS
 $$
 
-다. 이 식을 그대로 naïve loop로 옮기면 7중 loop가 나온다.
+Output 하나당 \(CRS\)개의 product가 reduction되고, 그런 output이 \(NMPQ\)개 있다.
 
-![Naive seven-loop implementation of convolution](images/L02-83-conv-loop-nest.png)
+각 tensor의 reuse 방향도 식에서 읽을 수 있다.
+
+- Filter \(F_{m,c,r,s}\): \(n,p,q\) 방향으로 재사용
+- Input \(I_{n,c,Up+r,Uq+s}\): 여러 \(m\)과 겹치는 window 사이에서 재사용
+- Output \(O_{n,m,p,q}\): \(c,r,s\) reduction 동안 partial sum으로 재사용
+- Bias \(B_m\): 모든 \(n,p,q\)에 재사용
+
+어느 reuse를 local register와 buffer에서 살릴지가 dataflow다.
+
+### Seven-loop Implementation
+
+![Naive seven-loop convolution](images/L02-83-conv-loop-nest.png)
 
 ```python
 for n in range(N):
@@ -266,63 +511,137 @@ for n in range(N):
                     for r in range(R):
                         for s in range(S):
                             O[n, m, p, q] += (
-                                I[n, c, U*p+r, U*q+s] * F[m, c, r, s]
+                                I[n, c, U*p+r, U*q+s]
+                                * F[m, c, r, s]
                             )
+                O[n, m, p, q] = activation(O[n, m, p, q])
 ```
 
-Einsum과 loop nest의 차이는 수학 표기 취향이 아니다. 위 코드는 `s → r → c → p → q → m → n`이라는 처리 순서를 이미 박아 넣었다. 어떤 값을 register에 오래 둘지, 연속된 memory access가 어느 rank인지, 병렬 PE에 무엇을 나눠줄지가 이 순서에 묶인다.
+이 loop는 \(s \rightarrow r \rightarrow c \rightarrow p \rightarrow q \rightarrow m \rightarrow n\) 순서를 강제한다. \(O\)는 inner \(c,r,s\) 동안 stationary라 partial sum traffic을 줄이기 좋다. 대신 filter와 input의 장거리 reuse는 cache나 별도 tiling이 없으면 놓친다.
 
-Einsum은 그 결정을 미룬다. 이후 mapping 단계에서 loop를 reorder하고, tile로 쪼개고, 여러 rank를 한 PE array에 spatial하게 펼친다. 하나의 CONV 식에서 weight-stationary, output-stationary, row-stationary 같은 서로 다른 dataflow가 나오는 자리다.
+Einsum에는 이 순서가 없다. 이후 mapping 단계에서 loop interchange, tiling, spatial unrolling을 적용한다. 같은 CONV 식에서 weight-stationary, output-stationary, row-stationary dataflow가 갈라지는 지점이다.
 
-## Fully connected는 특별한 연산이 아니다
+## Fully Connected Layer
 
-Fully connected layer를 CONV 관점에서 보면 filter의 공간 크기가 input 전체와 같은 경우다.
+### Connectivity
+
+![Fully connected and sparsely connected layers](images/L02-85-fully-vs-sparse.png)
+
+Fully connected layer에서는 모든 input neuron이 모든 output neuron과 weight로 연결된다. Input 수가 \(K\), output 수가 \(M\)이면 weight가 \(MK\)개다.
+
+그림의 sparsely connected variant는 일부 edge만 남긴다. Pruning 뒤의 FC가 이 형태가 될 수 있다. 다만 sparse weight를 저장하고 0을 건너뛰는 index·control cost까지 포함해야 실제 이득을 판단할 수 있다.
+
+### FC as Convolution
+
+CONV 관점에서는 filter가 input feature map 전체를 덮는 경우가 FC다.
+
+![Fully connected layer as a convolution variant](images/L02-87-fc-as-conv.png)
 
 $$
 R=H,\qquad S=W,\qquad P=Q=1
 $$
 
-Batch가 하나라면
+Batch가 하나일 때 식은
 
 $$
-O_m = I_{c,h,w} \times F_{m,c,h,w}
+O_m = I_{c,h,w} F_{m,c,h,w}
 $$
 
-이고 \(c,h,w\)를 하나의 \(k=CHW\) rank로 flatten하면
+다. \(c,h,w\)가 모두 reduction rank다. Output \(m\) 하나는 input feature map 전체와 해당 filter 전체의 dot product다.
+
+### Flattening
+
+\(C,H,W\) 세 rank를 \(CHW\) 하나로 flatten할 수 있다.
+
+![Flattening C, H, and W into CHW](images/L02-90-flatten.png)
+
+Row-major layout에서 coordinate 변환은
 
 $$
-O_m = I_k \times F_{m,k}
+chw = H W c + W h + w
 $$
 
-가 된다. Matrix-vector multiply, 즉 GEMV다.
-
-Batch \(N\)을 넣으면 input이 \(N \times K\) matrix가 되면서
+이다.
 
 $$
-O_{n,m} = I_{n,k} \times F_{m,k}
+I_{c,h,w} \rightarrow I_{chw}
 $$
 
-형태의 matrix-matrix multiply, GEMM으로 바뀐다.
+$$
+F_{m,c,h,w} \rightarrow F_{m,chw}
+$$
 
-![A batched fully connected layer becomes matrix-matrix multiplication](images/L02-101-fc-matmul.png)
+따라서 FC Einsum은
 
-이건 단순한 표기 정리가 아니다. Batch가 커지면 같은 weight matrix를 여러 input이 공유해 arithmetic intensity를 높일 수 있다. GEMV는 weight를 읽어 한 vector에 쓰고 끝나서 memory-bound가 되기 쉽지만, GEMM은 불러온 weight tile을 batch 방향으로 재사용한다. GPU와 DNN accelerator가 GEMM에 그렇게 많은 하드웨어와 소프트웨어를 투자하는 이유가 여기서 보인다.
+$$
+O_m = I_{chw} F_{m,chw}
+$$
 
-CONV도 `im2col`로 input window를 펼치면 GEMM으로 바꿀 수 있다. 다만 실제로 펼친 matrix를 메모리에 만들면 중복 데이터가 커진다. 그래서 고성능 library는 대개 layout과 tile 안에서 암묵적으로 변환하는 implicit GEMM이나 convolution 전용 kernel을 쓴다. 수학적으로 GEMM과 같다는 말과, 메모리에서도 공짜로 GEMM이 된다는 말은 다르다.
+로 바뀐다.
 
-## L02를 덮고 남는 것
+![Original and flattened FC Einsums](images/L02-98-flatten-einsum.png)
 
-처음엔 CNN 기초가 절반이라 쉬어가는 강의처럼 보였다. 다시 보면 목적은 꽤 명확하다.
+Flattening은 연산 수를 바꾸지 않는다. 세 개의 nested reduction loop를 하나의 linear loop로 다시 index한 것이다. Memory layout이 이 flatten 순서와 맞으면 연속 access가 되고, 맞지 않으면 transpose나 strided access가 필요하다.
 
-- DNN layer를 Einsum으로 적으면 계산의 내용과 iteration space가 드러난다.
-- 식만으로는 처리 순서가 정해지지 않는다. 그 빈칸이 mapping이다.
-- 계산량이 같아도 mapping과 storage에 따라 traffic이 달라진다.
-- Compute intensity는 workload가 가진 reuse와 구현이 실제로 살린 reuse를 구분한다.
-- Roofline은 현재 구현이 compute와 memory 중 어디에 막혔는지 보여준다.
+### GEMV and GEMM
 
-여기까지 오면 accelerator diagram을 볼 때 PE 개수부터 세는 습관이 조금 바뀐다. 먼저 식을 찾고, reduction rank가 무엇인지, 어떤 tensor가 어느 방향으로 재사용되는지, 그 값을 붙잡아둘 메모리가 있는지 보게 된다. 다음 강의부터 나오는 dataflow와 partitioning도 결국 이 질문을 더 큰 iteration space에 적용하는 일이다.
+Batch 하나의 FC는 matrix-vector multiplication이다.
 
-## 참고
+$$
+\underbrace{F[M,CHW]}_{\text{matrix}}
+\times
+\underbrace{I[CHW]}_{\text{vector}}
+=
+\underbrace{O[M]}_{\text{vector}}
+$$
+
+슬라이드 L02-92부터 L02-97은 \(chw\)를 증가시키며 partial sum을 만들고, \(m\)을 바꿔 다음 output을 계산하는 과정을 animation으로 보여준다.
+
+Batch \(N\)이 붙으면 input과 output에 \(n\) rank가 추가된다.
+
+$$
+O_{n,m} = I_{n,chw} F_{m,chw}
+$$
+
+![Batched FC as matrix-matrix multiplication](images/L02-101-fc-matmul.png)
+
+이제 matrix-matrix multiplication이다.
+
+$$
+F[M,K] \times I[K,N] = O[M,N]
+$$
+
+여기서 \(K=CHW\)다.
+
+![FC Einsum and conventional matrix multiplication notation](images/L02-102-fc-matmul-notation.png)
+
+강의의 FC 식은 \(O_{n,m}\), 일반적인 matmul 식은 \(C_{m,n}=A_{m,k}B_{k,n}\)로 rank 순서가 달라 보인다. Einsum에서는 rank 이름이 같게 연결되고 reduction rank가 일치하면 계산 관계는 같다. 실제 memory layout에서 \(N\)과 \(M\) 중 어느 rank가 연속인지는 별도 문제다.
+
+Batch는 hardware 효율에도 영향을 준다. GEMV는 weight matrix를 읽어 vector 하나에 쓰고 끝나므로 weight reuse가 적고 memory-bound가 되기 쉽다. GEMM은 같은 weight tile을 \(N\)개의 input에 재사용할 수 있어 compute intensity가 높아진다.
+
+CONV도 `im2col`로 input window를 펼치면 GEMM 형태로 바꿀 수 있다. 실제로 큰 im2col matrix를 만들면 중복 activation 때문에 memory footprint가 커진다. 고성능 library가 implicit GEMM이나 convolution 전용 kernel을 쓰는 이유다.
+
+## Slide Coverage
+
+| Slides | Content |
+| --- | --- |
+| L02-1 ~ 3 | 강의 범위, workload-to-hardware framing |
+| L02-4 ~ 8 | 설계 방법론, architecture/workload 분리, TeAAL concerns |
+| L02-9 ~ 14 | Tensor rank·shape·size, matrix multiplication, Einsum |
+| L02-15 ~ 20 | Matrix-vector ODE, iteration space, reduction |
+| L02-21 ~ 26 | Operation count, best-case traffic와 CI |
+| L02-27 ~ 41 | Loop traversal, stationarity, achieved traffic와 CI |
+| L02-42 ~ 44 | Roofline, implementation comparison, optimization loop |
+| L02-45 ~ 52 | CNN application, depth, CONV/FC/NORM/POOL |
+| L02-53 ~ 64 | 2D convolution과 stride-1 animation |
+| L02-65 ~ 71 | Stride-2/3 animation과 downsampling |
+| L02-72 ~ 75 | Zero padding, PyTorch convention, receptive field |
+| L02-76 ~ 83 | Channel·batch tensor, decoder ring, CONV Einsum과 7중 loop |
+| L02-84 ~ 91 | FC connectivity, CONV 관점, flattening |
+| L02-92 ~ 99 | GEMV partial-sum animation, flattened FC Einsum |
+| L02-100 ~ 102 | Batch FC, GEMM, conventional matmul notation |
+
+## References
 
 - [MIT 6.5930/1 Spring 2026 L02 slides](https://csg.csail.mit.edu/6.5930/lectures/L02-Overview_on_DNN_components.pdf)
 - [TeAAL: A Declarative Framework for Modeling Sparse Tensor Accelerators, MICRO 2023](https://people.csail.mit.edu/emer/media/papers/2023.10.micro.teaal.pdf)
