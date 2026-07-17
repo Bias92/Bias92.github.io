@@ -10,7 +10,7 @@
 
 constexpr int BS = 256;
 
-// v0: interleaved addressing with modulo guard (warp-divergent)
+// v0: interleaved addressing with a warp-nonuniform modulo predicate
 __global__ void reduce_v0(const float* in, float* out, int n) {
     __shared__ float buf[BS];
     int tid = threadIdx.x;
@@ -126,7 +126,7 @@ int main() {
     CHECK(cudaEventCreate(&t0)); CHECK(cudaEventCreate(&t1));
 
     struct { const char* name; Kernel k; } vs[] = {
-        {"v0_divergent ", reduce_v0},
+        {"v0_interleaved", reduce_v0},
         {"v1_sequential", reduce_v1},
         {"v2_shuffle   ", reduce_v2},
     };
