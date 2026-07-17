@@ -2,310 +2,189 @@
 title: "6.5930 L01 - Introduction and Applications"
 date: 2026-03-07
 tags: ["MLSys", "DNN-Accelerator", "MIT-6.5930"]
+categories: ["MIT 6.5930"]
+series: ["MIT 6.5930"]
+math: true
+summary: "딥러닝 하드웨어가 왜 따로 필요한가. 비싼 data movement, 범용 CPU의 비용, domain-specific accelerator와 TeAAL, Roofline까지 L01의 논리를 한 줄로 잇는다."
 draft: false
 ---
 
-## Ilya Sutskever의 한 마디 (L01-3)
+> 기준 자료: MIT 6.5930/1 Spring 2026, [L01 - Introduction and Applications](https://csg.csail.mit.edu/6.5930/lectures/L01-Intro_and_Applications.pdf)
 
-![Ilya Sutskever Quote](images/L01-3-ilya-quote.png)
+첫 강의라서 가벼운 수업 소개 정도일 줄 알았는데, GPU와 TPU를 지나 CPU pipeline, TeAAL, Roofline까지 한 번에 간다. 슬라이드만 넘기면 사례가 계속 바뀌어서 조금 산만하다. 그래도 관통하는 질문은 하나다.
 
-강의 초반에 Ilya Sutskever의 말을 하나 가져온다.
+**딥러닝 연산을 왜 그냥 CPU나 GPU에 맡기지 않고, 별도 하드웨어까지 만들어가며 다루는가?**
 
-"Compute has been the oxygen of deep learning."
+L01의 답을 먼저 쓰면 이렇다. 연산량은 너무 빨리 커졌고, 이제 연산 자체보다 데이터를 먹여 살리는 비용이 더 크다. 범용 프로세서가 유연성을 위해 들고 있는 복잡한 제어 로직도 DNN의 규칙적인 tensor 연산에는 꽤 비싼 짐이다.
 
-2017년 ACM 튜링상 50주년 행사에서 나온 말이다. 좋은 알고리즘만으로는 아무것도 못 돌린다. 결국 연산 자원이 받쳐줘야 한다. 나는 이 문장을 MLSys가 왜 필요한지에 대한 가장 짧은 답으로 읽었다.
+## Compute는 산소인데, 공짜 산소는 아니다
 
-모델은 계속 바뀐다. CNN에서 Transformer로 넘어왔고, 이제는 MoE나 Mamba 같은 구조도 흔하다. 그때마다 모델 쪽 지식은 크게 흔들리지만, 모델을 실제 장비에서 효율적으로 돌리는 문제는 없어지지 않는다. AI-resistant한 커리어라는 표현이 조금 거창해 보여도, MLSys가 오래 갈 분야라는 얘기에는 동의한다.
+![Ilya Sutskever quote: Compute has been the oxygen of deep learning](images/L01-3-ilya-quote.png)
 
-## AI Ingredients: 3대 요소 (L01-2)
+강의는 Ilya Sutskever가 2017년 ACM 튜링상 50주년 행사에서 한 말로 시작한다.
 
-![AI Ingredients](images/L01-2-ai-ingredients.png)
+> Compute has been the oxygen of deep learning.
 
-강의는 지금의 AI를 만든 재료를 Big Data, GPU Acceleration, New ML Techniques 세 가지로 묶는다.
+Big Data, GPU acceleration, 새로운 ML 기법. 흔히 지금의 AI를 만든 세 재료라고 묶는 것들이다.
 
-1. Big Data. Facebook에는 하루 3.5억 장의 이미지가 올라오고, YouTube에는 분당 300시간 분량의 영상이 쌓이며, Walmart는 시간당 2.5PB의 데이터를 처리한다. 모델이 먹을 데이터가 이 정도로 쌓였기 때문에 대규모 학습도 가능해졌다.
+![Three ingredients behind modern AI](images/L01-2-ai-ingredients.png)
 
-2. GPU Acceleration. Tesla T4 같은 GPU는 행렬곱을 대량으로 병렬 처리한다. CPU만으로는 감당하기 어려웠던 학습량을 현실적인 시간 안으로 끌어왔다.
+데이터가 쌓였고, AlexNet과 Transformer 같은 모델이 나왔고, 그 계산을 현실적인 시간 안에 끝낼 GPU가 있었다. 셋 중 하나만 빠져도 지금 규모의 모델은 안 나왔을 것이다. 6.5930은 그중 compute를 열어보는 수업이다. 정확히는, FLOP 숫자만 보는 게 아니라 그 FLOP이 실제 칩에서 어떻게 실행되고 어디서 막히는지를 본다.
 
-3. New ML Techniques. AlexNet이 CNN 시대를 열었고 Transformer가 지금의 LLM을 만들었다. 알고리즘이 바뀌면 잘 맞는 하드웨어의 조건도 같이 바뀐다.
+GPU가 변해온 방향도 꽤 노골적이다.
 
-셋 중 하나만 빠져도 지금 규모의 AI는 나오기 어렵다. 이 수업은 그중 compute 쪽을 파고든다.
+![GPU evolution toward DNN-specific hardware](images/L01-4-gpu-evolution.png)
 
-## GPU의 DNN 특화 진화 (L01-4)
+Pascal까지는 행렬곱도 주로 범용 CUDA core가 맡았다. Volta V100부터는 작은 행렬의 multiply-accumulate를 통째로 처리하는 Tensor Core가 들어왔다. Ampere A100에서는 여기에 2:4 structured sparsity 지원까지 붙었다. 네 원소 중 두 개가 0인 패턴을 맞추면 유효한 값만 계산한다.
 
-![GPU Evolution](images/L01-4-gpu-evolution.png)
+여기서 `sparse = fast`로 읽으면 곤란하다. 아무 위치나 0으로 만든 비정형 sparsity는 하드웨어가 바로 건너뛸 수 없다. pruning 결과가 2:4라는 계약을 지켜야 Tensor Core의 sparse path를 탄다. 모델 구조와 하드웨어가 서로의 형편을 봐줘야 성능이 나온다는 첫 사례다.
 
-Pascal 시기까지 행렬곱은 주로 범용 CUDA Core가 맡았다. 2017년 V100에는 Tensor Core가 들어갔다. CUDA Core에서 스칼라 FMA를 반복하는 대신 작은 행렬의 multiply-accumulate를 전용 유닛에서 처리하는 방식이다. 같은 면적에서 DNN 연산 처리량을 훨씬 높일 수 있었고, FP16 지원도 이득을 키웠다.
+## 소프트웨어 회사가 칩까지 만드는 이유
 
-2020년 A100에서는 Tensor Core가 2:4 structured sparsity를 지원하기 시작했다. 연속된 네 원소 중 두 개가 0인 패턴을 맞추면 0인 항을 건너뛰고 유효한 값만 계산한다.
+![Software companies building their own hardware](images/L01-5-sw-companies-hw.png)
 
-여기서 아무 sparse matrix나 빨라지는 건 아니다. pruning 결과가 하드웨어가 이해하는 2:4 패턴에 맞아야 한다. 알고리즘과 하드웨어를 따로 설계할 수 없는 이유가 이런 데서 나온다.
+Google과 Amazon은 NVIDIA GPU를 많이 사는 회사이면서, TPU·Inferentia·Trainium도 직접 만든다. 처음 보면 굳이 싶다. GPU는 이미 빠르고 CUDA 생태계도 있는데 왜 칩 설계까지 떠안나.
 
-## SW 기업의 자체 HW (L01-5)
+범용성의 세금 때문이다. GPU는 그래픽, 과학 계산, DNN을 모두 받아야 한다. 반면 데이터센터에서 실제로 돌릴 workload와 서비스 규모를 알고 있다면 필요한 연산, 메모리 용량, 통신 패턴에 맞춰 면적과 전력을 다시 배분할 수 있다. Google TPU v1은 inference용 256×256 systolic array로 시작했고, v2부터 training까지 넓어졌다. AWS도 클라우드 안에서 반복되는 inference와 training의 단가를 낮추려고 각각 Inferentia와 Trainium을 만들었다.
 
-![Software Companies Building HW](images/L01-5-sw-companies-hw.png)
+Cerebras WSE는 이 논리를 웨이퍼 끝까지 밀어붙인 물건이다.
 
-Google이나 Amazon은 NVIDIA GPU를 대량으로 사는 회사이면서 동시에 직접 칩도 만든다. 이유는 비용과 최적화다.
+![Cerebras wafer-scale engine](images/L01-6-cerebras-wse.png)
 
-GPU는 그래픽부터 과학 계산까지 다 받아야 하는 범용 장치다. 반대로 데이터센터에서 돌릴 작업이 DNN inference와 training으로 좁혀져 있다면 그 연산에만 맞춘 칩을 만드는 편이 전력과 면적 면에서 유리할 수 있다.
+보통은 웨이퍼에서 작은 die를 잘라 패키징한다. WSE는 웨이퍼 한 장을 거의 그대로 칩 하나로 쓴다. 슬라이드에 나온 1세대 WSE의 온칩 SRAM은 18GB다. 수많은 작은 칩을 연결할 때 생기는 off-chip 통신을 줄이고, 모델과 중간값을 가능한 한 가까이 두겠다는 선택이다.
 
-Google TPU v1은 inference용으로 나왔고 256×256 systolic array를 사용했다. v2부터는 training도 지원했다. Amazon은 AWS의 inference와 training 비용을 낮추려고 Inferentia와 Trainium을 만들었다. 국내의 FuriosaAI와 Rebellions도 같은 문제를 각자 다른 방식으로 풀고 있다.
+당연히 공짜는 아니다. 결함이 하나만 생겨도 버릴 수 없으니 redundant core와 routing이 필요하고, 전력 공급과 냉각, 패키징도 전부 별도 문제다. WSE를 보편적인 정답으로 볼 필요는 없다. 대신 **data movement가 너무 비싸지면 설계자가 어디까지 과격해질 수 있는지**는 잘 보여준다.
 
-## Cerebras WSE (L01-6)
+같은 방향은 폰 안에서도 보인다.
 
-![Cerebras WSE](images/L01-6-cerebras-wse.png)
+![Mobile SoCs with DNN accelerators](images/L01-7-mobile-soc.png)
 
-Cerebras WSE는 이 방향을 끝까지 밀어붙인 사례다. 보통 칩은 웨이퍼에서 작은 die를 잘라 만들지만, Cerebras는 웨이퍼 전체를 칩 하나로 쓴다. 덕분에 온칩 SRAM만 18GB다. A100의 온칩 SRAM이 20MB 안팎이고 TPU도 32MB 이내라는 점을 생각하면 규모가 다르다.
+Apple은 A11부터 Neural Engine을 넣었다. Face ID처럼 네트워크 왕복을 기다릴 수 없고, 카메라 데이터를 클라우드로 보내기도 곤란한 기능이 첫 용도였다. 데이터센터 accelerator가 throughput과 TCO를 쫓는다면 모바일 NPU는 작은 전력·메모리 예산 안에서 latency와 privacy를 지켜야 한다. 그래서 quantization이나 pruning이 모바일에서 특히 세게 등장한다.
 
-물론 공짜는 아니다. 수율, 냉각, 가격 문제가 따라온다. 널리 쓰이는 정답이라기보다는 특정 워크로드를 위해 어디까지 과감해질 수 있는지 보여주는 설계에 가깝다.
+## 진짜 비싼 건 연산보다 이동이다
 
-## Mobile SoCs for DNNs (L01-7)
+![Projected growth in computing energy consumption](image-1.png)
 
-![Mobile SOCs](images/L01-7-mobile-soc.png)
+슬라이드는 데이터센터 전력 비중이 빠르게 늘어날 것이라는 여러 전망을 가져온다. 전망치 자체는 조사 시점과 범위에 따라 크게 흔들린다. 여기서 읽어야 할 건 정확히 8%냐 9%냐가 아니다. 모델 크기와 서비스 호출량은 커지는데 전력과 메모리 대역폭은 같은 속도로 따라오지 못한다는 사실이다.
 
-DNN 전용 유닛은 데이터센터에만 있지 않다. 폰과 노트북에도 이미 들어가 있다.
+더 직접적인 숫자는 이쪽이다. 강의의 65nm 기준 normalized energy 표에서 ALU 연산을 1로 놓으면, global buffer 접근은 6, DRAM 접근은 200이다. 공정도 다르고 메모리 종류도 달라졌으니 지금 칩에 200이라는 숫자를 그대로 대입하면 안 된다. 그래도 순서는 안 바뀐다.
 
-Apple A11은 2017년에 처음으로 2코어 ANE를 탑재했다. Face ID와 Animoji 같은 on-device inference가 주된 용도였다. 2022년 M2의 ANE는 16코어다. A11 대비 26배라는 성능 향상에는 코어 수 증가와 세대별 아키텍처 개선이 함께 들어간다.
+**멀고 큰 메모리일수록 비싸다.**
 
-모바일에서는 모델 크기, 정수 양자화, pruning 가능성이 특히 중요하다. 서버처럼 전력과 메모리를 넉넉하게 쓸 수 없어서다.
+PE 안의 작은 register file, 칩 안의 SRAM, 칩 밖의 DRAM 순서로 갈수록 용량은 커지지만 에너지와 지연도 커진다. accelerator가 PE array만큼이나 memory hierarchy와 dataflow를 중요하게 다루는 이유다. 같은 값을 DRAM에서 열 번 읽는 대신 한 번 가져와 register에서 열 번 쓰면, 연산기는 그대로인데 전체 비용은 크게 달라진다.
 
-## 컴퓨팅 에너지 소비 증가 (L01-8)
+### 학습비 한 번보다 무서운 서비스 호출량
 
-![alt text](image-1.png)
+슬라이드의 GPT-3 예시는 175B 모델 학습에 약 \(3.14 \times 10^{23}\) FLOPs가 필요하고, V100 한 장이면 수백 년이 걸린다는 계산을 보여준다. 뒤이어 GPT-4의 추정 학습비와 DeepSeek가 공개한 최종 training run 비용도 비교한다.
 
-슬라이드는 미국 데이터센터의 전력 비중이 2022년 3%에서 2030년 8%까지 늘어날 수 있다는 Goldman Sachs의 2024년 전망을 인용한다. ICT 전체가 세계 전력의 20.9%를 차지할 수 있다는 예측도 함께 나온다.
+이런 숫자는 범위를 먼저 봐야 한다. GPT-4 쪽은 외부의 총비용 추정이고, DeepSeek 쪽은 최종 학습 런의 GPU 비용에 가깝다. 서로 다른 항목을 그대로 나눠 “몇 배 싸다”고 하면 이야기는 화려해져도 비교는 망가진다. DeepSeek에서 시스템적으로 볼 만한 부분은 MoE다. 전체 671B parameter를 매 token마다 전부 쓰지 않고 일부 expert만 활성화해 실제 계산량을 줄인다.
 
-모델은 계속 커지는데 전력은 무한하지 않다. 같은 연산을 더 적은 에너지로 끝내는 게 시스템 문제로 올라온 이유다.
+Training은 한 번이 무겁다. Inference는 한 번은 가벼워도 서비스가 살아 있는 동안 끝없이 반복된다. 챗봇 요청, 추천, 번역, 카메라 처리까지 합치면 누적 inference 비용이 운영비를 결정한다. “학습시킬 수 있는가”와 “돈을 벌면서 서빙할 수 있는가”는 다른 문제다.
 
-여기서 연산 자체보다 data movement가 비싸다는 사실이 중요하다. 슬라이드의 65nm 기준 수치에서는 DRAM 접근 한 번이 ALU 연산보다 약 200배 많은 에너지를 먹는다. 연산기를 빠르게 만드는 것만으로는 부족하다. 데이터를 멀리 보내는 횟수부터 줄여야 한다.
+### 클라우드로 보내면 해결되지 않는 것들
 
-그래서 Cerebras는 온칩 SRAM을 크게 만들었다. 일반적인 accelerator도 register file, local buffer, global buffer, DRAM 순서로 메모리 계층을 두고 가까운 곳의 데이터를 최대한 재사용한다.
+![Why run inference on-device](2026-03-07-15-09-09.png)
 
-## Computing Cost of ChatGPT (L01-12)
+On-device inference에는 통신, privacy, latency라는 세 가지 아주 현실적인 이유가 있다. 네트워크가 끊기면 기능도 같이 멈추는 제품은 만들기 어렵고, 의료·국방 데이터는 애초에 밖으로 보내기 곤란하다. 자율주행은 수십 ms의 왕복 지연조차 안전 문제로 이어진다.
 
-GPT-3는 96개 레이어와 175B 파라미터를 가진다. 학습에 필요한 부동소수점 연산은 총 3.14×10²³ FLOPs로 잡는다.
+자율주행차의 센서 데이터와 DNN 호출량을 계산한 슬라이드가 재미있다. 차량 한 대만 보면 처리할 수 있어 보이지만, 10개 DNN을 여러 카메라에 60Hz로 돌리고 그 차량이 백만 대가 되면 단위가 금방 조 단위 inference로 바뀐다. 2.5kW짜리 prototype compute box를 그대로 차에 넣는 것도 답이 아니다. 이 문제는 “GPU를 더 꽂자”로 끝나지 않는다.
 
-슬라이드의 계산으로는 V100 한 장에서 355년이 걸리고, 클라우드 비용은 약 4.6M 달러다. 한화로는 약 60억 원이다. GPT-4의 학습 비용은 100M 달러 이상으로 추정한다.
+## 공정이 더는 다 해결해주지 않는다
 
-숫자의 정확한 범위보다 중요한 건 규모다. 모델 크기가 한 세대 오를 때 연산 비용도 사람이 감당하기 어려운 속도로 커졌다.
+![Moore's Law slowdown and domain-specific hardware](2026-03-07-15-23-37.png)
 
-## Changing Trends: DeepSeek (L01-13)
+트랜지스터 수는 계속 늘지만, Dennard scaling은 2000년대 중반에 이미 깨졌다. 트랜지스터를 작게 만들 때 전력도 같은 비율로 줄던 시절이 끝나면서 clock은 멈췄고, 칩 전체를 동시에 켤 수도 없게 됐다. 공정 세대만 바꾸면 같은 코드가 저절로 빨라지는 보너스가 줄었다.
 
-![](2026-03-07-14-59-08.png)
+그래서 남은 트랜지스터를 어디에 쓸지가 중요해졌다. 범용 CPU는 어떤 코드가 올지 모르기 때문에 branch predictor, out-of-order issue, register renaming, speculative execution, cache coherence 같은 장치를 잔뜩 들고 있다. 이것들은 쓸모없는 장식이 아니다. irregular한 범용 코드에서 execution unit을 놀리지 않으려면 필요하다.
 
-슬라이드는 GPT-4의 추정 학습비와 DeepSeek의 공개 비용을 나란히 놓는다. GPT-4는 1,300억 원 이상, DeepSeek는 약 80억 원이라는 숫자다.
+다만 DNN의 대부분은 크고 규칙적인 MAC loop다. 같은 control overhead를 매 instruction마다 지불할 이유가 적다.
 
-다만 둘은 같은 항목이 아니다. DeepSeek 쪽은 최종 학습 런의 GPU 렌탈비에 가깝고, GPT-4 쪽은 훨씬 넓은 범위를 포함한 총비용 추정치다. 그대로 나눠서 몇 배 싸다고 말하면 비교가 틀어진다.
+### CPU pipeline이 들고 있는 유연성의 비용
 
-DeepSeek의 구조에서 눈에 띄는 건 MoE다. 전체 파라미터는 671B지만 토큰 하나를 처리할 때는 37B만 활성화한다. 모든 expert를 매번 돌리지 않고 필요한 일부만 골라 계산량을 줄인다.
+![Simple in-order pipeline](2026-03-07-16-09-22.png)
 
-## Training vs Inference (L01-15)
+In-order superscalar는 한 cycle에 여러 instruction을 내보낼 수 있어도, 앞선 load가 cache miss에 걸리면 뒤의 독립적인 instruction까지 같이 기다린다. 그래서 out-of-order pipeline은 issue queue에 instruction을 모아두고 operand가 준비된 것부터 실행한다.
 
-![](2026-03-07-15-05-37.png)
+![Basic out-of-order pipeline](image-2.png)
 
-Training은 한 번의 비용이 크지만 모델 하나를 기준으로 실행 횟수는 적다. Inference는 한 번의 비용이 상대적으로 작아도 서비스가 살아 있는 동안 계속 호출된다.
+SMT는 한 thread가 막혔을 때 다른 thread의 instruction으로 빈 execution slot을 채운다. Intel의 Hyper-Threading이 이 계열이다. GPU의 SIMT와 이름이 비슷하지만 다른 개념이다. SMT는 여러 독립 thread가 한 CPU pipeline의 자원을 공유하는 것이고, SIMT는 한 instruction으로 여러 lane의 thread를 함께 움직이는 실행 모델이다.
 
-챗봇에 질문 하나를 보내 답을 받는 것도 inference 한 번이다. 이런 요청이 매일 수조 번 쌓이면 누적 비용은 training보다 더 큰 문제가 된다. LLM inference 최적화 직군이 따로 생기는 이유도 여기 있다.
+![Simultaneous multithreading](image-3.png)
 
-## On-Device의 장점 (L01-18)
+이 장치들은 “다음에 무슨 코드가 올지 모른다”는 문제를 풀기 위해 존재한다. DNN accelerator는 반대로 workload를 좁혀버린다. 복잡한 instruction window 대신 수백~수천 개의 단순한 PE와 명시적인 buffer, predictable한 dataflow를 택한다. 유연성을 덜 사고 그 면적을 MAC과 SRAM에 쓴다.
 
-![](2026-03-07-15-09-09.png)
+## Accelerator는 하나의 모양이 아니다
 
-클라우드 대신 디바이스에서 직접 추론할 이유는 세 가지다.
+![Different tensor accelerator organizations](image-4.png)
 
-1. Communication. 네트워크가 없거나 불안정한 곳에서는 클라우드 모델을 호출할 수 없다.
+여기서부터 수업의 본론이 시작된다. “DNN accelerator”라고 부르면 다 비슷한 systolic array일 것 같지만 실제로는 꽤 다르다.
 
-2. Privacy. 의료 기록이나 국방 데이터처럼 밖으로 보내기 곤란한 정보는 디바이스 안에서 처리하는 편이 안전하다.
+Eyeriss는 CNN inference와 data reuse에 맞춘 spatial array다. SCNN은 sparse CNN의 0을 건너뛰는 데 초점을 맞춘다. ExTensor와 Gamma는 sparse tensor와 sparse matrix의 irregular한 access를 다루기 위해 서로 다른 network와 scheduling을 쓴다. workload가 dense인지 sparse인지, CNN인지 attention인지에 따라 PE 배치, interconnect, buffer, 데이터 순회 순서가 전부 갈린다.
 
-3. Latency. 자율주행처럼 즉시 반응해야 하는 시스템에서는 수십에서 수백 ms의 왕복 지연도 치명적이다.
+CPU pipeline은 큰 틀이 표준화돼 있다. accelerator 쪽은 논문 두 편만 읽어도 서로 쓰는 용어와 그림이 달라진다. 비교가 어렵다. TeAAL이 등장하는 자리가 여기다.
 
-## Self-Driving Cars (L01-19)
+### TeAAL: 설계를 네 층으로 분리해서 보기
 
-자율주행은 edge inference의 요구가 한꺼번에 드러나는 예다.
+![TeAAL pyramid of concerns](image-6.png)
 
-카메라와 레이더는 약 30초마다 6GB의 데이터를 만든다. 자동차 한 대가 10개 DNN을 60Hz로, 카메라 10대에 대해 돌린다고 가정하면 시간당 inference 횟수는 21.6M이다. 차량이 100만 대면 시간당 21.6조 번이다.
+TeAAL은 tensor algebra accelerator를 한 덩어리의 블록 다이어그램으로 보지 않고 네 종류의 결정으로 나눈다.
 
-프로토타입 컴퓨팅 장비의 소비전력이 2,500W에 이르면 공랭만으로 버티기 어렵다. 그렇다고 센서 데이터를 전부 클라우드로 보낼 수도 없다. 통신량과 지연이 바로 안전 문제로 이어진다.
+| 층 | 묻는 질문 |
+| --- | --- |
+| Compute | 무슨 tensor 연산을 하는가. MatMul인가, attention인가 |
+| Mapping | iteration space를 어떤 순서와 병렬성으로 순회하는가 |
+| Format | tensor를 dense, CSR 같은 어떤 형태로 저장하는가 |
+| Binding | 계산과 데이터를 실제 PE·buffer·network 어디에 붙이는가 |
 
-## Moore's Law 둔화와 Domain-Specific HW의 필요성 (L01-22)
+이 구분이 좋은 이유는 “빠르다”를 쪼개서 말할 수 있기 때문이다. 수식은 같은데 loop order가 달라서 traffic이 늘었는지, sparse format이 문제인지, PE에 일이 고르게 안 나뉜 건지 따로 잡아낼 수 있다.
 
-![](2026-03-07-15-23-37.png)
+### FuseMax를 이 언어로 읽기
 
-MLSys가 독립된 분야가 된 배경에는 Moore's Law와 Dennard Scaling의 둔화가 있다.
+![FuseMax changes across compute, architecture, mapping, and binding](image-7.png)
 
-트랜지스터 수는 여전히 늘지만 예전 같은 속도는 아니다. 달러당 트랜지스터 수도 정체되고 있다. 트랜지스터가 작아질수록 전력도 함께 줄던 Dennard Scaling은 2005년 전후로 깨졌다. 슬라이드에서 clock speed와 TDP가 더 이상 크게 오르지 않는 이유다.
+FuseMax는 Transformer attention의 낮은 PE utilization을 끌어올린 사례다. QK matmul, softmax, V matmul을 따로 실행하면 각 단계의 중간 결과를 메모리에 쓰고 다시 읽는다. Cascade는 이 연산들을 더 강하게 fuse해 중간 traffic을 줄인다. 그런데 fusion만 했다고 PE가 곧바로 꽉 차지는 않는다. 새 mapping을 받을 수 있도록 architecture를 바꾸고, 실제 자원 배치를 다듬어야 utilization이 90% 근처까지 올라간다.
 
-범용 프로세서의 성능과 효율이 공정만 바꾼다고 자동으로 오르지 않으니 특정 연산에 맞춘 하드웨어가 필요해졌다. Tensor Core는 행렬곱, Google TPU는 DNN training과 inference, Apple ANE는 on-device inference, FuriosaAI NPU는 AI inference에 초점을 둔다.
+![FuseMax PE utilization across design changes](image-8.png)
 
-## L01-23 ~ L01-25: CPU Pipeline의 진화
+이 그래프에서 재미있는 건 baseline이 나쁜 이유가 “MAC이 느려서”가 아니라는 점이다. PE는 이미 많다. 일이 잘게 나뉘고 이동하고 배치되는 방식이 어긋나서 대부분 놀고 있었다. accelerator 성능을 peak TOPS만 보고 판단하면 놓치는 부분이다.
 
-이 부분은 범용 CPU가 높은 utilization을 얻기 위해 얼마나 많은 제어 로직을 들고 있는지 보여준다. DNN처럼 규칙적인 행렬 연산에서는 그 복잡성이 그대로 이득이 되지 않는다.
+## PE array보다 먼저 memory hierarchy를 보게 된다
 
-### Simple In-Order Pipeline (L01-23)
+![Typical DNN accelerator structure](image-9.png)
 
-![](2026-03-07-16-09-22.png)
+전형적인 구조는 DRAM - global buffer - NoC - PE local register file - ALU로 내려간다. PE 자체는 multiplier와 adder, 작은 register file, 간단한 control 정도다. 화려한 연산기보다 데이터를 어디에 얼마나 오래 붙잡아둘지가 더 큰 설계 문제다.
 
-슬라이드의 파이프라인은 IF, ID, EX, MEM, WB로 이어지는 5단계 구조에서 ID를 Decode와 Reg Read로 나눈 6단계 구조다. 단계별 작업을 줄이면 클럭을 높일 여지가 생긴다. 한 사이클에 명령어를 여러 개 처리하므로 superscalar 구조이기도 하다.
+슬라이드의 65nm normalized energy 예시는 이 우선순위를 아주 세게 보여준다.
 
-Fetch에서는 PC가 가리키는 주소의 명령어를 I-cache에서 가져온다. 다음 PC는 branch predictor가 고른다.
+| 데이터 위치 | 상대 비용 |
+| --- | ---: |
+| ALU 연산 | 1× |
+| PE 내부 register file | 1× |
+| PE 간 NoC | 2× |
+| Global buffer | 6× |
+| DRAM | 200× |
 
-Decode에서는 opcode, rs, rd, immediate를 해석한다. Reg Read에서는 필요한 operand를 레지스터 파일에서 읽는다.
+그래서 설계 변수도 PE 개수로 끝나지 않는다. memory hierarchy의 깊이와 용량, tiling, loop order, parallelism, fusion, sparse zero를 건너뛰는 방법까지 함께 골라야 한다.
 
-Execute에서는 ALU가 실제 연산을 수행한다. 그림의 빨간 chevron이 세 개라면 동시에 쓸 수 있는 functional unit이 세 개라는 뜻이다. Integer ALU, FP 또는 Multiply Unit, Branch Unit 같은 조합을 생각하면 된다.
+![Accelerator design decisions](image-10.png)
 
-D-cache와 Store Buffer는 load와 store를 처리하고, Reg Write에서 결과를 레지스터 파일에 돌려놓는다.
+## Roofline: 느리다는 말을 둘로 쪼개기
 
-### Basic Out-of-Order Pipeline (L01-24)
+![Roofline-based inefficiency analysis](image-11.png)
 
-![alt text](image-2.png)
+Roofline은 성능이 compute에 막혔는지 memory bandwidth에 막혔는지 보는 모델이다. x축은 compute intensity, 즉 가져온 데이터 하나로 얼마나 많은 연산을 했는가다. y축은 throughput이다.
 
-In-order superscalar는 앞 명령어가 cache miss에 걸리면 뒤에 준비된 명령어까지 같이 멈춘다. functional unit을 세 개 깔아도 일이 도착하지 않으면 놀 수밖에 없다.
+왼쪽 사선 구간에서는 데이터를 충분히 못 가져와 memory-bound다. 여기서 PE를 더 붙여도 놀기만 한다. 오른쪽 평평한 구간에서는 연산기의 peak throughput이 한계다. 이때는 bandwidth를 더 줘도 위로 못 올라간다.
 
-Out-of-order 구조는 issue queue를 두고 operand가 준비된 명령어부터 먼저 보낸다. 앞의 load가 메모리를 기다리는 동안 독립적인 뒤 명령어를 실행해 빈 슬롯을 채운다.
+L01의 Step 1~7은 theoretical peak에서 실제 성능이 깎이는 과정을 쪼갠다. workload가 가진 병렬성, dataflow가 노출하는 병렬성, 유한한 PE array와 buffer, 평균·순간 bandwidth를 차례로 반영한다. “이 accelerator는 100 TOPS인데 왜 20 TOPS밖에 안 나오지?”라는 질문에 peak spec 대신 병목의 위치로 답하는 방식이다.
 
-### SMT: Simultaneous Multi-Threading (L01-25)
+첫 강의를 덮고 남는 건 특정 칩 이름보다 이 관점이다. DNN accelerator는 MAC을 많이 박은 칩이 아니다. **어떤 tensor 계산을, 어떤 순서로, 어떤 데이터 표현을 써서, 어느 메모리와 PE에 배치할지 정하는 기계**다. 연산은 그 결정들의 마지막에 있다.
 
-여기서 SMT는 GPU의 SIMT와 다른 개념이다.
+L02에서는 이걸 더 작은 단위로 내린다. tensor와 Einsum으로 workload를 쓰고, iteration space와 memory traffic을 계산한 뒤, CNN과 fully connected layer가 실제로 어떤 tensor 연산이 되는지 본다.
 
-![alt text](image-3.png)
+## 참고
 
-그림의 빨강, 노랑, 초록은 서로 다른 스레드다. 파이프라인을 스레드 수만큼 복제한 게 아니라 하나의 파이프라인을 여러 스레드가 나눠 쓴다. Intel이 Hyper-Threading이라는 이름으로 유별나게 잘 써먹던 방식이다.
-
-한 스레드가 막혔을 때 다른 스레드의 준비된 명령어로 빈 슬롯을 채워 throughput을 올린다.
-
-| 구조 | 특징 |
-|------|------|
-| Scalar | 5-stage, width=1, 한 사이클에 명령어 1개 |
-| Superscalar (In-Order) | width>1, 한 사이클에 여러 개를 순서대로 처리 |
-| OoO + Superscalar | width>1, 준비된 명령어부터 처리 |
-| OoO + SMT | 여러 스레드가 하나의 파이프라인을 공유 |
-
-Branch Prediction, Register Renaming, Issue Queue, Retire, Thread Choosing은 모두 범용성을 위해 들어간 제어 로직이다. DNN의 반복적인 MatMul에는 이 복잡성이 과하다. accelerator가 복잡한 CPU pipeline 대신 PE array와 memory hierarchy를 앞세우는 이유다.
-
-## Accelerator 다양성 (L01-26)
-
-![alt text](image-4.png)
-
-DNN accelerator라고 해서 다 같은 모양은 아니다. 타깃 워크로드가 달라지면 PE 배치, 메모리 계층, 데이터 흐름도 달라진다.
-
-1. Eyeriss는 CNN inference를 위한 spatial array이고 각 PE에 local scratchpad를 둔다.
-
-2. Eyeriss V2는 더 유연한 NoC를 넣었다.
-
-3. SCNN은 sparse CNN에서 0인 값을 건너뛰는 데 초점을 맞췄다.
-
-4. ExTensor와 Gamma는 sparse tensor와 sparse matrix 연산을 각각 겨냥한다.
-
-5. spZip은 sparse 데이터의 압축과 해제를 다룬다.
-
-CPU는 파이프라인의 큰 틀이 꽤 표준화되어 있다. accelerator는 dense인지 sparse인지, CNN인지 Transformer인지에 따라 설계부터 갈라진다. 이 차이를 같은 언어로 분석하는 법이 수업의 본론이다.
-
-PE는 Processing Element의 약자다. CPU의 ALU에 가까운 작은 연산 유닛이며, 보통 multiplier와 adder, 작은 register file을 묶어 MAC을 처리한다.
-
-## TeAAL Pyramid of Concerns & FuseMax (L01-28 ~ L01-34)
-
-여기부터 용어가 갑자기 많아진다. 첫 강의에서는 이름을 다 외우기보다 계층을 나눠 본다는 감각만 챙기면 된다.
-
-### TeAAL Pyramid of Concerns (L01-28)
-
-![alt text](image-6.png)
-
-TeAAL은 accelerator 설계를 네 계층으로 나눈다. 위로 갈수록 결정이 세밀해지고, architecture는 각 계층이 가능한 범위를 제한한다.
-
-| 계층 | 의미 | 수업 연결 |
-|------|------|----------|
-| Compute | 어떤 연산을 하는가. MatMul, Attention 등 | Lab 1: Einsum |
-| Mapping | 연산을 하드웨어에 어떻게 배치하는가. tiling, dataflow 등 | Lab 2, 3 |
-| Format | 데이터를 어떤 형태로 저장하는가. dense, sparse 등 | Lab 4: Sparsity |
-| Binding | 연산과 데이터를 실제 PE와 buffer에 어떻게 할당하는가 | Lab 2, 3 |
-
-수업 뒤쪽에서 나오는 설계 문제 대부분을 이 네 칸에 다시 놓아볼 수 있다.
-
-### FuseMax: 피라미드 실제 적용 사례 (L01-29)
-
-![alt text](image-7.png)
-
-FuseMax는 Transformer attention을 가속하는 설계다. compute, mapping, binding을 차례로 손보면서 낮았던 PE utilization을 약 90%까지 올린다.
-
-| 단계 | 계층 | 바꾼 것 | 결과 |
-|------|------|----------|------|
-| Cascade | Compute | MatMul과 Softmax를 fuse해 중간 data movement를 줄임 | utilization 소폭 상승 |
-| Architecture 변경 | Architecture와 Mapping | 새로운 mapping이 가능하도록 구조를 바꿈 | utilization 추가 상승 |
-| Binding 개선 | Binding | 작업을 PE에 더 고르게 할당 | utilization 약 90% |
-
-Unfused는 Q×K, Softmax, ×V를 따로 실행해 단계마다 중간 결과를 메모리에 쓴다. FLAT은 기존의 부분적인 fusion 방식이다. Cascade는 중간 결과를 메모리에 내보내지 않도록 더 강하게 묶는다.
-
-어느 한 단계만 잘 만든다고 성능이 나오지는 않는다. 연산을 묶는 방식, 하드웨어 구조, 실제 자원 배치가 같이 맞아야 한다.
-
-### PE Utilization 변화 (L01-30 ~ L01-34)
-
-![alt text](image-8.png)
-
-L01-30의 baseline에서는 BERT, TrXL, T5, XLM 모두 시퀀스 길이 1K부터 1M까지 PE utilization이 0.25 아래에 머문다. PE를 수백 개 만들어 놓고도 대부분을 놀리는 상태다.
-
-그래프의 x축은 sequence length, y축은 PE utilization이다. 빨간색 Unfused와 주황색 FLAT 모두 낮게 깔린다. L01-31부터 L01-33까지 Cascade, Architecture, Binding을 차례로 적용하면 utilization이 약 90%까지 올라간다.
-
-## DNN Accelerator의 기본 구조 (L01-43)
-
-![alt text](image-9.png)
-
-전형적인 DNN accelerator는 복잡한 CPU pipeline 대신 PE array와 memory hierarchy를 둔다.
-
-데이터는 DRAM에서 Global Buffer로 들어오고 PE array로 전달된다. 각 PE 안에는 1kB보다 작은 Reg File과 ALU, 간단한 Control이 있다. PE 수는 수백 개에서 수천 개 수준이고 Global Buffer는 대략 100kB에서 500kB 규모다.
-
-각 PE는 MAC처럼 단순하고 반복적인 연산에 집중한다. Branch Prediction이나 Register Renaming에 면적을 쓰지 않으니 같은 칩 면적에 연산 유닛을 더 많이 넣을 수 있다.
-
-슬라이드가 제시한 65nm 기준 normalized energy cost는 다음과 같다.
-
-| 데이터를 가져오는 위치 | 에너지 비용 |
-|---|---|
-| ALU 연산 자체 | 1× |
-| Reg File에서 ALU | 1× |
-| PE 사이 NoC에서 ALU | 2× |
-| Global Buffer에서 ALU | 6× |
-| DRAM에서 ALU | 200× |
-
-DRAM 접근 한 번이 실제 연산보다 200배 비싸다. Cerebras가 18GB SRAM을 넣은 이유도 같은 표에서 나온다.
-
-"Farther and larger memories consume more power."
-
-이 문장을 기억해두면 수업 뒤쪽의 dataflow와 tiling 얘기가 훨씬 쉽게 읽힌다.
-
-## Accelerator 설계 결정 변수 (L01-44)
-
-![alt text](image-10.png)
-
-설계자가 직접 골라야 하는 항목은 수업의 Lab과 이어진다.
-
-| 설계 결정 | 구체적 내용 | Lab |
-|----------|----------|-----|
-| PE array | PE 개수와 PE 사이 연결 방식 | Lab 2, 3 |
-| Memory hierarchy | 계층 수, 용량, 데이터 배치 | Lab 2, 3 |
-| Scheduling | mapping, dataflow, tiling, parallelism, fusion | Lab 2, 3 |
-| Sparsity 처리 | gating, skipping, 압축 포맷 | Lab 4 |
-| 구현 기술 | RRAM, optical, superconductors 등 | Lab 5 |
-
-TeAAL의 Compute, Mapping, Format, Binding이 여기서 실제 설계 변수로 내려온다.
-
-## Roofline 기반 비효율 분석 (L01-45)
-
-![alt text](image-11.png)
-
-Roofline Model은 성능이 연산량에 막혔는지 메모리 대역폭에 막혔는지 보는 틀이다. x축은 compute intensity, y축은 성능이다. x축 값이 클수록 데이터 하나를 가져와 더 많은 연산을 한다. 경사진 선은 memory bandwidth가 만드는 한계고, 오른쪽의 평평한 선은 compute peak가 만드는 한계다.
-
-왼쪽 경사면에 붙으면 memory-bound이고 오른쪽 평탄면에 붙으면 compute-bound다.
-
-슬라이드의 Step 1부터 Step 7은 이론적인 peak가 현실의 제약을 만날 때 얼마나 깎이는지 보여준다.
-
-| Step | 제약 요인 | Lab |
-|------|---------|-----|
-| Step 1 | 워크로드 자체의 최대 병렬성 | Lab 1 |
-| Step 2 | dataflow가 허용하는 최대 병렬성 | Lab 2, 3 |
-| PE 개수 | 하드웨어의 theoretical peak | 없음 |
-| Step 3 | 유한한 PE array 크기 | Lab 2, 3 |
-| Step 4 | PE array 차원 제약 | Lab 2, 3 |
-| Step 5 | 유한한 storage 용량 | Lab 2, 3 |
-| Step 6 | 평균 bandwidth 부족 | Lab 2, 3 |
-| Step 7 | 순간 bandwidth 부족 | 없음 |
-
-제약을 하나씩 반영할수록 roofline이 아래로 조여진다. 처음부터 실제 성능을 하나의 숫자로 찍는 대신 어디에서 얼마가 깎였는지 분리해서 볼 수 있다.
+- [MIT 6.5930/1 Spring 2026 L01 slides](https://csg.csail.mit.edu/6.5930/lectures/L01-Intro_and_Applications.pdf)
+- [TeAAL: A Declarative Framework for Modeling Sparse Tensor Accelerators, MICRO 2023](https://people.csail.mit.edu/emer/media/papers/2023.10.micro.teaal.pdf)
+- [Efficient Processing of Deep Neural Networks, Sze et al.](https://doi.org/10.1007/978-3-031-01766-7)
+- [Roofline: An Insightful Visual Performance Model for Multicore Architectures](https://doi.org/10.1145/1498765.1498785)
