@@ -1,4 +1,4 @@
-<svg viewBox="0 0 940 470" xmlns="http://www.w3.org/2000/svg" role="img">
+<svg viewBox="0 0 940 424" xmlns="http://www.w3.org/2000/svg" role="img">
   <title>Tesla compute hierarchy: SPA to TPC to SM to SP</title>
   <desc>The Tesla processor hierarchy zoomed left to right. The SPA holds several TPCs; one TPC holds a texture unit and two SMs; one SM holds eight SPs plus two SFUs, an LSU, a warp-issue unit, a register file, and 16 KB of shared memory. On G80 that is 8 TPC times 2 SM times 8 SP = 128 SP.</desc>
   <style>text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;}</style>
@@ -8,7 +8,7 @@
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <rect width="940" height="470" fill="#0d0e10"/>
+  <rect width="940" height="424" fill="#0d0e10"/>
 
   <!-- panel titles -->
   <g text-anchor="middle" font-size="14" font-weight="700" fill="#8fd8ea">
@@ -88,6 +88,4 @@
     <text x="788" y="266">Register file</text>
     <text x="788" y="310">16 KB shared memory</text>
   </g>
-
-  <text x="470" y="440" text-anchor="middle" font-size="12.5" fill="#9aa8ae">G80: 8 TPC × 2 SM × 8 SP = 128 SP</text>
 </svg>

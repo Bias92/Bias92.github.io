@@ -1,4 +1,4 @@
-<svg viewBox="0 0 422 496" xmlns="http://www.w3.org/2000/svg" role="img">
+<svg viewBox="0 0 422 418" xmlns="http://www.w3.org/2000/svg" role="img">
 <title>Blackwell SM component diagram, B200 2024</title>
 <style>
 text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
@@ -17,10 +17,10 @@ text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-s
 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 <pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="0.8" fill="#1b2a30"/></pattern>
 </defs>
-<rect width="422" height="496" fill="#0d0e10"/><rect width="422" height="496" fill="url(#dots)" opacity="0.32"/>
+<rect width="422" height="418" fill="#0d0e10"/><rect width="422" height="418" fill="url(#dots)" opacity="0.32"/>
 <g transform="translate(20 20)" filter="url(#glow)">
-  <rect width="382" height="396" rx="12" class="outline"/>
-  <text x="22" y="34" class="plateTitle">Blackwell SM</text><text x="176" y="34" class="meta">B200 · 2024</text>
+  <rect width="382" height="378" rx="12" class="outline"/>
+  <g transform="translate(0 -36)">
   <rect x="22" y="58" width="338" height="28" class="ic"/><text x="191" y="77" text-anchor="middle" class="label">Instruction cache</text>
   <g transform="translate(22 100)">
     <rect width="74" height="30" class="sched"/><rect x="88" width="74" height="30" class="sched"/><rect x="176" width="74" height="30" class="sched"/><rect x="264" width="74" height="30" class="sched"/>
@@ -33,7 +33,6 @@ text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-s
   <rect x="206" y="304" width="154" height="42" class="tensor"/><text x="283" y="330" text-anchor="middle" class="label">CTA-pair MMA</text>
   <rect x="22" y="358" width="170" height="34" class="mem"/><text x="107" y="380" text-anchor="middle" class="label">shared / L1</text>
   <rect x="206" y="358" width="154" height="34" class="tensor"/><text x="283" y="380" text-anchor="middle" class="label">NVFP4 / MXFP</text>
-  <text x="191" y="414" text-anchor="middle" class="note">GPU package context, outside the SM</text>
-  <rect x="22" y="422" width="338" height="28" class="fabric"/><text x="191" y="441" text-anchor="middle" class="label">2 reticle dies · NVLink 5 · HBM3e</text>
+  </g>
 </g>
 </svg>

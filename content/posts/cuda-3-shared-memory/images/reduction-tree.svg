@@ -1,5 +1,5 @@
-<svg width="720" height="340" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
-  <rect x="0" y="0" width="720" height="340" rx="12" fill="#0d0e10" stroke="#22323a"/>
+<svg width="720" height="308" viewBox="0 0 720 308" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="0" y="0" width="720" height="308" rx="12" fill="#0d0e10" stroke="#22323a"/>
 
   <!-- left labels -->
   <text x="24" y="58" font-size="12" fill="#8fb2bd">buf[0..7]</text>
@@ -64,6 +64,4 @@
 
   <!-- level 3: y 264..294 -->
   <rect x="190" y="264" width="48" height="30" rx="5" fill="#e46fd6"/><text x="214" y="284" font-size="14" fill="#0d0e10" font-weight="700" text-anchor="middle">31</text>
-
-  <text x="360" y="324" font-size="12.5" fill="#8fb2bd" text-anchor="middle">N = 8 · reduction depth = log₂8 = 3 stages · magenta cells mark the active destination lanes</text>
 </svg>

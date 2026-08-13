@@ -1,4 +1,4 @@
-<svg width="720" height="610" viewBox="0 0 720 610" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+<svg width="720" height="548" viewBox="0 0 720 548" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
   <defs>
     <marker id="bank-bad" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M1 1L9 5L1 9Z" fill="#e46fd6"/>
@@ -8,7 +8,7 @@
     </marker>
   </defs>
 
-  <rect x="0" y="0" width="720" height="610" rx="12" fill="#0d0e10" stroke="#22323a"/>
+  <rect x="0" y="0" width="720" height="548" rx="12" fill="#0d0e10" stroke="#22323a"/>
 
   <!-- Plain 32 x 32 tile. -->
   <text x="28" y="31" font-size="14.5" fill="#9fdcec" font-weight="600">1. tile[32][32]: column access has stride 32 words</text>
@@ -101,7 +101,4 @@
     <text x="520" y="482">all 32 banks used once</text>
     <text x="520" y="502">conflict-free; no extra shared bytes</text>
   </g>
-
-  <text x="360" y="575" font-size="12" fill="#8fb2bd" text-anchor="middle">Padding spends 128 B per tile; swizzling spends address arithmetic and layout complexity.</text>
-  <text x="360" y="594" font-size="11.5" fill="#8fb2bd" text-anchor="middle">Both measured the same on this 32 x 32 float transpose.</text>
 </svg>
