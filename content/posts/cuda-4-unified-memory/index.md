@@ -28,15 +28,15 @@ Unified Memory는 모든 hardware를 같은 구조로 바꾸지 않는다. 서�
 
 이 글에서 다루는 일반적인 CUDA process에서 pointer에 담기는 값은 **virtual address**다. 이 값은 DRAM이나 VRAM chip의 물리적 위치를 직접 나타내는 physical address가 아니다.
 
-Virtual memory는 주소 공간을 보통 **page**라는 일정 크기의 단위로 나눈다. **Page table**은 virtual page에 유효한 physical page가 연결돼 있는지, 연결됐다면 어디이며 어떤 접근이 허용되는지 기록한다. 이 연결을 **mapping**이라고 한다. 아직 유효한 mapping이 없는 virtual page도 있다.
+Virtual memory는 virtual address space를 보통 **page**라는 일정 크기의 단위로 나눈다. Physical memory는 같은 크기의 **frame**(page frame)으로 나뉜다. **Page table**은 virtual page가 어느 physical frame에 연결됐는지와 어떤 접근이 허용되는지 기록한다. 이 연결을 **mapping**이라고 한다. 아직 유효한 mapping이 없는 virtual page도 있다.
 
-CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치인 **MMU**(Memory Management Unit)가 virtual address를 현재 접근 가능한 physical address로 변환한다. Virtual address는 virtual page number와 page 안의 위치를 나타내는 offset으로 나뉜다. 주소 변환은 page number를 바꾸지만 offset은 그대로 유지한다.
+CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치인 **MMU**(Memory Management Unit)가 virtual address를 현재 접근 가능한 physical address로 변환한다. Virtual address는 virtual page number와 page 안의 위치를 나타내는 offset으로 나뉜다. 주소 변환은 virtual page number를 physical frame number로 바꾸지만 offset은 그대로 유지한다.
 
-MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근 page-table 변환 결과를 찾는다. TLB는 data가 아니라 주소 변환 결과를 보관하는 cache다. TLB에 결과가 없으면 page table을 조회한다. 따라서 **TLB miss는 page fault가 아니다**. Page table에도 유효한 mapping이 없거나 접근 권한이 맞지 않을 때 fault가 발생할 수 있다.
+MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근의 virtual-page-to-physical-frame 변환 결과를 찾는다. TLB는 data가 아니라 주소 변환 결과를 보관하는 cache다. TLB에 결과가 없으면 page table을 조회한다. 따라서 **TLB miss는 page fault가 아니다**. Page table에도 유효한 mapping이 없거나 접근 권한이 맞지 않을 때 fault가 발생할 수 있다.
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.svg?v=2#wide)
 
-변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. Physical page가 놓이는 곳은 system에 따라 CPU DRAM, discrete GPU의 VRAM, Orin의 shared SoC DRAM일 수 있다. **Placement** 또는 **residency**는 이 위치를 뜻한다.
+변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. Physical frame이 놓이는 곳은 system에 따라 CPU DRAM, discrete GPU의 VRAM, Orin의 shared SoC DRAM일 수 있다. **Placement** 또는 **residency**는 이 위치를 뜻한다.
 
 최신 값이 매 순간 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 cache에 남을 수 있다. 다음 processor가 최신 값을 보려면 올바른 접근 순서와 cache 상태가 함께 보장돼야 한다.
 
@@ -99,7 +99,7 @@ CPU와 GPU는 DRAM 접근을 줄이려고 최근 data를 각자의 **cache**에 
 
 **Cache coherence**는 올바르게 synchronization된 접근에서 다음 processor가 최신 값을 보도록 cached copy의 상태를 관리하는 규칙이다. Write-back은 변경된 값을 아래 memory에 반영하고, invalidation은 오래된 cached copy를 무효화한다. Hardware가 processor 사이의 cache 상태 전달을 지원할 수도 있고, driver가 synchronization 경계에서 필요한 cache maintenance를 수행할 수도 있다.
 
-Synchronization과 coherence는 별도 API 두 개를 뜻하지 않는다. Program은 `cudaDeviceSynchronize()`로 실행 순서를 만들고, CUDA의 memory model과 현재 system의 driver 또는 hardware가 그 경계에서 값의 가시성을 보장한다. Placement는 physical page가 CPU memory, GPU memory, shared DRAM 중 어디에 있는가의 문제이므로 coherence와도 구분해야 한다.
+Synchronization과 coherence는 별도 API 두 개를 뜻하지 않는다. Program은 `cudaDeviceSynchronize()`로 실행 순서를 만들고, CUDA의 memory model과 현재 system의 driver 또는 hardware가 그 경계에서 값의 가시성을 보장한다. Placement는 physical frame이 CPU memory, GPU memory, shared DRAM 중 어디에 있는가의 문제이므로 coherence와도 구분해야 한다.
 
 Coherence는 data race를 허용하는 기능이 아니다. CPU와 GPU가 synchronization 없이 같은 위치를 동시에 읽고 쓰면 full Unified Memory에서도 결과를 보장할 수 없다. 앞 예제의 `41 → 42`는 순차 접근과 값의 가시성을 확인할 뿐, 내부 cache operation의 종류와 비용까지 측정하지 않는다.
 
@@ -132,9 +132,9 @@ Limited도 `cudaMallocManaged`로 pointer 하나를 만들고 CPU → GPU → CP
 
 Page fault와 migration은 full Unified Memory의 automatic placement를 이해하기 위해 필요한 개념이다. **Software coherence**는 hardware protocol 대신 memory manager와 driver가 mapping과 migration을 관리하는 방식이다. 다음 설명은 CPU DRAM과 GPU memory가 분리된 software-coherent full model의 한 경로다. 뒤에서 다룰 Orin의 실제 경로가 아니다.
 
-CPU가 managed allocation을 먼저 쓰면 해당 page가 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 GPU page table에 유효한 mapping이 없거나 현재 residency로 접근을 처리할 수 없다면 **page fault**가 발생한다. 이 문맥의 fault는 program crash가 아니라 “현재 상태로 이 memory access를 바로 완료할 수 없다”는 event다.
+CPU가 managed allocation을 먼저 쓰면 해당 virtual page를 backing하는 physical frame이 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 GPU page table에 유효한 mapping이 없거나 현재 residency로 접근을 처리할 수 없다면 **page fault**가 발생한다. 이 문맥의 fault는 program crash가 아니라 “현재 상태로 이 memory access를 바로 완료할 수 없다”는 event다.
 
-Memory manager와 CUDA driver는 필요한 physical page를 GPU 쪽에 준비하고 최신 내용을 옮긴 뒤 GPU mapping을 설치한다. 멈췄던 GPU instruction은 그다음 재개된다. Page 내용을 한 memory domain에서 다른 곳으로 옮기는 작업이 **migration**이다. Pointer 값은 바뀌지 않는다.
+Memory manager와 CUDA driver는 GPU memory에 physical frame을 준비하고 virtual page의 최신 내용을 옮긴 뒤 GPU mapping을 설치한다. 멈췄던 GPU instruction은 그다음 재개된다. Virtual page의 내용을 한 memory domain의 physical frame에서 다른 memory domain의 frame으로 옮기는 작업이 **migration**이다. Pointer 값은 바뀌지 않는다.
 
 ![Software-coherent full Unified Memory의 page fault와 migration](images/demand-paging.svg)
 
