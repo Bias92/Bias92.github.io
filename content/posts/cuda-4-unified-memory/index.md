@@ -119,7 +119,7 @@ int main() {
 
 두 번째는 cache coherence다. CPU와 GPU는 DRAM 접근을 줄이려고 최근 데이터를 각자의 cache에 보관한다. Cache는 cache line이라는 연속된 byte 묶음 단위로 데이터를 가져온다. GPU가 `42`를 cache에 쓴 뒤 CPU의 다음 read가 `42`를 얻도록 cache 상태를 맞춘다.
 
-Hardware coherence를 사용하는 system에서는 hardware가 processor 사이의 cache 상태를 직접 맞춘다. Driver가 맡는 system에서는 access와 synchronization 경계에서 주소 연결, 데이터 이동, cache 상태를 조정해 다음 처리 장치가 최신 값을 읽게 한다. 이 가운데 cache의 변경값을 다른 처리 장치에 보이게 하거나 이전 cache 사본을 폐기하는 작업을 cache maintenance라고 한다.
+이 cache coherence를 달성하는 방식은 둘로 나뉜다. Hardware가 processor 사이의 cache 상태를 직접 맞추면 hardware coherence다. Driver가 access와 synchronization 경계에서 주소 연결, 데이터 이동, cache 상태를 조정해 다음 처리 장치가 최신 값을 읽게 하면 software coherence다. 이 가운데 cache의 변경값을 다른 처리 장치에 보이게 하거나 이전 cache 사본을 폐기하는 작업을 cache maintenance라고 한다.
 
 Synchronization은 CPU가 언제 읽는지를 정하고, cache coherence는 그때 어떤 값이 보이는지를 정한다. Placement는 data가 놓인 physical memory를 나타낸다. 같은 위치를 여러 처리 장치가 수정할 때는 synchronization으로 접근 순서를 정한다.
 
