@@ -36,7 +36,7 @@ MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근의 virtual-page
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
-변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. Physical frame의 위치는 hardware topology에 따라 달라진다. Discrete system에서는 CPU가 연결된 system DRAM 또는 GPU의 VRAM에 놓일 수 있다. Integrated system에서는 CPU와 GPU가 공유하는 system DRAM에 놓일 수 있다. 특정 page가 현재 어느 memory에 놓여 있는지를 **placement** 또는 **residency**라고 한다.
+변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. Physical frame의 위치는 hardware topology에 따라 달라진다. Discrete system에서는 CPU가 연결된 system DRAM 또는 GPU의 VRAM에 놓일 수 있다. Integrated system에서는 CPU와 GPU가 공유하는 system DRAM에 놓일 수 있다. 특정 virtual page를 backing하는 physical frame이 현재 어느 memory에 놓여 있는지가 **placement**다.
 
 최신 값이 매 순간 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 cache에 남을 수 있다. 다음 processor가 최신 값을 보려면 올바른 접근 순서와 cache 상태가 함께 보장돼야 한다.
 
@@ -116,7 +116,7 @@ Shared DRAM을 쓴다고 full Unified Memory인 것은 아니다. 반대로 phys
 
 **Limited Unified Memory**에서는 CPU와 GPU의 접근 시점이 크게 나뉜다. 기본 규칙에서는 GPU kernel이 실행되는 동안 CPU가 managed memory에 접근하면 안 된다. Kernel launch와 completion synchronization이 접근 주체를 넘기는 경계가 된다. **Oversubscription**, 즉 GPU memory보다 큰 managed allocation을 사용하는 기능도 지원하지 않는다.
 
-**Full Unified Memory**에서는 GPU가 실제 접근 시점에 필요한 managed page를 가져올 수 있고, CPU와 GPU가 서로 다른 managed 위치를 동시에 사용할 수 있다. GPU memory보다 큰 managed allocation도 만들 수 있으며, 필요한 page만 GPU에 resident하고 나머지는 다른 memory에 놓이거나 evict될 수 있다. 그래도 synchronization 없이 같은 위치를 동시에 수정하는 data race까지 허용되는 것은 아니다.
+**Full Unified Memory**에서는 GPU가 실제 접근 시점에 필요한 managed page를 가져올 수 있고, CPU와 GPU가 서로 다른 managed 위치를 동시에 사용할 수 있다. GPU memory보다 큰 managed allocation도 만들 수 있으며, 필요한 page의 physical frame만 GPU memory에 놓고 나머지는 다른 memory에 두거나 evict할 수 있다. 그래도 synchronization 없이 같은 위치를 동시에 수정하는 data race까지 허용되는 것은 아니다.
 
 현재 장치가 어느 model인지 GPU 이름이나 compute capability만으로 판단하면 안 된다. Operating system, kernel, driver, GPU, CPU-GPU interconnect의 조합이 결과를 바꾼다. CUDA는 `cudaDeviceGetAttribute`로 현재 환경을 직접 조회하게 한다.
 
@@ -132,13 +132,13 @@ Limited도 `cudaMallocManaged`로 pointer 하나를 만들고 CPU → GPU → CP
 
 Page fault와 migration은 full Unified Memory의 automatic placement를 이해하기 위해 필요한 개념이다. **Software coherence**는 hardware protocol 대신 memory manager와 driver가 mapping과 migration을 관리하는 방식이다. 다음 설명은 CPU DRAM과 GPU memory가 분리된 software-coherent full model의 한 경로다. 뒤에서 다룰 Orin의 실제 경로가 아니다.
 
-CPU가 managed allocation을 먼저 쓰면 해당 virtual page를 backing하는 physical frame이 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 GPU page table에 유효한 mapping이 없거나 현재 residency로 접근을 처리할 수 없다면 **page fault**가 발생한다. 이 문맥의 fault는 program crash가 아니라 “현재 상태로 이 memory access를 바로 완료할 수 없다”는 event다.
+CPU가 managed allocation을 먼저 쓰면 해당 virtual page를 backing하는 physical frame이 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 GPU page table에 유효한 mapping이 없거나 현재 placement로 접근을 처리할 수 없다면 **page fault**가 발생한다. 이 문맥의 fault는 program crash가 아니라 “현재 상태로 이 memory access를 바로 완료할 수 없다”는 event다.
 
 Memory manager와 CUDA driver는 GPU memory에 physical frame을 준비하고 virtual page의 최신 내용을 옮긴 뒤 GPU mapping을 설치한다. 멈췄던 GPU instruction은 그다음 재개된다. Virtual page의 내용을 한 memory domain의 physical frame에서 다른 memory domain의 frame으로 옮기는 작업이 **migration**이다. Pointer 값은 바뀌지 않는다.
 
 ![Software-coherent full Unified Memory의 page fault와 migration](images/demand-paging.svg)
 
-Page fault와 migration은 동의어가 아니다. 그림의 경로에서는 fault가 처리를 시작하게 만든 event이고 migration이 그 해결 방법이다. 예를 들어 GPU가 interconnect를 통해 CPU-resident page를 remote access하는 full-support system은 page를 복사하지 않고 mapping만 설치할 수 있다.
+Page fault와 migration은 동의어가 아니다. 그림의 경로에서는 fault가 처리를 시작하게 만든 event이고 migration이 그 해결 방법이다. 예를 들어 GPU가 interconnect를 통해 CPU memory에 있는 page를 remote access하는 full-support system은 page를 복사하지 않고 mapping만 설치할 수 있다.
 
 CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반복되는 **page ping-pong**이 생길 수 있다. Managed code가 짧아도 data movement 비용은 커질 수 있다는 뜻이다. `cudaMemPrefetchAsync`는 지정한 range를 destination processor 가까이 populate하거나 migrate하도록 요청하는 performance hint이며, correctness를 보장하는 synchronization 함수는 아니다.
 
