@@ -16,23 +16,23 @@ Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 �
 
 ## CPU Memory와 GPU Memory
 
-**Allocation**은 프로그램이 사용할 address range와 그 memory의 관리 규칙을 확보하는 일이다. **Allocator**는 요청받은 크기와 alignment에 맞는 range를 찾아 allocation을 만드는 software component다. **Pointer**는 object나 memory 위치를 가리키는 address이며, allocation API가 반환한 pointer는 프로그램이 사용할 수 있는 range의 시작을 가리킨다.
+**Allocation**은 프로그램이 사용할 memory 영역을 확보하는 일이다. **Allocator**는 사용할 수 있는 영역 가운데 요청한 크기에 맞는 곳을 골라 그 시작 address를 pointer로 반환하는 software다. `malloc`은 CPU code가 사용할 allocation을 만든다. `cudaMalloc`은 GPU가 접근하도록 CUDA가 관리하는 memory 영역인 **device allocation**을 만든다.
 
-`malloc`은 CPU process의 heap allocator를 사용하고, `cudaMalloc`은 CUDA Runtime과 driver를 거쳐 device allocation을 만든다. 두 allocation은 서로 다른 memory domain에 놓일 수 있다.
+한 process 안의 여러 **thread**는 같은 process memory를 공유하면서 각자 명령을 실행한다. 그래서 여러 thread가 동시에 `malloc`이나 `free`를 호출하면 같은 allocator 내부 상태에 접근할 수 있다. Allocator는 `free`로 반환된 memory block을 다음 요청에 다시 내주기 위해 보관한다. 빈 block은 linked list나 bitmap 같은 자료구조로 추적할 수 있다. **Linked list**는 각 항목이 다음 항목의 위치를 기록해 연결되는 구조이고, **bitmap**은 각 bit로 block의 사용 여부를 표시하는 구조다. 그중 linked list로 연결한 빈 block 목록을 **free list**라고 한다. [TCMalloc 공식 설계](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/docs/design.md#L203-L205)에서도 실제로 사용하는 용어다.
 
-Allocator는 여러 thread의 allocation 요청을 동시에 받을 수 있다. 두 thread가 같은 free-list head를 읽고 각자 새 값을 기록하면 한쪽 변경이 사라지거나 list 연결이 깨질 수 있다. 이처럼 결과가 실행 순서에 따라 달라지는 넓은 문제를 **race condition**이라고 한다. 그중 같은 memory location에 대한 접근이 겹치고, 하나 이상이 write이며, 해당 접근이 atomic도 아니고 synchronization으로 순서가 정해지지도 않은 경우가 **data race**다. C++에서 data race는 undefined behavior다.
+여러 thread가 free list의 같은 연결 정보나 사용 여부를 동시에 고치면 한쪽 변경이 사라지거나 목록이 깨질 수 있다. **Mutex**(mutual exclusion)는 이를 막기 위한 상호배제 lock이다. 한 thread가 `lock`에 성공하면 `unlock`할 때까지 mutex로 보호된 상태를 혼자 수정하고, 다른 thread는 기다린다. `lock`과 `unlock` 사이의 보호된 code 구간을 **critical section**이라고 한다. 또한 앞 thread가 `unlock`하기 전에 기록한 변경은 같은 mutex의 다음 `lock`에 성공한 thread에게 보인다. 단, 그 상태를 읽거나 쓰는 모든 code가 같은 mutex를 사용해야 한다.
 
-**Mutex**(mutual exclusion)는 이런 shared state를 한 번에 한 thread만 수정하게 만드는 synchronization primitive다. 단, 그 state를 다루는 모든 code path가 같은 mutex를 사용해야 한다. Thread는 `lock`을 얻은 뒤 free-list pointer 여러 개를 갱신하고, 내부 상태가 다시 일관된 시점에 `unlock`한다. 이처럼 함께 보호해야 하는 code 구간을 **critical section**이라고 한다. `unlock` 전에 기록한 값은 같은 mutex의 다음 `lock`이 성공한 thread에게 보이도록 synchronization 관계도 만들어진다. 다른 thread가 이미 mutex를 가지고 있다면 나머지는 lock이 풀릴 때까지 기다린다.
+**Load**는 memory의 현재 값을 읽는 동작이고, **store**는 새 값을 기록하는 동작이다. `counter += 1`을 개념적으로 나누면 현재 counter를 load하고, 1을 더한 뒤, 결과를 store한다. 이 세 동작을 보호하지 않으면 두 갱신이 서로 덮어써 하나가 사라질 수 있다. 따라서 실제 C++ code에서는 여러 thread가 공유 counter를 synchronization 없이 수정하면 안 된다.
 
-**Atomic operation**은 특정 atomic object의 load, store 또는 read-modify-write가 다른 thread에게 쪼개진 중간 상태로 보이지 않게 수행되는 연산이다. Read-modify-write의 예인 compare-and-swap은 현재 값이 예상값과 같을 때만 새 값으로 바꾸고, `fetch_add`는 counter를 읽어 증가시킨 뒤 이전 값을 반환한다. Atomic은 한 변수의 짧은 갱신에 적합하지만, 다른 metadata의 순서와 가시성이나 여러 pointer가 함께 맞아야 하는 free-list 구조 전체를 자동으로 보호하지는 않는다.
+**Read-modify-write**는 `현재 값 읽기 → 새 값 계산 → 결과 기록`을 하나로 묶은 연산이다. 이를 **atomic operation**으로 수행하면 같은 atomic 변수에 접근하는 다른 thread는 변경 중간 상태를 볼 수 없다. **Compare-and-swap**(CAS)은 대표적인 atomic read-modify-write다. 현재 값이 비교 대상으로 전달한 값과 같을 때만 새 값으로 바꾸고 성공 여부를 돌려준다. Atomic operation은 counter나 lock 상태처럼 한 값의 변경에는 적합하지만, free list의 여러 연결 정보를 함께 고치는 code 전체를 자동으로 보호하지는 않는다.
 
-Mutex 구현도 보통 atomic compare-and-swap으로 잠금 상태를 기록하는 **lock word**를 먼저 차지하려고 한다. 경쟁이 없으면 이 fast path만으로 끝난다. 이미 다른 thread가 mutex를 가지고 있다면 잠시 반복 확인하거나 operating system에 대기를 요청하고, mutex를 가진 thread가 `unlock`할 때 다시 깨어난다. **Semaphore**는 사용할 수 있는 permit 또는 resource 수를 0 이상의 counter로 관리하며, 값이 0이면 기다린다. Mutex와 달리 owner 개념이 필수는 아니므로 다른 thread가 permit을 반환할 수도 있다. 따라서 semaphore는 allocator의 shared invariant를 보호하는 mutex와 같은 primitive가 아니다. Mutex, atomic, semaphore는 allocator보다 아래에 있는 memory 계층이 아니라 allocator 구현이 필요에 따라 사용하는 synchronization 도구다.
+**Semaphore**는 mutex와 목적이 다르다. 사용할 수 있는 resource 수를 숫자로 보관하고, 숫자가 0이면 새 요청을 기다리게 한다. 예를 들어 buffer가 세 개라면 semaphore를 3으로 시작하고, 한 thread가 buffer를 빌릴 때 1을 줄이고 반환할 때 1을 늘릴 수 있다. Mutex는 critical section에 한 thread만 들어가게 하고, semaphore는 동시에 사용할 수 있는 resource 수를 제한한다. 둘은 allocator 아래의 memory 계층이 아니라 allocator가 필요에 따라 사용하는 synchronization 도구다.
 
-[Google TCMalloc의 공식 설계](https://google.github.io/tcmalloc/design.html)는 이 구분을 실제 allocator 구조로 보여 준다. Front-end의 per-thread 또는 per-CPU cache는 한 실행 주체만 접근하므로 대부분의 작은 allocation을 lock 없이 처리한다. Local cache가 비면 shared middle-end에서 object를 보충하는데, 이곳의 Transfer cache와 Central free list는 size class별 mutex로 보호된다. 즉 모든 `malloc`이 하나의 global lock을 잡는 것이 아니라, local fast path와 synchronization이 필요한 shared path가 나뉜다. 아래 그림은 해당 문서의 [Apache 2.0](https://github.com/google/tcmalloc/blob/master/LICENSE) 원본이다.
+[Google TCMalloc의 공식 설계](https://google.github.io/tcmalloc/design.html)는 mutex와 atomic operation이 실제 allocator에서 어디에 쓰이는지 보여 준다. TCMalloc은 비슷한 크기의 allocation 요청을 **size class**로 묶는다. Thread 또는 CPU 하나가 전용으로 사용하는 local cache에 재사용 가능한 block이 남아 있으면 shared lock 없이 allocation을 처리한다. Local cache가 비면 local cache와 OS 쪽 memory 관리 사이에서 여러 실행 주체가 함께 사용하는 **middle-end**에서 block을 가져온다. Middle-end의 Transfer Cache는 local cache 사이에 block 묶음을 전달하고, Central Free List는 size class별 빈 block을 관리한다. 두 구조는 size class별 lock으로 보호된다. 따라서 모든 `malloc`이 하나의 lock을 기다리는 구조는 아니다. 아래 그림은 해당 문서의 [Apache 2.0](https://github.com/google/tcmalloc/blob/master/LICENSE) 원본이다.
 
 ![Google TCMalloc의 local front-end cache, shared middle-end, OS page heap 구조](images/tcmalloc-internals.png#medium)
 
-그림의 Central Free List가 lock을 사용하는 방식은 [TCMalloc의 실제 source](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L58-L72)에서도 확인할 수 있다. 설계 문서의 `mutex lock`은 상호배제 잠금이라는 일반 표현이다. 현재 구현이 사용하는 구체적인 type은 `std::mutex`가 아니라 Abseil의 `SpinLock`이다. 다음은 설명용으로 다시 만든 코드가 아니라, 해당 commit의 서로 다른 위치에서 가져온 실제 두 줄이다.
+그림의 Central Free List가 lock을 사용하는 방식은 [TCMalloc의 실제 source](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L58-L72)에서도 확인할 수 있다. 설계 문서의 `mutex lock`은 상호배제 lock이라는 일반 표현이다. 현재 구현이 사용하는 구체적인 type은 Google의 C++ library인 Abseil의 `SpinLock`이다. **SpinLock**은 lock이 풀렸는지 짧게 반복 확인하는 mutex 구현이다. 다음은 설명용으로 다시 만든 코드가 아니라, 해당 commit의 서로 다른 위치에서 가져온 실제 두 줄이다.
 
 ```cpp
 absl::base_internal::SpinLock lock_;
@@ -42,7 +42,9 @@ absl::base_internal::SpinLock lock_;
 CentralFreeListLockHolder h(lock_);
 ```
 
-첫 줄은 [mutable member를 보호하는 lock의 선언](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L290-L291)이다. 두 번째 줄은 [`InsertRange`가 shared free list를 수정하기 직전에 lock holder를 만드는 부분](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L641-L645)이다. Holder의 constructor는 실제로 `lock_.lock()`을 호출하고, scope가 끝나 destructor가 실행되면 `lock_.unlock()`을 호출한다. 따라서 `h`가 살아 있는 block이 critical section이 된다. 그 아래 구현에서는 [atomic compare-and-swap으로 lock을 얻고](https://github.com/abseil/abseil-cpp/blob/20260526.0/absl/base/internal/spinlock.h#L281-L304), 경쟁이 계속되면 [slow path에서 기다린다](https://github.com/abseil/abseil-cpp/blob/20260526.0/absl/base/internal/spinlock.cc#L98-L168).
+첫 줄은 [Central Free List의 내부 상태를 보호하는 lock 선언](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L290-L291)이다. 두 번째 줄은 [`InsertRange`가 반환된 block을 shared free list에 넣기 전에 lock을 얻는 부분](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L641-L645)이다. `CentralFreeListLockHolder`가 만들어지면 lock을 얻고, 이 변수가 존재하는 code 구간을 벗어나면 자동으로 unlock한다. 그동안에는 한 thread만 Central Free List를 수정한다.
+
+이 `SpinLock`도 앞에서 설명한 atomic operation을 사용한다. [실제 Abseil 구현](https://github.com/abseil/abseil-cpp/blob/20260526.0/absl/base/internal/spinlock.h#L281-L304)의 CAS는 lock 상태가 `비어 있음`일 때만 `사용 중`으로 바꾼다. 여러 thread가 동시에 시도해도 하나만 성공한다. 실패한 thread는 상태를 다시 확인하고, 경쟁이 계속되면 [대기 처리 코드](https://github.com/abseil/abseil-cpp/blob/20260526.0/absl/base/internal/spinlock.cc#L98-L168)로 넘어간다. 즉 TCMalloc이 사용하는 Abseil SpinLock은 atomic CAS로 lock 상태를 바꾸고, TCMalloc은 그 SpinLock으로 여러 변경이 포함된 critical section을 보호한다.
 
 Discrete GPU가 달린 일반적인 PC에서는 CPU DRAM과 GPU 전용 memory(VRAM)가 물리적으로 분리돼 있다. 앞 글처럼 CPU의 `malloc` allocation과 GPU의 `cudaMalloc` allocation을 따로 쓰는 방식에서는 계산 전 H2D(Host to Device) copy가 필요하고, GPU 결과를 CPU에서 읽기 전 D2H(Device to Host) copy가 필요하다.
 
