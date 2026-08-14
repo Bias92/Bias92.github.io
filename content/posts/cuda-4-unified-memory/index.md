@@ -38,7 +38,7 @@ MMU는 먼저 TLB(Translation Lookaside Buffer)에서 최근의 가상 페이지
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
-변환된 물리 주소는 캐시와 물리 메모리로 이어지는 메모리 계층에서 사용된다. [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#unified-and-system-memory)는 이기종 시스템에 여러 물리 메모리가 있으며, CUDA가 데이터의 할당과 배치, 이동을 관리한다고 설명한다. [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)에는 `Placement Policy`가 별도 항목으로 나온다. Full 지원 환경의 `cudaMallocManaged`는 `First touch/hint`로 분류된다. First touch는 보통 데이터를 처음 접근한 처리 장치의 메모리에 배치한다는 뜻이다. Hint는 드라이버의 배치 결정을 돕는 정보일 뿐, 데이터를 즉시 옮기거나 실제 배치 위치를 보장하지 않는다.
+변환된 물리 주소는 캐시와 물리 메모리로 이어지는 메모리 계층에서 사용된다. [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#unified-and-system-memory)는 이기종 시스템에 여러 물리 메모리가 있으며, CUDA가 데이터의 할당과 배치, 이동을 관리한다고 설명한다.
 
 여기서 관리형 할당(managed allocation)은 `cudaMallocManaged`로 만든 할당을 말한다. 어느 메모리에 둘지, 언제 옮길지, 어느 처리 장치에 매핑을 걸지를 개발자가 아니라 CUDA 런타임과 드라이버가 정하기 때문에 관리형이라고 부른다. `cudaMalloc`으로 만든 할당은 개발자가 `cudaMemcpy`로 직접 옮기므로 여기에 해당하지 않는다.
 
@@ -126,6 +126,8 @@ Limited Unified Memory에서는 CPU와 GPU의 접근 시점이 크게 나뉜다.
 
 Full Unified Memory에서는 GPU의 실제 접근 시점에 page migration이나 remote-access mapping으로 접근을 처리할 수 있고, CPU와 GPU가 서로 다른 managed 위치를 동시에 사용할 수 있다. GPU memory보다 큰 managed allocation도 만들 수 있다. discrete GPU 환경에서는 필요한 pages를 GPU memory에 두고 나머지는 system memory에 둘 수도 있다. 그래도 synchronization 없이 같은 위치를 동시에 수정하는 data race까지 허용되는 것은 아니다.
 
+CUDA 공식 [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)의 `Placement Policy`는 새 기능 이름이 아니라, 메모리 할당 API마다 데이터의 저장 위치를 어떻게 정하는지 비교하는 열 제목이다. `cudaMallocManaged` 행의 `First touch/hint`는 첫 접근과 권고 정보라는 두 배치 기준을 묶어 쓴 것이다. `First touch`는 각 페이지를 CPU나 GPU가 처음 읽거나 쓸 때, 보통 그 처리 장치의 메모리에 데이터를 두는 방식이다. `hint`는 프로그램이 CUDA에 예상 접근 방식이나 선호 위치를 알려 주는 정보이며 정확성이 아니라 성능에만 영향을 준다. 이 가운데 선호 위치를 알려 주는 정보는 데이터를 즉시 옮기지 않으며, 실제 위치를 그곳으로 고정하지도 않는다.
+
 현재 장치가 어느 model인지 GPU 이름이나 compute capability만으로 판단하면 안 된다. Operating system, kernel, driver, GPU, CPU-GPU interconnect의 조합이 결과를 바꾼다. CUDA는 `cudaDeviceGetAttribute`로 현재 환경을 직접 조회하게 한다.
 
 `managedMemory`는 explicit managed allocation을 만들 수 있는지 알려 준다. 그다음 세 attribute는 아래 순서로 읽는다.
@@ -148,7 +150,7 @@ Memory manager와 CUDA driver는 GPU memory에 physical frame을 준비하고 vi
 
 Page fault와 migration은 동의어가 아니다. 그림의 경로에서는 fault가 처리를 시작하게 만든 event이고 migration이 그 해결 방법이다. 예를 들어 GPU가 interconnect를 통해 CPU memory에 있는 page를 remote access하는 full-support system은 page를 복사하지 않고 mapping만 설치할 수 있다.
 
-CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반복되는 page ping-pong이 생길 수 있다. Managed code가 짧아도 data movement 비용은 커질 수 있다는 뜻이다. `cudaMemPrefetchAsync`는 지정한 range를 destination processor 가까이 populate하거나 migrate하도록 요청하는 performance hint이며, correctness를 보장하는 synchronization 함수는 아니다.
+CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반복되는 page ping-pong이 생길 수 있다. Managed code가 짧아도 data movement 비용은 커질 수 있다는 뜻이다. `cudaMemPrefetchAsync`는 지정한 범위의 데이터를 특정 처리 장치 가까운 메모리로 미리 옮기도록 요청한다. 이 호출은 성능을 조정할 뿐, 올바른 실행 순서를 보장하는 synchronization 함수가 아니다.
 
 HMM(Heterogeneous Memory Management)은 Linux kernel이 CPU와 GPU의 page-table 변경, device fault, page migration을 연결하는 infrastructure다. 호환되는 Linux PCIe system에서는 HMM이 system allocation을 지원하는 software-coherent full model을 구현할 수 있다. 앞의 attribute 조합만으로 HMM 사용을 확정할 수는 없으며, 실제 addressing mode는 `nvidia-smi -q`에서 확인한다.
 
