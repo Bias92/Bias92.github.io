@@ -90,15 +90,6 @@ cudaMallocManaged(&x, sizeof(*x));
 
 Explicit-copy 방식에서는 CPU용 `h_data`, GPU용 `d_data`, H2D, D2H가 필요했다. Managed 방식에서는 CPU와 GPU가 `x` 하나를 사용하며 소스에 두 copy를 적지 않는다. Driver는 GPU와 memory 상태를 제어하는 system software다. Runtime, driver, hardware가 현재 system의 지원 방식에 따라 address mapping, physical placement, 최신 값의 가시성을 구현한다.
 
-### 보장하는 것과 하지 않는 것
-
-여기까지가 `cudaMallocManaged`의 보장이다. 다음 내용은 보장하지 않는다.
-
-- 동일한 내용의 완전한 physical copy가 CPU memory와 GPU memory 양쪽에 항상 존재한다.
-- 물리적인 data copy가 전혀 없다.
-- CPU와 GPU가 synchronization 없이 같은 위치를 동시에 읽고 쓸 수 있다.
-- Explicit copy보다 항상 빠르다.
-
 ### 최소 예제
 
 아래 코드는 같은 managed allocation을 CPU와 GPU가 차례로 사용하는 기본 형태다. `41`은 값이 바뀌었는지 확인하려고 고른 임의의 수다. GPU thread 하나가 한 번 `1`을 더하므로 예상 결과는 `42`다.
