@@ -53,7 +53,7 @@
   <path d="M140 442 V486" fill="none" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
   <text x="100" y="472" class="accent">hit</text>
 
-  <path d="M390 442 V466 H255 V486" fill="none" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
+  <path d="M390 442 V466 H185 V486" fill="none" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
   <text x="320" y="459" text-anchor="middle" class="accent">valid entry</text>
 
   <path d="M475 442 V486" fill="none" stroke="#66747a" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#steel-arrow)"/>
