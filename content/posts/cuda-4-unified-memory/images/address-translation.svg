@@ -1,79 +1,61 @@
-<svg width="560" height="710" viewBox="0 0 560 710" xmlns="http://www.w3.org/2000/svg" role="img">
-  <title>Virtual address translation through an MMU, TLB, and page table</title>
-  <desc>A CPU or GPU memory access presents a virtual page number and page offset to an MMU. The MMU checks a TLB and, on a TLB miss, walks a page table. A valid translation produces a physical page number with the same offset. A missing or disallowed mapping can raise a page fault.</desc>
+<svg width="1120" height="701" viewBox="0 0 1120 701" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>CPU virtual-to-physical address translation</title>
+  <desc>A recolored version of the reference layout. A CPU sends a virtual address to an MMU, the MMU exchanges translations with a TLB, and a physical address reaches physical memory through a bus.</desc>
   <style>
-    text { font-family: 'Roboto', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; }
-    .actor { fill: #d7e2e6; font-size: 24px; font-weight: 700; }
-    .label { fill: #d7e2e6; font-size: 20px; }
-    .accent { fill: #7fe0f7; font-size: 20px; font-weight: 700; }
-    .note { fill: #a6b0b5; font-size: 20px; }
+    text { font-family: 'Roboto', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; }
+    .main { fill: #d7e2e6; font-size: 32px; }
+    .label { fill: #d7e2e6; font-size: 30px; }
+    .legend { fill: #d7e2e6; font-size: 29px; }
   </style>
-  <defs>
-    <marker id="cyan-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 Z" fill="#4fc9e8"/>
-    </marker>
-    <marker id="steel-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 Z" fill="#66747a"/>
-    </marker>
-  </defs>
 
-  <rect width="560" height="710" fill="#0d0e10"/>
+  <rect width="1120" height="701" fill="#0d0e10"/>
 
-  <rect x="70" y="20" width="420" height="64" rx="4" fill="#11171a" stroke="#52636b" stroke-width="1.5"/>
-  <text x="280" y="60" text-anchor="middle" class="actor">CPU or GPU load / store</text>
+  <rect x="6" y="6" width="431" height="393" fill="#0d0e10" stroke="#66747a" stroke-width="6"/>
 
-  <line x1="280" y1="84" x2="280" y2="111" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
+  <rect x="225" y="20" width="199" height="139" fill="#4fc9e8" stroke="#66747a" stroke-width="6"/>
+  <text x="324.5" y="102" text-anchor="middle" fill="#0d0e10" font-size="32">CPU</text>
 
-  <rect x="35" y="120" width="490" height="76" rx="4" fill="#15242a" stroke="#4fc9e8" stroke-width="1.5"/>
-  <line x1="380" y1="120" x2="380" y2="196" stroke="#52636b" stroke-width="1.5"/>
-  <text x="207" y="166" text-anchor="middle" class="actor">virtual page number</text>
-  <text x="452" y="154" text-anchor="middle" class="label">page</text>
-  <text x="452" y="178" text-anchor="middle" class="label">offset</text>
+  <text x="492" y="51" text-anchor="middle" class="main">CPU</text>
+  <text x="492" y="93" text-anchor="middle" class="main">casing</text>
 
-  <line x1="280" y1="196" x2="280" y2="221" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
-  <text x="298" y="219" class="note">virtual address</text>
+  <line x1="324" y1="159" x2="324" y2="239" stroke="#4fc9e8" stroke-width="4"/>
+  <path d="M313 225 L324 241 L335 225" fill="none" stroke="#4fc9e8" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter"/>
+  <text x="82" y="211" class="label">virtual address</text>
 
-  <rect x="170" y="230" width="220" height="70" rx="4" fill="#11171a" stroke="#52636b" stroke-width="1.5"/>
-  <text x="280" y="274" text-anchor="middle" class="actor">MMU</text>
+  <rect x="225" y="245" width="199" height="140" fill="#15242a" stroke="#4fc9e8" stroke-width="6"/>
+  <text x="324.5" y="326" text-anchor="middle" class="main">MMU</text>
 
-  <path d="M235 300 V326 H140 V351" fill="none" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
-  <text x="154" y="318" class="accent">lookup</text>
+  <rect x="21" y="292" width="139" height="49" fill="#15242a" stroke="#4fc9e8" stroke-width="6"/>
+  <text x="90.5" y="327" text-anchor="middle" class="main">TLB</text>
 
-  <rect x="35" y="360" width="210" height="82" rx="4" fill="#11171a" stroke="#52636b" stroke-width="1.5"/>
-  <text x="140" y="394" text-anchor="middle" class="actor">TLB</text>
-  <text x="140" y="421" text-anchor="middle" class="note">translation cache</text>
+  <line x1="225" y1="309" x2="162" y2="309" stroke="#4fc9e8" stroke-width="4"/>
+  <path d="M178 299 L162 309 L178 319" fill="none" stroke="#4fc9e8" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter"/>
+  <line x1="160" y1="331" x2="223" y2="331" stroke="#4fc9e8" stroke-width="4"/>
+  <path d="M207 321 L223 331 L207 341" fill="none" stroke="#4fc9e8" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter"/>
 
-  <rect x="315" y="360" width="210" height="82" rx="4" fill="#11171a" stroke="#52636b" stroke-width="1.5"/>
-  <text x="420" y="394" text-anchor="middle" class="actor">Page table</text>
-  <text x="420" y="421" text-anchor="middle" class="note">page-table entry</text>
+  <rect x="684" y="6" width="431" height="393" fill="#11171a" stroke="#66747a" stroke-width="6"/>
+  <rect x="687" y="9" width="425" height="61" fill="#344249"/>
+  <line x1="684" y1="70" x2="1115" y2="70" stroke="#66747a" stroke-width="6"/>
+  <text x="899.5" y="50" text-anchor="middle" class="main">physical memory</text>
+  <text x="899.5" y="103" text-anchor="middle" class="label">physical address #1</text>
+  <text x="899.5" y="147" text-anchor="middle" class="label">physical address #2</text>
+  <text x="899.5" y="191" text-anchor="middle" class="label">physical address #3</text>
+  <text x="899.5" y="237" text-anchor="middle" class="main">.</text>
+  <text x="899.5" y="281" text-anchor="middle" class="main">.</text>
+  <text x="899.5" y="325" text-anchor="middle" class="main">.</text>
+  <text x="899.5" y="369" text-anchor="middle" class="main">.</text>
 
-  <line x1="245" y1="401" x2="313" y2="401" stroke="#4fc9e8" stroke-width="2" stroke-dasharray="7 7" marker-end="url(#cyan-arrow)"/>
-  <text x="280" y="389" text-anchor="middle" class="accent">miss</text>
+  <line x1="324" y1="385" x2="324" y2="520" stroke="#4fc9e8" stroke-width="4"/>
+  <path d="M313 506 L324 522 L335 506" fill="none" stroke="#4fc9e8" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter"/>
+  <text x="346" y="469" class="label">physical address</text>
 
-  <path d="M140 442 V486" fill="none" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
-  <text x="100" y="472" class="accent">hit</text>
+  <text x="14" y="539" class="label">bus</text>
+  <line x1="88" y1="529" x2="1115" y2="529" stroke="#66747a" stroke-width="5"/>
 
-  <path d="M390 442 V466 H185 V486" fill="none" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
-  <text x="320" y="459" text-anchor="middle" class="accent">valid entry</text>
+  <line x1="891" y1="529" x2="891" y2="402" stroke="#4fc9e8" stroke-width="4"/>
+  <path d="M880 416 L891 400 L902 416" fill="none" stroke="#4fc9e8" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter"/>
 
-  <path d="M475 442 V486" fill="none" stroke="#66747a" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#steel-arrow)"/>
-  <text x="468" y="472" text-anchor="middle" class="note">not present</text>
-
-  <rect x="35" y="495" width="300" height="76" rx="4" fill="#15242a" stroke="#4fc9e8" stroke-width="1.5"/>
-  <line x1="220" y1="495" x2="220" y2="571" stroke="#52636b" stroke-width="1.5"/>
-  <text x="127" y="529" text-anchor="middle" class="actor">physical page</text>
-  <text x="127" y="554" text-anchor="middle" class="actor">number</text>
-  <text x="277" y="529" text-anchor="middle" class="label">same page</text>
-  <text x="277" y="553" text-anchor="middle" class="label">offset</text>
-
-  <rect x="365" y="495" width="160" height="76" rx="4" fill="#11171a" stroke="#66747a" stroke-width="1.5"/>
-  <text x="445" y="529" text-anchor="middle" class="actor">page fault</text>
-  <text x="445" y="554" text-anchor="middle" class="note">handled / error</text>
-
-  <line x1="185" y1="571" x2="185" y2="616" stroke="#4fc9e8" stroke-width="2" marker-end="url(#cyan-arrow)"/>
-  <text x="203" y="605" class="note">memory hierarchy</text>
-
-  <rect x="35" y="625" width="490" height="70" rx="4" fill="#11171a" stroke="#52636b" stroke-width="1.5"/>
-  <text x="280" y="655" text-anchor="middle" class="actor">physical backing page</text>
-  <text x="280" y="681" text-anchor="middle" class="note">CPU DRAM · GPU VRAM · shared SoC DRAM</text>
+  <text x="28" y="611" class="legend">CPU: Central processing unit</text>
+  <text x="28" y="654" class="legend">MMU: Memory management unit</text>
+  <text x="28" y="692" class="legend">TLB: Translation lookaside buffer</text>
 </svg>
