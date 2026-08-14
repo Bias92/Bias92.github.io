@@ -12,7 +12,7 @@ CUDA 프로그램은 CPU와 GPU라는 서로 다른 processor를 함께 사용�
 
 [Host-Device 데이터 흐름]({{< relref "/posts/cuda-c-basics" >}}#host-device-데이터-흐름)에서는 CPU용 `h_data`와 GPU용 `d_data`를 따로 만들고, 계산 전후에 `cudaMemcpy`를 호출했다. 위치와 이동 시점이 코드에 그대로 보이는 explicit memory management다. 대신 자료구조가 복잡해질수록 host pointer, device pointer, copy 방향, 수명을 모두 개발자가 맞춰야 한다.
 
-Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 접근 규칙 아래 사용하게 한다. CPU DRAM과 GPU memory를 하나의 physical memory로 합치는 기능은 아니다. 이 글은 virtual address와 physical frame, synchronization과 cache coherence를 차례로 설명한다. 마지막에는 Jetson AGX Orin의 실제 device attribute를 이용해 shared DRAM이라는 hardware topology와 limited Unified Memory라는 access model을 구분한다.
+Unified Memory는 CPU와 GPU가 하나의 메모리 할당을 CUDA가 정한 접근 규칙 아래 사용하게 한다. CPU DRAM과 GPU 메모리를 하나의 물리 메모리로 합치는 기능은 아니다. 이 글은 가상 주소와 물리 프레임, 동기화와 캐시 일관성을 차례로 설명한다. 마지막에는 Jetson AGX Orin의 실제 장치 속성을 이용해, CPU와 GPU가 DRAM을 공유한다는 사실과 Limited Unified Memory라는 지원 방식이 별개임을 확인한다.
 
 ## CPU Memory와 GPU Memory
 
@@ -111,7 +111,7 @@ Coherence는 data race를 허용하는 기능이 아니다. CPU와 GPU가 synchr
 
 ## Limited와 Full Unified Memory
 
-Physical topology와 Unified Memory support model은 서로 다른 축이다.
+CPU와 GPU의 물리 메모리가 연결된 방식과 Unified Memory 지원 방식은 서로 다른 문제다.
 
 | 질문 | 가능한 구조 |
 |---|---|
@@ -161,7 +161,7 @@ concurrentManagedAccess=0
 pageableMemoryAccess=0
 ```
 
-이 출력에서 `managedMemory=1`은 explicit managed allocation을 지원한다는 뜻이다. `concurrentManagedAccess=0`에서 support model은 limited로 판정된다. `pageableMemoryAccess=0`이므로 plain `malloc`이나 `new` allocation은 Unified Memory 대상이 아니다. 앞 절의 HMM 경로도 아니다. `pageableMemoryAccessUsesHostPageTables`는 앞의 두 조건이 모두 `1`일 때만 해석하므로 이 Orin 판정에는 사용하지 않는다.
+이 출력에서 `managedMemory=1`은 명시적으로 만든 관리형 할당을 지원한다는 뜻이다. `concurrentManagedAccess=0`이므로 지원 방식은 Limited로 판정된다. `pageableMemoryAccess=0`이므로 일반 `malloc`이나 `new` 할당은 Unified Memory 대상이 아니다. 앞 절의 HMM 경로도 아니다. `pageableMemoryAccessUsesHostPageTables`는 앞의 두 조건이 모두 `1`일 때만 해석하므로 이 Orin 판정에는 사용하지 않는다.
 
 여기까지는 실제 장치 출력으로 판정한 결과다. 다음 shared-memory와 cache 설명은 이번 probe에서 내부 operation을 관측한 결과가 아니라 NVIDIA의 Tegra memory model을 이 Orin에 적용한 것이다.
 
