@@ -18,7 +18,7 @@ Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 �
 
 **Allocation**은 프로그램이 사용할 address range와 그 memory의 관리 규칙을 확보하는 일이다. **Allocator**는 요청받은 크기와 alignment에 맞는 range를 찾아 allocation을 만드는 software component다. **Pointer**는 object나 memory 위치를 가리키는 address이며, allocation API가 반환한 pointer는 프로그램이 사용할 수 있는 range의 시작을 가리킨다.
 
-`malloc`은 CPU process의 heap allocator를 사용하고, `cudaMalloc`은 CUDA Runtime과 driver를 거쳐 device allocation을 만든다. 두 allocation은 서로 다른 memory domain에 놓일 수 있다. Allocation이 항상 모든 physical frame의 즉시 배정을 뜻하는 것도 아니다. 예를 들어 CPU의 `malloc`은 virtual address range를 먼저 반환하고, 실제 physical frame은 page를 처음 접근할 때 연결될 수 있다.
+`malloc`은 CPU process의 heap allocator를 사용하고, `cudaMalloc`은 CUDA Runtime과 driver를 거쳐 device allocation을 만든다. 두 allocation은 서로 다른 memory domain에 놓일 수 있다.
 
 Allocator는 여러 thread의 allocation 요청을 동시에 받을 수 있으므로 free block 목록이나 arena 같은 내부 상태를 **mutex** 또는 **atomic operation**으로 보호할 수 있다. Mutex는 한 번에 한 thread만 해당 상태를 수정하게 하고, atomic operation은 값을 중간에 끼어드는 변경 없이 하나의 연산으로 갱신하는 CPU instruction이다. 경쟁이 없으면 mutex의 빠른 경로가 atomic instruction만으로 끝날 수 있고, 기다려야 하면 operating system이 thread를 재우고 깨운다. **Semaphore**는 사용할 수 있는 resource의 개수를 counter로 관리하는 별도의 synchronization primitive다. 따라서 mutex와 semaphore는 allocator보다 아래에 있는 memory 계층이 아니라, allocator 구현이 필요에 따라 사용하는 synchronization 도구다.
 
