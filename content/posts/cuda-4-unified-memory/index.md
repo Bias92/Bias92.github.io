@@ -30,11 +30,11 @@ Pointer에 담기는 값은 process의 **virtual address**다. 이 값은 DRAM�
 
 Virtual memory는 주소 공간을 보통 **page**라는 일정 크기의 단위로 나눈다. **Page table**은 virtual page에 유효한 physical page가 연결돼 있는지, 연결됐다면 어디이며 어떤 접근이 허용되는지 기록한다. 이 연결을 **mapping**이라고 한다. 아직 유효한 mapping이 없는 virtual page도 있다.
 
-CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치인 **Memory Management Unit(MMU)**이 최근 변환 결과를 먼저 확인하고, 필요하면 page table을 조회한다. Physical page가 놓이는 곳은 system에 따라 CPU DRAM, discrete GPU의 VRAM, Orin의 shared SoC DRAM일 수 있다. **Placement** 또는 **residency**는 이 위치를 뜻한다.
+CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치인 **MMU**(Memory Management Unit)가 최근 변환 결과를 먼저 확인하고, 필요하면 page table을 조회한다. Physical page가 놓이는 곳은 system에 따라 CPU DRAM, discrete GPU의 VRAM, Orin의 shared SoC DRAM일 수 있다. **Placement** 또는 **residency**는 이 위치를 뜻한다.
 
 최신 값이 매 순간 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 cache에 남을 수 있다. 다음 processor가 최신 값을 보려면 올바른 접근 순서와 cache 상태가 함께 보장돼야 한다.
 
-CUDA의 **Unified Virtual Addressing(UVA)**은 한 process 안의 CPU memory와 각 GPU memory를 하나의 virtual address space에 배치한다. CPU와 GPU는 서로 다른 page table을 사용할 수 있으므로 같은 pointer 값을 쓰더라도 각 processor에 유효한 mapping이 필요하다. UVA 자체는 `cudaMalloc`로 만든 device allocation을 CPU가 읽게 만들지 않으며, data placement나 cache 상태도 관리하지 않는다.
+CUDA의 **UVA**(Unified Virtual Addressing)는 한 process 안의 CPU memory와 각 GPU memory를 하나의 virtual address space에 배치한다. CPU와 GPU는 서로 다른 page table을 사용할 수 있으므로 같은 pointer 값을 쓰더라도 각 processor에 유효한 mapping이 필요하다. UVA 자체는 `cudaMalloc`로 만든 device allocation을 CPU가 읽게 만들지 않으며, data placement나 cache 상태도 관리하지 않는다.
 
 Unified Memory는 그 다음 층이다. CUDA가 CPU와 GPU의 접근을 관리하는 **managed allocation**을 제공하고, system이 지원하는 방식으로 mapping, placement, 최신 값의 visibility를 관리한다. 정리하면 UVA는 **주소 체계**, Unified Memory는 **접근과 관리 규칙**이다.
 
@@ -136,11 +136,11 @@ Page fault와 migration은 동의어가 아니다. 그림의 경로에서는 fau
 
 CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반복되는 **page ping-pong**이 생길 수 있다. Managed code가 짧아도 data movement 비용은 커질 수 있다는 뜻이다. `cudaMemPrefetchAsync`는 지정한 range를 destination processor 가까이 populate하거나 migrate하도록 요청하는 performance hint이며, correctness를 보장하는 synchronization 함수는 아니다.
 
-**Heterogeneous Memory Management(HMM)**은 Linux kernel이 CPU와 GPU의 page-table 변경, device fault, page migration을 연결하는 infrastructure다. 호환되는 Linux PCIe system에서는 HMM이 system allocation을 지원하는 software-coherent full model을 구현할 수 있다. 앞의 attribute 조합만으로 HMM 사용을 확정할 수는 없으며, 실제 addressing mode는 `nvidia-smi -q`에서 확인한다.
+**HMM**(Heterogeneous Memory Management)은 Linux kernel이 CPU와 GPU의 page-table 변경, device fault, page migration을 연결하는 infrastructure다. 호환되는 Linux PCIe system에서는 HMM이 system allocation을 지원하는 software-coherent full model을 구현할 수 있다. 앞의 attribute 조합만으로 HMM 사용을 확정할 수는 없으며, 실제 addressing mode는 `nvidia-smi -q`에서 확인한다.
 
 ## Jetson AGX Orin: Shared DRAM과 Limited Unified Memory
 
-앞의 개념을 실제 장치에 적용했다. 환경은 Jetson AGX Orin Developer Kit, L4T R36.5.0, JetPack 6.2.2, CUDA 12.6이다. Orin은 CPU와 GPU를 하나의 chip에 넣은 **SoC(System on Chip)**다. Device 0은 compute capability 8.7인 **integrated GPU(iGPU)**였다. Compute capability는 GPU가 지원하는 CUDA hardware 기능 세대를 나타낸다.
+앞의 개념을 실제 장치에 적용했다. 환경은 Jetson AGX Orin Developer Kit, L4T R36.5.0, JetPack 6.2.2, CUDA 12.6이다. Orin은 CPU와 GPU를 하나의 chip에 넣은 **SoC**(System on Chip)다. Device 0은 compute capability 8.7인 **iGPU**(integrated GPU)였다. Compute capability는 GPU가 지원하는 CUDA hardware 기능 세대를 나타낸다.
 
 ```text
 device=0 name=Orin cc=8.7 integrated=1
