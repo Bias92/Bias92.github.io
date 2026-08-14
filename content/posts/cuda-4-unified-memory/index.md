@@ -22,6 +22,10 @@ Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 �
 
 Allocator는 여러 thread의 allocation 요청을 동시에 받을 수 있으므로 free block 목록이나 arena 같은 내부 상태를 **mutex** 또는 **atomic operation**으로 보호할 수 있다. Mutex는 한 번에 한 thread만 해당 상태를 수정하게 하고, atomic operation은 값을 중간에 끼어드는 변경 없이 하나의 연산으로 갱신하는 CPU instruction이다. 경쟁이 없으면 mutex의 빠른 경로가 atomic instruction만으로 끝날 수 있고, 기다려야 하면 operating system이 thread를 재우고 깨운다. **Semaphore**는 사용할 수 있는 resource의 개수를 counter로 관리하는 별도의 synchronization primitive다. 따라서 mutex와 semaphore는 allocator보다 아래에 있는 memory 계층이 아니라, allocator 구현이 필요에 따라 사용하는 synchronization 도구다.
 
+[Google TCMalloc의 공식 설계](https://google.github.io/tcmalloc/design.html)는 이 구분을 실제 allocator 구조로 보여 준다. Front-end의 per-thread 또는 per-CPU cache는 한 실행 주체만 접근하므로 대부분의 작은 allocation을 lock 없이 처리한다. Local cache가 비면 shared middle-end에서 object를 보충하는데, 이곳의 Transfer cache와 Central free list는 size class별 mutex로 보호된다. 즉 모든 `malloc`이 하나의 global lock을 잡는 것이 아니라, local fast path와 synchronization이 필요한 shared path가 나뉜다. 아래 그림은 해당 문서의 [Apache 2.0](https://github.com/google/tcmalloc/blob/master/LICENSE) 원본이다.
+
+![Google TCMalloc의 local front-end cache, shared middle-end, OS page heap 구조](images/tcmalloc-internals.png#medium)
+
 Discrete GPU가 달린 일반적인 PC에서는 CPU DRAM과 GPU 전용 memory(VRAM)가 물리적으로 분리돼 있다. 앞 글처럼 CPU의 `malloc` allocation과 GPU의 `cudaMalloc` allocation을 따로 쓰는 방식에서는 계산 전 H2D(Host to Device) copy가 필요하고, GPU 결과를 CPU에서 읽기 전 D2H(Device to Host) copy가 필요하다.
 
 Integrated GPU는 CPU와 GPU가 같은 physical system memory를 공유할 수 있다는 점에서 discrete GPU와 다르다. 이 경우에는 CPU DRAM과 별도 VRAM 사이를 건너는 copy가 필요하지 않다. 그러나 같은 DRAM을 써도 heterogeneous한 두 processor가 virtual address를 변환하는 방식과, 자주 쓰는 data의 cached copy를 관리하는 방식은 서로 다를 수 있다. 따라서 shared DRAM이라는 사실만으로 CPU pointer를 GPU가 곧바로 사용할 수 있다거나, 한쪽이 쓴 최신 값이 다른 쪽에 자동으로 보인다고 결론낼 수 없다. **Physical topology**는 memory가 hardware에 어떻게 연결됐는지를 설명하고, **programming model**은 software가 그 memory에 어떻게 접근할 수 있는지를 정한다.
