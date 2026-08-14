@@ -36,7 +36,7 @@ MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근의 virtual-page
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
-변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. Physical frame의 위치는 hardware topology에 따라 달라진다. Discrete system에서는 CPU가 연결된 system DRAM 또는 GPU의 VRAM에 놓일 수 있다. Integrated system에서는 CPU와 GPU가 공유하는 system DRAM에 놓일 수 있다. 이 글에서 측정한 Jetson AGX Orin은 integrated system에 해당한다. 특정 page가 현재 어느 memory에 놓여 있는지를 **placement** 또는 **residency**라고 한다.
+변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. Physical frame의 위치는 hardware topology에 따라 달라진다. Discrete system에서는 CPU가 연결된 system DRAM 또는 GPU의 VRAM에 놓일 수 있다. Integrated system에서는 CPU와 GPU가 공유하는 system DRAM에 놓일 수 있다. 특정 page가 현재 어느 memory에 놓여 있는지를 **placement** 또는 **residency**라고 한다.
 
 최신 값이 매 순간 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 cache에 남을 수 있다. 다음 processor가 최신 값을 보려면 올바른 접근 순서와 cache 상태가 함께 보장돼야 한다.
 
