@@ -67,7 +67,7 @@ CUDA 문서는 이 셋을 구분해서 쓴다. 아래는 discrete GPU에서 `x`�
 
 ### UVA와 Unified Memory
 
-CUDA의 UVA(Unified Virtual Addressing)는 한 프로세스 안의 CPU 메모리와 각 GPU 메모리를 하나의 가상 주소 공간에 배치한다. CPU와 GPU는 각자 유효한 매핑을 사용한다. UVA는 주소 체계를 제공한다. GPU 전용 `cudaMalloc` allocation은 GPU가 접근하고, CPU와 GPU가 함께 접근할 allocation은 managed memory 또는 mapped memory로 만든다. Unified Memory는 managed allocation의 접근과 배치, 값의 가시성을 관리한다.
+CUDA의 UVA(Unified Virtual Addressing)는 한 프로세스 안의 CPU 메모리와 각 GPU 메모리를 하나의 가상 주소 공간에 배치한다. CPU와 GPU는 각자 유효한 매핑을 사용한다. UVA는 메모리를 구분하는 주소 체계를 제공한다. `cudaMalloc` allocation의 접근 주체는 GPU다. Unified Memory는 CPU와 GPU가 함께 사용하는 managed allocation의 접근과 배치, 값의 가시성을 관리한다.
 
 ## Unified Memory와 Managed Allocation
 
@@ -113,7 +113,7 @@ int main() {
 
 ## Synchronization과 Coherence
 
-앞 코드에는 순서와 값의 가시성이라는 두 층이 있다. `cudaDeviceSynchronize()`는 현재 device에 제출한 작업이 끝날 때까지 CPU thread를 기다리게 하여 GPU write를 CPU read보다 앞에 둔다. Managed allocation의 cache maintenance는 CUDA driver와 hardware가 이 synchronization 경계에서 처리한다.
+앞 코드에는 실행 순서와 최신 값의 가시성이라는 두 층이 있다. `cudaDeviceSynchronize()`는 현재 device에 제출한 작업이 끝날 때까지 CPU thread를 기다리게 하여 GPU write를 CPU read보다 앞에 둔다.
 
 CPU와 GPU는 DRAM 접근을 줄이려고 최근 데이터를 각자의 캐시에 보관한다. 이렇게 캐시에 올라간 값을 캐시 사본이라고 한다. 캐시는 보통 캐시 라인이라는 연속된 바이트 묶음 단위로 데이터를 가져온다. 처리 장치가 캐시 라인을 고쳤는데 그 값이 아직 아래 메모리에 반영되지 않은 상태를 dirty(더러움, 미반영), 다른 캐시에 남은 옛 사본을 stale(낡음)이라고 한다.
 
@@ -183,7 +183,7 @@ pageableMemoryAccess=0
 
 `managedMemory=1`은 explicit managed allocation 지원을, `concurrentManagedAccess=0`은 `Limited model`을 뜻한다. `pageableMemoryAccess=0`은 Unified Memory의 범위를 `cudaMallocManaged` 같은 explicit managed allocation으로 제한한다.
 
-이 Orin은 `concurrentManagedAccess=0`이므로 GPU 대상 `cudaMemPrefetchAsync`를 지원하지 않는다. Probe는 해당 호출을 건너뛰었다.
+이 Orin은 `concurrentManagedAccess=0`이므로 GPU 대상 `cudaMemPrefetchAsync`를 지원하지 않는다. 측정 프로그램은 해당 호출을 건너뛰었다.
 
 `Limited model` 판정은 위 장치 출력에 근거한다. Shared SoC DRAM과 cache 동작은 NVIDIA Tegra memory model을 이 장치에 적용한 결과다.
 
