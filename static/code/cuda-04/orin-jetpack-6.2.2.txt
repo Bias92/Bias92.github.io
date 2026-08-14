@@ -6,6 +6,7 @@
 # CUDA toolkit/runtime/driver API: 12.6
 # Power mode: MODE_30W (unchanged)
 # Repository: Bias92/Bias92.github.io main @ b88fc745264bb4c19708028de129739a28fcb672
+# Probe source preserved byte-for-byte at static/code/cuda-04/orin_um_probe.cu
 
 $ nvcc -O2 -arch=sm_87 -std=c++17 /tmp/cuda04-orin-probe/orin_um_probe.cu -o /tmp/cuda04-orin-probe/orin_um_probe
 $ /tmp/cuda04-orin-probe/orin_um_probe 0

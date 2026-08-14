@@ -1,6 +1,6 @@
-<svg width="560" height="330" viewBox="0 0 560 330" xmlns="http://www.w3.org/2000/svg" role="img">
+<svg width="560" height="310" viewBox="0 0 560 310" xmlns="http://www.w3.org/2000/svg" role="img">
   <title>Jetson AGX Orin cache-coherence paths</title>
-  <desc>CPU and iGPU caches use one shared SoC DRAM. One-way I/O coherency exposes CPU writes to the GPU. After GPU work, synchronization lets the CUDA driver manage GPU cache state before CPU access resumes.</desc>
+  <desc>CPU and iGPU caches use one shared SoC DRAM. One-way I/O coherency lets the iGPU observe CPU-cached updates without implying a cache-to-cache copy. After GPU work, synchronization lets the CUDA driver maintain GPU cache state before CPU access resumes.</desc>
   <style>
     text { font-family: 'Roboto', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; }
     .actor { fill: #d7e2e6; font-size: 24px; font-weight: 700; }
@@ -8,15 +8,12 @@
     .note { fill: #a6b0b5; font-size: 20px; }
   </style>
   <defs>
-    <marker id="cyan-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M0,0 L8,4 L0,8 Z" fill="#4fc9e8"/>
-    </marker>
     <marker id="steel-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
       <path d="M0,0 L8,4 L0,8 Z" fill="#66747a"/>
     </marker>
   </defs>
 
-  <rect width="560" height="330" fill="#0d0e10"/>
+  <rect width="560" height="310" fill="#0d0e10"/>
 
   <rect x="35" y="20" width="170" height="65" rx="4" fill="#11171a" stroke="#52636b"/>
   <text x="120" y="61" text-anchor="middle" class="actor">CPU cache</text>
@@ -25,10 +22,10 @@
   <text x="440" y="61" text-anchor="middle" class="actor">iGPU cache</text>
 
   <line x1="205" y1="68" x2="355" y2="68" stroke="#4fc9e8" stroke-width="2"
-        stroke-dasharray="7 7" marker-end="url(#cyan-arrow)"/>
+        stroke-dasharray="7 7"/>
   <rect x="216" y="35" width="128" height="25" fill="#0d0e10"/>
   <text x="280" y="55" text-anchor="middle" class="relation">I/O coherency</text>
-  <text x="280" y="122" text-anchor="middle" class="note">CPU writes visible to iGPU</text>
+  <text x="280" y="122" text-anchor="middle" class="note">iGPU observes CPU-cached updates</text>
 
   <path d="M120 85 V155" fill="none" stroke="#66747a" stroke-width="2"/>
   <path d="M440 85 V155" fill="none" stroke="#66747a" stroke-width="2"/>
@@ -47,5 +44,4 @@
   <line x1="280" y1="246" x2="280" y2="291" stroke="#4fc9e8" stroke-width="2"/>
   <circle cx="280" cy="270" r="7" fill="#0d0e10" stroke="#4fc9e8" stroke-width="2"/>
   <text x="280" y="244" text-anchor="middle" class="relation">cudaDeviceSynchronize()</text>
-  <text x="280" y="312" text-anchor="middle" class="note">driver-managed GPU cache</text>
 </svg>

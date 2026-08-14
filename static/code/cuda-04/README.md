@@ -1,12 +1,13 @@
 # CUDA 04 examples
 
-두 소스는 서로 다른 목적의 독립 실행 파일이다.
+세 CUDA 소스는 서로 다른 목적의 독립 실행 파일이다.
 
 ## Files
 
 | 파일 | 역할 | 출력의 성격 |
 |---|---|---|
 | `managed_add.cu` | 본문의 CPU 41 → GPU +1 → CPU 42 최소 예제 | 정답 확인용, benchmark 아님 |
+| `orin_um_probe.cu` | Orin iGPU 확인과 Unified Memory device attributes 조회 | Orin 관찰 재현용 |
 | `prefetch_demo.cu` | device attributes, prefetch, range attributes 진단 | 환경 의존 진단용, 성능표용 실측 아님 |
 | `orin-jetpack-6.2.2.txt` | Jetson AGX Orin의 attribute와 `managed_add` 출력 | 2026-08-14 관찰 기록 |
 
@@ -38,6 +39,10 @@ nvcc -O2 -arch="$CUDA_TARGET_ARCH" \
 
 nvcc -O2 -arch="$CUDA_TARGET_ARCH" -std=c++17 \
   -o prefetch_demo prefetch_demo.cu
+
+# Jetson AGX Orin에서만 사용
+nvcc -O2 -arch=sm_87 -std=c++17 \
+  -o orin_um_probe orin_um_probe.cu
 ```
 
 ## Run
@@ -49,6 +54,7 @@ nvcc -O2 -arch="$CUDA_TARGET_ARCH" -std=c++17 \
 ```
 
 Linux에서는 `.exe`를 뺀 이름으로 실행한다.
+Jetson AGX Orin에서는 `./orin_um_probe 0`으로 iGPU와 attribute를 함께 확인한다.
 
 `managed_add`의 예상 정답은 고정이다.
 

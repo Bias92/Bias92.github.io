@@ -1,6 +1,6 @@
 <svg width="560" height="390" viewBox="0 0 560 390" xmlns="http://www.w3.org/2000/svg" role="img">
   <title>Software-coherent full Unified Memory page migration</title>
-  <desc>A simplified sequence: CPU first-touch places page P in CPU memory, a GPU load faults, the driver moves the page and installs a GPU mapping, and the GPU load resumes.</desc>
+  <desc>A simplified sequence: CPU first-touch places page P in CPU memory, the GPU load faults, the driver moves the page to GPU memory and installs a GPU mapping, and the load resumes.</desc>
   <style>
     text { font-family: 'Roboto', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; }
     .actor { fill: #d7e2e6; font-size: 18px; font-weight: 700; }
@@ -18,7 +18,7 @@
 
   <text x="72" y="35" text-anchor="middle" class="actor">CPU memory</text>
   <text x="280" y="35" text-anchor="middle" class="actor">Driver</text>
-  <text x="488" y="35" text-anchor="middle" class="actor">GPU memory</text>
+  <text x="488" y="35" text-anchor="middle" class="actor">GPU</text>
 
   <line x1="72" y1="52" x2="72" y2="350" stroke="#344249" stroke-width="1.5"/>
   <line x1="280" y1="52" x2="280" y2="350" stroke="#344249" stroke-width="1.5"/>
@@ -35,7 +35,7 @@
   <text x="299" y="189" class="accent">page fault</text>
 
   <path d="M88 245 C180 245 366 245 472 245" fill="none" stroke="#4fc9e8" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="280" y="231" text-anchor="middle" class="event">migrate page P to GPU</text>
+  <text x="280" y="231" text-anchor="middle" class="event">migrate P to GPU memory</text>
   <text x="280" y="270" text-anchor="middle" class="note">install a valid GPU mapping</text>
 
   <circle cx="488" cy="322" r="7" fill="#4fc9e8"/>
