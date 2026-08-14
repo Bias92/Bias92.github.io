@@ -1,0 +1,107 @@
+<svg width="720" height="440" viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>CUDA Unified Memory capability decision path</title>
+  <desc>Read managedMemory, concurrentManagedAccess, pageableMemoryAccess, and pageableMemoryAccessUsesHostPageTables in order to classify Unified Memory capabilities.</desc>
+  <style>
+    text { font-family: 'Roboto', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .attr { fill: #d7e2e6; font-size: 13px; font-weight: 600; }
+    .question { fill: #7f858c; font-size: 10.5px; }
+    .branch { fill: #718087; font-size: 10px; font-weight: 700; }
+    .result { fill: #7fe0f7; font-size: 12px; font-weight: 700; letter-spacing: .3px; }
+    .detail { fill: #9aa3a8; font-size: 10.5px; }
+  </style>
+  <defs>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="2.4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c6f88" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#40cdef" stop-opacity=".95"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#464f55" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#93a3aa" stop-opacity=".75"/>
+    </linearGradient>
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M1 1 9 5 1 9Z" fill="#40cdef"/>
+    </marker>
+    <marker id="arrow-steel" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M1 1 9 5 1 9Z" fill="#93a3aa"/>
+    </marker>
+  </defs>
+
+  <rect width="720" height="440" fill="#0d0e10"/>
+
+  <!-- The cyan spine follows the value 1; steel side branches terminate at 0. -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="315" y1="62" x2="315" y2="126" stroke="#40cdef" stroke-width="1.6" marker-end="url(#arrow-cyan)"/>
+    <line x1="315" y1="156" x2="315" y2="220" stroke="#40cdef" stroke-width="1.6" marker-end="url(#arrow-cyan)"/>
+    <line x1="315" y1="250" x2="315" y2="314" stroke="#40cdef" stroke-width="1.6" marker-end="url(#arrow-cyan)"/>
+
+    <line x1="330" y1="47" x2="454" y2="47" stroke="#93a3aa" stroke-width="1.35" marker-end="url(#arrow-steel)"/>
+    <line x1="330" y1="141" x2="454" y2="141" stroke="#93a3aa" stroke-width="1.35" marker-end="url(#arrow-steel)"/>
+    <line x1="330" y1="235" x2="454" y2="235" stroke="#93a3aa" stroke-width="1.35" marker-end="url(#arrow-steel)"/>
+
+    <path d="M304 340 L230 393" stroke="#40cdef" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+    <path d="M326 340 L500 393" stroke="#40cdef" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+  </g>
+
+  <g class="branch">
+    <text x="327" y="96">1</text>
+    <text x="327" y="190">1</text>
+    <text x="327" y="284">1</text>
+    <text x="390" y="38">0</text>
+    <text x="390" y="132">0</text>
+    <text x="390" y="226">0</text>
+    <text x="266" y="365">0</text>
+    <text x="402" y="360">1</text>
+  </g>
+
+  <!-- Compact decision nodes. -->
+  <g filter="url(#glow)" fill="url(#teal)" stroke="#40cdef" stroke-width="1.4">
+    <path d="M315 31 331 47 315 63 299 47Z"/>
+    <path d="M315 125 331 141 315 157 299 141Z"/>
+    <path d="M315 219 331 235 315 251 299 235Z"/>
+    <path d="M315 313 332 330 315 347 298 330Z"/>
+  </g>
+
+  <g text-anchor="end">
+    <text class="attr" x="284" y="43">managedMemory?</text>
+    <text class="question" x="284" y="59">managed allocation available</text>
+
+    <text class="attr" x="284" y="137">concurrentManagedAccess?</text>
+    <text class="question" x="284" y="153">limited or full capability</text>
+
+    <text class="attr" x="284" y="231">pageableMemoryAccess?</text>
+    <text class="question" x="284" y="247">system allocations included</text>
+
+    <text class="attr" x="284" y="320">pageableMemoryAccessUses</text>
+    <text class="attr" x="284" y="336">HostPageTables?</text>
+  </g>
+
+  <!-- Terminal capability labels: no repeated containers. -->
+  <g>
+    <line x1="468" y1="47" x2="552" y2="47" stroke="url(#steel)" stroke-width="2"/>
+    <text class="result" x="568" y="44">UNAVAILABLE</text>
+    <text class="detail" x="568" y="60">managed allocations</text>
+
+    <line x1="468" y1="141" x2="552" y2="141" stroke="url(#steel)" stroke-width="2"/>
+    <text class="result" x="568" y="138">LIMITED</text>
+    <text class="detail" x="568" y="154">explicit managed</text>
+
+    <line x1="468" y1="235" x2="552" y2="235" stroke="url(#steel)" stroke-width="2"/>
+    <text class="result" x="568" y="232">FULL</text>
+    <text class="detail" x="568" y="248">explicit managed</text>
+
+    <line x1="154" y1="393" x2="286" y2="393" stroke="url(#teal)" stroke-width="2" filter="url(#glow)"/>
+    <text class="result" x="220" y="415" text-anchor="middle">FULL · ALL ALLOCATIONS</text>
+    <text class="detail" x="220" y="431" text-anchor="middle">software coherence · HMM</text>
+
+    <line x1="434" y1="393" x2="566" y2="393" stroke="url(#teal)" stroke-width="2" filter="url(#glow)"/>
+    <text class="result" x="500" y="415" text-anchor="middle">FULL · ALL ALLOCATIONS</text>
+    <text class="detail" x="500" y="431" text-anchor="middle">host page tables</text>
+  </g>
+</svg>

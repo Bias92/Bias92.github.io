@@ -1,0 +1,60 @@
+<svg width="720" height="322" viewBox="0 0 720 322" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>UVA, managed memory, UMA and HMM answer four different questions</title>
+  <desc>Four independent axes. UVA decides whether there is one virtual address space and moves no data. Managed memory decides who places and moves the pages. UMA is a hardware property: whether CPU and GPU share one physical DRAM. HMM decides which allocations are covered, extending the managed set to ordinary system allocations.</desc>
+  <style>
+    text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;fill:#cfe9f2}
+    .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace}
+    .term{font-size:13px;fill:#40cdef;letter-spacing:.02em}
+    .q{font-size:9.5px;fill:#6f8b96}
+    .box{font-size:10.5px;fill:#dff0f7}
+    .note{font-size:9.5px;fill:#8fb0bd}
+  </style>
+
+  <rect width="720" height="322" fill="#0d0e10"/>
+
+  <!-- ===== UVA ===== -->
+  <text x="20" y="46" class="term mono">UVA</text>
+  <text x="20" y="61" class="q">주소 공간</text>
+  <rect x="150" y="30" width="420" height="30" rx="5" fill="#12171b" stroke="#2f7f95"/>
+  <text x="360" y="49" class="box" text-anchor="middle">하나의 가상 주소 공간</text>
+  <rect x="150" y="30" width="70" height="30" rx="5" fill="#0f2b34" stroke="#2f7f95"/>
+  <text x="185" y="49" class="mono" font-size="9.5" fill="#9fdcec" text-anchor="middle">CPU</text>
+  <rect x="500" y="30" width="70" height="30" rx="5" fill="#0f2b34" stroke="#2f7f95"/>
+  <text x="535" y="49" class="mono" font-size="9.5" fill="#9fdcec" text-anchor="middle">GPU</text>
+  <text x="586" y="49" class="note">이동 없음</text>
+
+  <!-- ===== Managed ===== -->
+  <text x="20" y="119" class="term mono">Managed</text>
+  <text x="20" y="134" class="q">배치와 이동</text>
+  <rect x="150" y="103" width="70" height="30" rx="5" fill="#0f2b34" stroke="#2f7f95"/>
+  <text x="185" y="122" class="mono" font-size="9.5" fill="#9fdcec" text-anchor="middle">CPU</text>
+  <rect x="500" y="103" width="70" height="30" rx="5" fill="#0f2b34" stroke="#2f7f95"/>
+  <text x="535" y="122" class="mono" font-size="9.5" fill="#9fdcec" text-anchor="middle">GPU</text>
+  <line x1="222" y1="118" x2="492" y2="118" stroke="#e46fd6" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M500 118L490 113V123Z" fill="#e46fd6"/>
+  <rect x="348" y="110" width="16" height="16" rx="2" fill="#0d0e10" stroke="#e46fd6"/>
+  <text x="356" y="104" class="mono" font-size="8" fill="#c98ebd" text-anchor="middle">page</text>
+  <text x="586" y="122" class="note">드라이버가 이동</text>
+
+  <!-- ===== UMA ===== -->
+  <text x="20" y="192" class="term mono">UMA</text>
+  <text x="20" y="207" class="q">물리 메모리</text>
+  <rect x="150" y="176" width="420" height="30" rx="5" fill="#12171b" stroke="#4a5f68"/>
+  <text x="360" y="195" class="box" text-anchor="middle">같은 물리 DRAM</text>
+  <rect x="150" y="176" width="70" height="30" rx="5" fill="#0f2b34" stroke="#4a5f68"/>
+  <text x="185" y="195" class="mono" font-size="9.5" fill="#9fdcec" text-anchor="middle">CPU</text>
+  <rect x="500" y="176" width="70" height="30" rx="5" fill="#0f2b34" stroke="#4a5f68"/>
+  <text x="535" y="195" class="mono" font-size="9.5" fill="#9fdcec" text-anchor="middle">GPU</text>
+  <text x="586" y="195" class="note">하드웨어 속성</text>
+
+  <!-- ===== HMM ===== -->
+  <text x="20" y="265" class="term mono">HMM</text>
+  <text x="20" y="280" class="q">관리 범위</text>
+  <rect x="150" y="249" width="160" height="30" rx="5" fill="#0f2b34" stroke="#2f7f95"/>
+  <text x="230" y="268" class="mono" font-size="9.5" fill="#dff0f7" text-anchor="middle">cudaMallocManaged</text>
+  <line x1="312" y1="264" x2="336" y2="264" stroke="#6f8b96" stroke-width="1.2"/>
+  <path d="M344 264L334 259V269Z" fill="#6f8b96"/>
+  <rect x="352" y="249" width="218" height="30" rx="5" fill="#12171b" stroke="#2f7f95" stroke-dasharray="5 4"/>
+  <text x="461" y="268" class="mono" font-size="9.5" fill="#dff0f7" text-anchor="middle">malloc · new · mmap</text>
+  <text x="586" y="268" class="note">Linux 전용</text>
+</svg>

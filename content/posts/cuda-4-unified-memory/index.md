@@ -86,6 +86,10 @@ CPU 코드와 GPU kernel은 똑같은 포인터 값 `x`를 사용한다. `cudaMa
 
 UVA(Unified Virtual Addressing)는 CPU memory와 각 GPU memory의 주소를 한 process의 가상 주소 체계에 배치하는 기반이다. UVA가 주소를 정리한다면 Unified Memory는 그 주소를 어느 processor가 접근할 수 있는지, 최신 데이터가 어디에 있는지를 관리한다. 둘은 같은 말이 아니다.
 
+![UVA, managed, UMA, HMM이 각각 답하는 질문](images/layers.svg)
+
+네 단어는 층이 아니라 축이다. UVA는 주소, managed는 배치와 이동, UMA는 물리 메모리, HMM은 관리 범위를 정한다. 한 시스템이 이 네 축에서 각각 어디에 있는지가 곧 support model이다.
+
 ## Page Fault와 Migration
 
 가장 이해하기 쉬운 경우부터 보자. CPU와 GPU에 물리적으로 분리된 memory가 있고, software-coherent full Unified Memory를 지원하며, prefetch 같은 hint를 주지 않은 환경이다.
@@ -159,6 +163,8 @@ print_um_support_class(p);
 
 판정 순서는 중요하다. `managedMemory`는 `cudaMallocManaged` 자체를 쓸 수 있는지 확인한다. 그 다음 `concurrentManagedAccess`가 0이면 limited, 1이면 full support다. full일 때만 `pageableMemoryAccess`로 CUDA가 만든 managed allocation에 한정되는지, `malloc` 같은 system allocation까지 포함하는지 나눈다. host page-table 값은 두 값이 모두 1일 때만 해석한다.
 
+![device attribute 판정 경로](images/attribute-path.svg)
+
 classifier를 붙이면 출력 첫 줄은 아래 네 class 중 하나가 되고, 그 뒤의 41과 42는 변하지 않는다. 첫 줄은 이 글에서 측정한 특정 장비 값이 아니라 실행할 system에 따라 달라지는 capability 결과다.
 
 ```text
@@ -200,6 +206,8 @@ HMM을 지원하는 환경에서는 앞의 예제에서 allocation과 해제만 
 ```
 
 가능한 조건은 full support에서 `pageableMemoryAccess == 1`이고 `pageableMemoryAccessUsesHostPageTables == 0`인 경우다. 마지막 값이 1이면 HMM의 software page-table mirroring 대신 host page table을 사용하는 hardware-coherent 경로다. ATS(Address Translation Services)는 CUDA 문서가 설명하는 대표적인 구현이다.
+
+![같은 malloc 포인터가 GPU에 닿는 두 경로](images/hmm-paths.svg)
 
 HMM은 새로운 allocator의 이름도, migration을 없애는 기능도 아니다. Linux의 기존 allocation을 GPU memory-management 경로에 포함시키는 infrastructure다. 호환 kernel, driver, GPU와 NVIDIA open kernel module이 필요하므로 구체적인 요구사항은 [CUDA의 HMM 설명](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#hmm-full-unified-memory-with-software-coherency)에서 확인해야 한다.
 
