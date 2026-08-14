@@ -918,10 +918,10 @@ html { scroll-behavior: smooth; }
     margin: 1rem auto;
 }
 
-/* --- 조금 더 작은 도식: 데스크톱 600px, 좁은 화면에서는 본문 폭에 맞춤 --- */
+/* --- 작은 도식: 데스크톱 450px, 좁은 화면에서는 본문 폭에 맞춤 --- */
 .sb-post-content img[src*="#compact"],
 .post-content img[src*="#compact"] {
-    width: 600px;
+    width: 450px;
     max-width: 100% !important;
     display: block;
     margin: 1rem auto;
