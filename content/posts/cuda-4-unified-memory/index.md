@@ -26,11 +26,17 @@ Unified Memory는 모든 hardware를 같은 구조로 바꾸지 않는다. 서�
 
 ## Virtual Address와 Physical Memory
 
-Pointer에 담기는 값은 process의 **virtual address**다. 이 값은 DRAM이나 VRAM chip의 물리적 위치를 직접 나타내는 physical address가 아니다.
+이 글에서 다루는 일반적인 CUDA process에서 pointer에 담기는 값은 **virtual address**다. 이 값은 DRAM이나 VRAM chip의 물리적 위치를 직접 나타내는 physical address가 아니다.
 
 Virtual memory는 주소 공간을 보통 **page**라는 일정 크기의 단위로 나눈다. **Page table**은 virtual page에 유효한 physical page가 연결돼 있는지, 연결됐다면 어디이며 어떤 접근이 허용되는지 기록한다. 이 연결을 **mapping**이라고 한다. 아직 유효한 mapping이 없는 virtual page도 있다.
 
-CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치인 **MMU**(Memory Management Unit)가 최근 변환 결과를 먼저 확인하고, 필요하면 page table을 조회한다. Physical page가 놓이는 곳은 system에 따라 CPU DRAM, discrete GPU의 VRAM, Orin의 shared SoC DRAM일 수 있다. **Placement** 또는 **residency**는 이 위치를 뜻한다.
+CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치인 **MMU**(Memory Management Unit)가 virtual address를 현재 접근 가능한 physical address로 변환한다. Virtual address는 virtual page number와 page 안의 위치를 나타내는 offset으로 나뉜다. 주소 변환은 page number를 바꾸지만 offset은 그대로 유지한다.
+
+MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근 page-table 변환 결과를 찾는다. TLB는 data가 아니라 주소 변환 결과를 보관하는 cache다. TLB에 결과가 없으면 page table을 조회한다. 따라서 **TLB miss는 page fault가 아니다**. Page table에도 유효한 mapping이 없거나 접근 권한이 맞지 않을 때 fault가 발생할 수 있다.
+
+![MMU가 TLB와 page table을 사용해 virtual address를 physical address로 변환하는 과정](images/address-translation.svg)
+
+변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. Physical page가 놓이는 곳은 system에 따라 CPU DRAM, discrete GPU의 VRAM, Orin의 shared SoC DRAM일 수 있다. **Placement** 또는 **residency**는 이 위치를 뜻한다.
 
 최신 값이 매 순간 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 cache에 남을 수 있다. 다음 processor가 최신 값을 보려면 올바른 접근 순서와 cache 상태가 함께 보장돼야 한다.
 
