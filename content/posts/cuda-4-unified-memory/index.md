@@ -38,17 +38,17 @@ MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근의 virtual-page
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
-변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#unified-and-system-memory)는 heterogeneous system에 여러 physical memory가 있으며, CUDA가 data의 allocation, **placement**, migration을 관리한다고 설명한다. [세부 allocator 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)에서도 `Placement Policy`를 별도 항목으로 두고, full-support 환경의 `cudaMallocManaged`를 `First touch/hint`로 분류한다. First touch는 보통 data를 처음 접근한 processor 쪽 memory에 초기 배치한다는 뜻이다. Hint는 driver의 배치 결정을 유도할 뿐, 즉시 migration하거나 실제 placement를 보장하지 않는다.
+변환된 물리 주소는 캐시와 물리 메모리로 이어지는 메모리 계층에서 사용된다. [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#unified-and-system-memory)는 이기종 시스템에 여러 물리 메모리가 있으며, CUDA가 데이터의 할당과 배치, 이동을 관리한다고 설명한다. [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)에는 `Placement Policy`가 별도 항목으로 나온다. Full 지원 환경의 `cudaMallocManaged`는 `First touch/hint`로 분류된다. First touch는 보통 데이터를 처음 접근한 처리 장치의 메모리에 배치한다는 뜻이다. Hint는 드라이버의 배치 결정을 돕는 정보일 뿐, 데이터를 즉시 옮기거나 실제 배치 위치를 보장하지 않는다.
 
-이 공식 용례에 따라 이 글에서 **placement**는 managed allocation의 각 page 또는 memory range에 대응하는 실제 data가 현재 어느 physical memory에 저장돼 있는지를 뜻한다. **Mapping**이 `virtual page → physical frame`의 주소 연결이라면, placement는 그 data를 담은 physical memory의 위치다. Discrete system의 후보는 CPU의 system DRAM과 각 GPU의 memory다. CPU와 iGPU가 system DRAM을 공유하는 구조에서는 둘 사이에 별도 DRAM↔VRAM placement가 없다.
+CUDA 문서에서 **placement(배치)**는 관리형 할당의 각 페이지에 해당하는 데이터가 현재 어느 물리 메모리에 저장되어 있는지를 뜻한다. **Mapping(매핑)**은 가상 페이지를 물리 프레임에 연결하는 주소 관계이고, 배치는 그 물리 프레임이 어느 메모리에 속하는지를 가리킨다. 분리형 GPU에서는 관리형 데이터가 CPU의 시스템 DRAM이나 GPU의 VRAM에 저장될 수 있다. 반면 통합 GPU는 CPU와 시스템 DRAM을 공유하므로, 데이터를 별도의 VRAM으로 옮기는 과정이 없다.
 
-GPU가 CPU memory의 data를 remote access할 수 있도록 mapping만 추가하면 placement는 유지된다. 반면 **migration**은 data의 최신 내용을 다른 physical memory로 옮기므로 placement를 바꾼다. 처리 단위는 support model에 따라 다르다. Software-coherent full model은 보통 page 단위로 이동하고, hardware-coherent model은 cache-line 단위 접근도 가능하며, limited model은 virtual page보다 큰 단위로 이동할 수 있다.
+GPU가 CPU 메모리의 데이터를 복사하지 않고 직접 읽도록 주소 연결만 설정하면 배치는 바뀌지 않는다. 반면 **migration(이동)**은 최신 데이터를 다른 물리 메모리로 옮기므로 배치를 바꾼다. 처리 단위는 Unified Memory 지원 방식에 따라 다르다. 소프트웨어 일관성을 사용하는 Full 모델은 보통 페이지 단위로 이동한다. 하드웨어 일관성을 사용하는 모델은 캐시 라인 단위로도 접근할 수 있고, Limited 모델은 가상 페이지보다 큰 단위로 옮길 수 있다.
 
-최신 값이 매 순간 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 cache에 남을 수 있다. 다음 processor가 최신 값을 보려면 올바른 접근 순서와 cache 상태가 함께 보장돼야 한다.
+최신 값이 언제나 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 캐시에 남을 수 있다. 다음 처리 장치가 최신 값을 보려면 올바른 접근 순서와 캐시 상태가 함께 보장돼야 한다.
 
-CUDA의 **UVA**(Unified Virtual Addressing)는 한 process 안의 CPU memory와 각 GPU memory를 하나의 virtual address space에 배치한다. CPU와 GPU는 서로 다른 page table을 사용할 수 있으므로 같은 pointer 값을 쓰더라도 각 processor에 유효한 mapping이 필요하다. UVA 자체는 `cudaMalloc`로 만든 device allocation을 CPU가 읽게 만들지 않으며, data placement나 cache 상태도 관리하지 않는다.
+CUDA의 **UVA**(Unified Virtual Addressing)는 한 프로세스 안의 CPU 메모리와 각 GPU 메모리를 하나의 가상 주소 공간에 배치한다. CPU와 GPU는 서로 다른 페이지 테이블을 사용할 수 있으므로 같은 포인터 값을 쓰더라도 각 처리 장치에 유효한 매핑이 필요하다. UVA 자체는 `cudaMalloc`로 만든 장치 메모리 할당을 CPU가 읽게 만들지 않으며, 데이터 배치나 캐시 상태도 관리하지 않는다.
 
-Unified Memory는 그 다음 층이다. CUDA가 CPU와 GPU의 접근을 관리하는 **managed allocation**을 제공하고, system이 지원하는 방식으로 mapping, placement, 최신 값의 visibility를 관리한다. 정리하면 UVA는 **주소 체계**, Unified Memory는 **접근과 관리 규칙**이다.
+Unified Memory는 그 다음 층이다. CUDA는 CPU와 GPU의 접근을 관리하는 **관리형 할당(managed allocation)**을 제공하고, 시스템이 지원하는 방식으로 매핑과 배치, 최신 값이 보이도록 관리한다. 정리하면 UVA는 **주소 체계**, Unified Memory는 **접근과 관리 규칙**이다.
 
 ## Unified Memory와 Managed Allocation
 
