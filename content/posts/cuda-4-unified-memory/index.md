@@ -24,9 +24,9 @@ Allocator는 여러 thread의 allocation 요청을 동시에 받을 수 있으�
 
 Discrete GPU가 달린 일반적인 PC에서는 CPU DRAM과 GPU 전용 memory(VRAM)가 물리적으로 분리돼 있다. 앞 글처럼 CPU의 `malloc` allocation과 GPU의 `cudaMalloc` allocation을 따로 쓰는 방식에서는 계산 전 H2D(Host to Device) copy가 필요하고, GPU 결과를 CPU에서 읽기 전 D2H(Device to Host) copy가 필요하다.
 
-Integrated GPU는 다르다. CPU와 GPU가 같은 physical system memory를 공유할 수 있다. 그렇다고 CPU pointer를 GPU가 언제나 그대로 읽을 수 있는 것은 아니다. 같은 DRAM을 써도 두 processor가 memory를 찾아가는 주소 변환 방식과, 자주 쓰는 data의 임시 사본을 보관하는 cache는 서로 다를 수 있다. **Physical topology**와 **programming model**은 별개의 문제다.
+Integrated GPU는 CPU와 GPU가 같은 physical system memory를 공유할 수 있다는 점에서 discrete GPU와 다르다. 이 경우에는 CPU DRAM과 별도 VRAM 사이를 건너는 copy가 필요하지 않다. 그러나 같은 DRAM을 써도 heterogeneous한 두 processor가 virtual address를 변환하는 방식과, 자주 쓰는 data의 cached copy를 관리하는 방식은 서로 다를 수 있다. 따라서 shared DRAM이라는 사실만으로 CPU pointer를 GPU가 곧바로 사용할 수 있다거나, 한쪽이 쓴 최신 값이 다른 쪽에 자동으로 보인다고 결론낼 수 없다. **Physical topology**는 memory가 hardware에 어떻게 연결됐는지를 설명하고, **programming model**은 software가 그 memory에 어떻게 접근할 수 있는지를 정한다.
 
-Unified Memory는 모든 hardware를 같은 구조로 바꾸지 않는다. 서로 다른 구조에서도 CPU 코드와 GPU kernel이 같은 allocation을 다룰 수 있는 규칙을 제공한다.
+그래서 CUDA는 이 간극을 다루는 programming model 중 하나로 Unified Memory를 제공한다. Unified Memory는 hardware 구조를 바꾸는 기능이 아니다. 대신 CPU code와 GPU kernel이 같은 allocation을 가리키고, 허용된 순서로 접근했을 때 다음 processor가 최신 값을 보게 한다. 이를 위해 현재 system의 Runtime, driver, hardware가 support model에 맞춰 address mapping, data placement, cache 상태를 관리한다.
 
 ## Virtual Address와 Physical Memory
 
