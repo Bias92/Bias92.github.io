@@ -1,0 +1,56 @@
+<svg width="720" height="306" viewBox="0 0 720 306" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Explicit-copy model: two allocations, three host statements, two PCIe crossings</title>
+  <desc>Time flows downward. The CPU lane and the GPU lane are separated by the PCIe corridor. Host and device each get their own allocation. Every PCIe crossing is an explicit cudaMemcpy the programmer wrote.</desc>
+  <style>
+    text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;fill:#cfe9f2}
+    .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace}
+    .lane{font-size:13px;fill:#9fdcec;letter-spacing:.04em}
+    .num{font-size:11px;fill:#0d0e10;font-weight:700}
+    .code{font-size:12px;fill:#dff0f7}
+    .alloc{font-size:11px;fill:#8fb0bd}
+    .tag{font-size:10.5px;fill:#6f8b96;letter-spacing:.06em}
+  </style>
+
+  <rect width="720" height="306" fill="#0d0e10"/>
+
+  <text x="176" y="34" class="lane" text-anchor="middle">CPU / Host</text>
+  <text x="544" y="34" class="lane" text-anchor="middle">GPU / Device</text>
+
+  <rect x="312" y="46" width="96" height="230" fill="#0a1216" stroke="#2b3a42" stroke-dasharray="4 4"/>
+  <text x="360" y="34" class="tag" text-anchor="middle">PCIe</text>
+
+  <rect x="40" y="46" width="272" height="230" rx="8" fill="#12171b" stroke="#22323a"/>
+  <rect x="408" y="46" width="272" height="230" rx="8" fill="#12171b" stroke="#22323a"/>
+
+  <line x1="26" y1="54" x2="26" y2="268" stroke="#2b3a42"/>
+  <path d="M22 262L26 270L30 262Z" fill="#2b3a42"/>
+  <text x="26" y="288" class="tag" text-anchor="middle">time</text>
+
+  <!-- allocations: two of them -->
+  <rect x="56" y="58" width="240" height="26" rx="5" fill="none" stroke="#4a5f68" stroke-dasharray="5 4"/>
+  <text x="176" y="75" class="mono alloc" text-anchor="middle">malloc &#8594; h_data</text>
+  <rect x="424" y="58" width="240" height="26" rx="5" fill="none" stroke="#4a5f68" stroke-dasharray="5 4"/>
+  <text x="544" y="75" class="mono alloc" text-anchor="middle">cudaMalloc &#8594; d_data</text>
+
+  <!-- 1 -->
+  <rect x="56" y="100" width="240" height="34" rx="5" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="74" cy="117" r="9" fill="#40cdef"/>
+  <text x="74" y="121" class="num" text-anchor="middle">1</text>
+  <text x="90" y="121" class="mono code">cudaMemcpy(d, h, n, H2D);</text>
+  <line x1="312" y1="117" x2="400" y2="117" stroke="#40cdef" stroke-width="1.8"/>
+  <path d="M408 117L398 112V122Z" fill="#40cdef"/>
+
+  <!-- 2 -->
+  <rect x="424" y="162" width="240" height="34" rx="5" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="442" cy="179" r="9" fill="#40cdef"/>
+  <text x="442" y="183" class="num" text-anchor="middle">2</text>
+  <text x="458" y="183" class="mono code">kernel&lt;&lt;&lt;g,b&gt;&gt;&gt;(d_data);</text>
+
+  <!-- 3 -->
+  <rect x="56" y="224" width="240" height="34" rx="5" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="74" cy="241" r="9" fill="#40cdef"/>
+  <text x="74" y="245" class="num" text-anchor="middle">3</text>
+  <text x="90" y="245" class="mono code">cudaMemcpy(h, d, n, D2H);</text>
+  <line x1="408" y1="241" x2="320" y2="241" stroke="#40cdef" stroke-width="1.8"/>
+  <path d="M312 241L322 236V246Z" fill="#40cdef"/>
+</svg>

@@ -86,7 +86,7 @@ cudaMemcpy(h_result, d_result, size, cudaMemcpyDeviceToHost);
 
 Bring the finished result back from GPU memory to CPU memory.
 
-![data flow diagram](./images/neon3.png)
+![explicit copy data flow](./images/explicit-copy.svg)
 
 Why is this the single biggest optimization bottleneck? The bandwidth numbers make it obvious, as long as you keep the paths straight. The default host-to-device path for a discrete GPU is PCIe: PCIe Gen4 x16 is ~32 GB/s per direction (theoretical), Gen5 x16 ~64 GB/s. NVLink is far faster but topology-dependent; an H100's NVLink is ~900 GB/s aggregate (bidirectional), and it applies to GPU-to-GPU over NVLink/NVSwitch or Grace-to-Hopper over the on-package NVLink-C2C link on GH200, *not* to a plain `cudaMemcpy` from system RAM, which still crosses PCIe. On-device HBM, meanwhile, is ~2.0 TB/s on an A100 SXM (HBM2e) and ~3.35 TB/s on an H100 SXM (HBM3). So on-device memory outruns the PCIe host link by roughly 30-100×, depending on the PCIe generation and the GPU.
 

@@ -86,7 +86,7 @@ cudaMemcpy(h_result, d_result, size, cudaMemcpyDeviceToHost);
 
 계산이 끝난 GPU 메모리의 결과를 다시 CPU 메모리로 가져온다.
 
-![data flow diagram](./images/neon3.png)
+![explicit copy data flow](./images/explicit-copy.svg)
 
 이 3단계가 왜 CUDA 최적화의 가장 큰 병목이냐면, 경로만 헷갈리지 않으면 대역폭 숫자에서 바로 나온다. 개별 GPU의 기본 host-to-device 경로는 PCIe다. PCIe Gen4 x16은 방향당 약 32 GB/s(이론치), Gen5 x16은 약 64 GB/s다. NVLink는 훨씬 빠르지만 topology에 의존한다. H100의 NVLink는 약 900 GB/s(양방향 합산)이고, 이건 NVLink/NVSwitch로 묶인 GPU-GPU나 GH200의 on-package NVLink-C2C(Grace-Hopper) 경로에 해당하지, 시스템 RAM에서의 평범한 `cudaMemcpy`에는 해당하지 않는다. 그건 여전히 PCIe를 탄다. 반면 GPU 안 HBM은 A100 SXM이 약 2.0 TB/s(HBM2e), H100 SXM이 약 3.35 TB/s(HBM3)다. 정리하면 온디바이스 메모리가 PCIe host link보다 대략 30\~100배 빠르고, 그 배율은 PCIe 세대와 GPU에 따라 달라진다.
 
