@@ -101,9 +101,9 @@ int main() {
 
 앞 코드에는 순서와 값의 가시성이라는 두 층이 있다. **Synchronization**은 CPU와 GPU 작업의 순서를 정한다. `cudaDeviceSynchronize()`는 현재 device에 앞서 제출한 작업이 끝날 때까지 CPU thread를 기다리게 한다. 이 함수가 성공한 뒤에야 CPU가 `x`를 읽는다. Application이 별도의 cache-flush 함수를 호출할 필요는 없다.
 
-CPU와 GPU는 DRAM 접근을 줄이려고 최근 data를 각자의 **cache**에 보관한다. Cache는 보통 **cache line**이라는 연속된 byte 묶음으로 data를 가져온다. Processor가 cache line을 고친 뒤 변경된 값이 아직 아래 memory에 반영되지 않은 상태를 **dirty**라고 한다. 다른 cache에 남은 이전 사본은 **stale**하다.
+CPU와 GPU는 DRAM 접근을 줄이려고 최근 데이터를 각자의 **캐시**에 보관한다. 이렇게 캐시에 올라간 값을 **캐시 사본**이라고 한다. 캐시는 보통 **캐시 라인**이라는 연속된 바이트 묶음 단위로 데이터를 가져온다. 처리 장치가 캐시 라인을 고쳤는데 그 값이 아직 아래 메모리에 반영되지 않은 상태를 **dirty**(더러움, 미반영), 다른 캐시에 남은 옛 사본을 **stale**(낡음)이라고 한다.
 
-**Cache coherence**는 올바르게 synchronization된 접근에서 다음 processor가 최신 값을 보도록 cached copy의 상태를 관리하는 규칙이다. Write-back은 변경된 값을 아래 memory에 반영하고, invalidation은 오래된 cached copy를 무효화한다. Hardware가 processor 사이의 cache 상태 전달을 지원할 수도 있고, driver가 synchronization 경계에서 필요한 cache maintenance를 수행할 수도 있다.
+**Cache coherence**는 올바르게 synchronization된 접근에서 다음 처리 장치가 최신 값을 보도록 캐시 사본의 상태를 관리하는 규칙이다. Write-back은 변경된 값을 아래 메모리에 반영하고, invalidation은 낡은 캐시 사본을 무효화한다. Hardware가 processor 사이의 cache 상태 전달을 지원할 수도 있고, driver가 synchronization 경계에서 필요한 cache maintenance를 수행할 수도 있다.
 
 Synchronization과 coherence는 별도 API 두 개를 뜻하지 않는다. Program은 `cudaDeviceSynchronize()`로 실행 순서를 만들고, CUDA의 memory model과 현재 system의 driver 또는 hardware가 그 경계에서 값의 가시성을 보장한다. Placement는 실제 data가 어느 physical memory에 있는가의 문제이고, coherence는 다음 processor가 최신 값을 보는가의 문제다.
 
@@ -167,11 +167,11 @@ pageableMemoryAccess=0
 
 Tegra 문서에 따르면 Tegra의 CPU와 iGPU는 SoC DRAM을 공유하며 device memory, host memory, unified memory가 같은 physical SoC DRAM에 할당된다. `integrated=1`이라는 실제 출력도 이 장치가 host memory system과 통합된 GPU임을 확인한다. 따라서 Orin의 managed allocation을 CPU DRAM에서 별도 VRAM으로 PCIe migration한다고 설명하면 틀린다.
 
-Tegra에서 `concurrentManagedAccess=0`인 Unified Memory는 CPU와 iGPU 양쪽에서 cached된다. Orin에는 별도 VRAM copy가 없지만 CPU cache와 GPU cache가 하나로 합쳐진 것은 아니다. 같은 SoC DRAM 위의 cached copy가 어느 processor의 최신 값인지 맞추는 일이 남는다.
+Tegra에서 `concurrentManagedAccess=0`인 Unified Memory는 CPU와 iGPU 양쪽 캐시에 올라간다. Orin에는 별도 VRAM 사본이 없지만 CPU 캐시와 GPU 캐시가 하나로 합쳐진 것은 아니다. 같은 SoC DRAM 위의 캐시 사본 중 어느 쪽이 최신 값인지 맞추는 일이 남는다.
 
 Orin은 **I/O coherency**, 즉 one-way coherency를 지원한다. GPU는 CPU cache의 최신 update를 읽을 수 있으므로 application이 CPU cache를 직접 clean할 필요가 없다. 반대 방향까지 hardware가 대칭으로 처리하는 full coherency는 아니다. GPU cache의 최신 값을 CPU가 읽게 만드는 데 필요한 GPU cache-management operation은 CUDA driver가 managed memory 내부에서 처리한다.
 
-또한 Tegra 문서는 `concurrentManagedAccess=0`인 환경에서 kernel launch와 synchronization에 추가 coherency·cache-maintenance operation이 필요하다고 명시한다. 이 경계의 추가 작업은 latency를 늘릴 수 있다. 정확히 어느 cache line이 write-back 또는 invalidation됐는지와 그 비용은 이번 실행에서 측정하지 않았다.
+또한 Tegra 문서는 `concurrentManagedAccess=0`인 환경에서 kernel launch와 synchronization에 추가 coherency·cache-maintenance operation이 필요하다고 명시한다. 이 경계의 추가 작업은 latency를 늘릴 수 있다. 정확히 어느 캐시 라인이 write-back 또는 invalidation됐는지와 그 비용은 이번 실행에서 측정하지 않았다.
 
 ![Jetson AGX Orin의 one-way I/O coherency와 driver-managed GPU cache](images/orin-shared-dram.svg)
 
