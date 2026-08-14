@@ -60,7 +60,7 @@ GPGPU가 위력을 발휘하는 워크로드는 공통점이 하나 있다. 같�
 
 ### Host-Device 데이터 흐름
 
-이 글이 다루는 명시적 복사(explicit-copy) 모델에서, CPU(Host)와 GPU(Device)는 물리적으로 분리된 메모리를 갖는다. CPU에서 할당한 변수는 커널에서 보이지 않으므로 개발자가 직접 데이터를 옮겨야 한다. ([UVA와 Unified/managed memory]({{< relref "/posts/cuda-4-unified-memory" >}}#managed-allocation과-uva), integrated GPU는 이걸 완화해서 주소 공간을 공유하거나 페이지를 자동 이주시키지만, 그건 별도 주제다. 명시적 모델을 먼저 이해하는 게 순서다.) 이 모델에서 모든 CUDA 프로그램은 메모리 단절을 극복하려고 아래 3단계를 거친다.
+이 글이 다루는 명시적 복사(explicit-copy) 모델에서, CPU(Host)와 GPU(Device)는 물리적으로 분리된 메모리를 갖는다. CPU에서 할당한 변수는 커널에서 보이지 않으므로 개발자가 직접 데이터를 옮겨야 한다. ([`cudaMallocManaged`와 Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#cudamallocmanaged), integrated GPU처럼 CPU와 GPU가 physical memory를 공유하는 system은 배치 방식이 다르다. 여기서는 명시적 모델을 먼저 이해한다.) 이 모델에서 모든 CUDA 프로그램은 메모리 단절을 극복하려고 아래 3단계를 거친다.
 
 1. Host → Device (`cudaMemcpy`)
 
