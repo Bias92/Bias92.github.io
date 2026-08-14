@@ -20,7 +20,13 @@ Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 �
 
 `malloc`은 CPU process의 heap allocator를 사용하고, `cudaMalloc`은 CUDA Runtime과 driver를 거쳐 device allocation을 만든다. 두 allocation은 서로 다른 memory domain에 놓일 수 있다.
 
-Allocator는 여러 thread의 allocation 요청을 동시에 받을 수 있으므로 free block 목록이나 arena 같은 내부 상태를 **mutex** 또는 **atomic operation**으로 보호할 수 있다. Mutex는 한 번에 한 thread만 해당 상태를 수정하게 하고, atomic operation은 값을 중간에 끼어드는 변경 없이 하나의 연산으로 갱신하는 CPU instruction이다. 경쟁이 없으면 mutex의 빠른 경로가 atomic instruction만으로 끝날 수 있고, 기다려야 하면 operating system이 thread를 재우고 깨운다. **Semaphore**는 사용할 수 있는 resource의 개수를 counter로 관리하는 별도의 synchronization primitive다. 따라서 mutex와 semaphore는 allocator보다 아래에 있는 memory 계층이 아니라, allocator 구현이 필요에 따라 사용하는 synchronization 도구다.
+Allocator는 여러 thread의 allocation 요청을 동시에 받을 수 있다. 두 thread가 같은 free-list head를 읽고 각자 새 값을 기록하면 한쪽 변경이 사라지거나 list 연결이 깨질 수 있다. 이처럼 결과가 실행 순서에 따라 달라지는 넓은 문제를 **race condition**이라고 한다. 그중 같은 memory location에 대한 접근이 겹치고, 하나 이상이 write이며, 해당 접근이 atomic도 아니고 synchronization으로 순서가 정해지지도 않은 경우가 **data race**다. C++에서 data race는 undefined behavior다.
+
+**Mutex**(mutual exclusion)는 이런 shared state를 한 번에 한 thread만 수정하게 만드는 synchronization primitive다. 단, 그 state를 다루는 모든 code path가 같은 mutex를 사용해야 한다. Thread는 `lock`을 얻은 뒤 free-list pointer 여러 개를 갱신하고, 내부 상태가 다시 일관된 시점에 `unlock`한다. 이처럼 함께 보호해야 하는 code 구간을 **critical section**이라고 한다. `unlock` 전에 기록한 값은 같은 mutex의 다음 `lock`이 성공한 thread에게 보이도록 synchronization 관계도 만들어진다. 다른 thread가 이미 mutex를 가지고 있다면 나머지는 lock이 풀릴 때까지 기다린다.
+
+**Atomic operation**은 특정 atomic object의 load, store 또는 read-modify-write가 다른 thread에게 쪼개진 중간 상태로 보이지 않게 수행되는 연산이다. Read-modify-write의 예인 compare-and-swap은 현재 값이 예상값과 같을 때만 새 값으로 바꾸고, `fetch_add`는 counter를 읽어 증가시킨 뒤 이전 값을 반환한다. Atomic은 한 변수의 짧은 갱신에 적합하지만, 다른 metadata의 순서와 가시성이나 여러 pointer가 함께 맞아야 하는 free-list 구조 전체를 자동으로 보호하지는 않는다.
+
+Mutex 구현도 보통 atomic compare-and-swap으로 잠금 상태를 기록하는 **lock word**를 먼저 차지하려고 한다. 경쟁이 없으면 이 fast path만으로 끝난다. 이미 다른 thread가 mutex를 가지고 있다면 잠시 반복 확인하거나 operating system에 대기를 요청하고, mutex를 가진 thread가 `unlock`할 때 다시 깨어난다. **Semaphore**는 사용할 수 있는 permit 또는 resource 수를 0 이상의 counter로 관리하며, 값이 0이면 기다린다. Mutex와 달리 owner 개념이 필수는 아니므로 다른 thread가 permit을 반환할 수도 있다. 따라서 semaphore는 allocator의 shared invariant를 보호하는 mutex와 같은 primitive가 아니다. Mutex, atomic, semaphore는 allocator보다 아래에 있는 memory 계층이 아니라 allocator 구현이 필요에 따라 사용하는 synchronization 도구다.
 
 [Google TCMalloc의 공식 설계](https://google.github.io/tcmalloc/design.html)는 이 구분을 실제 allocator 구조로 보여 준다. Front-end의 per-thread 또는 per-CPU cache는 한 실행 주체만 접근하므로 대부분의 작은 allocation을 lock 없이 처리한다. Local cache가 비면 shared middle-end에서 object를 보충하는데, 이곳의 Transfer cache와 Central free list는 size class별 mutex로 보호된다. 즉 모든 `malloc`이 하나의 global lock을 잡는 것이 아니라, local fast path와 synchronization이 필요한 shared path가 나뉜다. 아래 그림은 해당 문서의 [Apache 2.0](https://github.com/google/tcmalloc/blob/master/LICENSE) 원본이다.
 
