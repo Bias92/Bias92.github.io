@@ -12,7 +12,7 @@ CUDA 프로그램은 CPU와 GPU라는 서로 다른 processor를 함께 사용�
 
 [Host-Device 데이터 흐름]({{< relref "/posts/cuda-c-basics" >}}#host-device-데이터-흐름)에서는 CPU용 `h_data`와 GPU용 `d_data`를 따로 만들고, 계산 전후에 `cudaMemcpy`를 호출했다. 위치와 이동 시점이 코드에 그대로 보이는 explicit memory management다. 대신 자료구조가 복잡해질수록 host pointer, device pointer, copy 방향, 수명을 모두 개발자가 맞춰야 한다.
 
-Unified Memory는 이 관리 부담을 줄인다. 다만 이름의 “Unified”는 CPU DRAM과 GPU memory가 언제나 하나의 물리 memory가 된다는 뜻이 아니다. 이 글은 같은 pointer를 쓴다는 말이 무엇인지, 최신 값은 어떻게 전달되는지, 그리고 shared DRAM인 Jetson AGX Orin이 device attribute에서 왜 limited model로 판정되는지 설명한다.
+Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 접근 규칙 아래 사용하게 한다. CPU DRAM과 GPU memory를 하나의 physical memory로 합치는 기능은 아니다. 이 글은 virtual address와 physical frame, synchronization과 cache coherence를 차례로 설명한다. 마지막에는 Jetson AGX Orin의 실제 device attribute를 이용해 shared DRAM이라는 hardware topology와 limited Unified Memory라는 access model을 구분한다.
 
 ## CPU Memory와 GPU Memory
 
