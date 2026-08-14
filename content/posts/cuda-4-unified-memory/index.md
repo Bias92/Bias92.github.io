@@ -133,7 +133,7 @@ Coherence는 data race를 허용하는 기능이 아니다. CPU와 GPU가 synchr
 
 ## Unified Memory 지원 모델
 
-CUDA는 managed memory의 접근 방식을 `Full model`과 `Limited model`로 나눈다. 두 이름은 CPU와 GPU가 물리 메모리를 공유하는지를 나타내지 않는다. GPU가 managed memory를 언제 준비하고, GPU가 실행되는 동안 CPU 접근을 허용하는지를 구분한다.
+CUDA는 managed memory의 접근 방식을 `Full model`과 `Limited model`로 나눈다. 분류 기준은 GPU가 managed memory를 언제 준비하는지와 GPU가 실행되는 동안 CPU 접근을 허용하는지다.
 
 ### Full model
 
