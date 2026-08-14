@@ -61,7 +61,7 @@ cudaMallocManaged(&x, sizeof(*x));
 
 `sizeof(*x)`만큼의 공간을 확보하고, 그 시작 주소를 pointer 변수 `x`에 기록한다. 함수가 `x`의 값을 바꿔야 하므로 첫 번째 인자는 `x`가 아니라 `&x`다. 이 allocation은 `cudaFree(x)`로 해제한다.
 
-Explicit-copy 방식에서는 CPU용 `h_x`, GPU용 `d_x`, H2D, D2H가 필요했다. Managed 방식에서는 CPU와 GPU가 `x` 하나를 사용하며 소스에 두 copy를 적지 않는다. **Driver**는 GPU와 memory 상태를 제어하는 system software다. Runtime, driver, hardware가 현재 system의 지원 방식에 따라 address mapping, physical placement, 최신 값의 가시성을 구현한다.
+Explicit-copy 방식에서는 CPU용 `h_data`, GPU용 `d_data`, H2D, D2H가 필요했다. Managed 방식에서는 CPU와 GPU가 `x` 하나를 사용하며 소스에 두 copy를 적지 않는다. **Driver**는 GPU와 memory 상태를 제어하는 system software다. Runtime, driver, hardware가 현재 system의 지원 방식에 따라 address mapping, physical placement, 최신 값의 가시성을 구현한다.
 
 여기까지가 `cudaMallocManaged`의 보장이다. 다음 내용은 보장하지 않는다.
 
