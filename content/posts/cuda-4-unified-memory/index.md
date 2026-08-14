@@ -34,7 +34,7 @@ Virtual memory는 virtual address space를 보통 page라는 일정 크기의 �
 
 CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치인 MMU(Memory Management Unit)가 virtual address를 현재 접근 가능한 physical address로 변환한다. Virtual address는 virtual page number와 page 안의 위치를 나타내는 offset으로 나뉜다. 주소 변환은 virtual page number를 physical frame number로 바꾸지만 offset은 그대로 유지한다.
 
-MMU는 먼저 TLB(Translation Lookaside Buffer)에서 최근의 가상 페이지→물리 프레임 변환 결과를 찾는다. TLB는 데이터가 아니라 주소 변환 결과를 보관하는 캐시다.
+MMU는 먼저 TLB(Translation Lookaside Buffer)에서 최근의 가상 페이지→물리 프레임 변환 결과를 찾는다. 캐시는 자주 쓰는 것을 가까운 곳에 작게 복사해 두고 먼저 찾아보는 저장소다. TLB는 데이터가 아니라 주소 변환 결과를 보관하는 캐시다.
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
@@ -44,7 +44,7 @@ MMU는 먼저 TLB(Translation Lookaside Buffer)에서 최근의 가상 페이지
 
 CUDA 문서에서 placement(배치)는 관리형 할당의 각 페이지에 해당하는 데이터가 현재 어느 물리 메모리에 저장되어 있는지를 뜻한다. Mapping(매핑)은 가상 페이지를 물리 프레임에 연결하는 주소 관계이고, 배치는 그 물리 프레임이 어느 메모리에 속하는지를 가리킨다. discrete GPU에서는 관리형 데이터가 CPU의 시스템 DRAM이나 GPU의 VRAM에 저장될 수 있다. 반면 integrated GPU는 CPU와 시스템 DRAM을 공유하므로, 데이터를 별도의 VRAM으로 옮기는 과정이 없다.
 
-GPU가 CPU 메모리의 데이터를 복사하지 않고 직접 읽도록 주소 연결만 설정하면 배치는 바뀌지 않는다. 반면 migration(이동)은 최신 데이터를 다른 물리 메모리로 옮기므로 배치를 바꾼다. 처리 단위는 Unified Memory 지원 방식에 따라 다르다. 소프트웨어 일관성을 사용하는 Full 모델은 보통 페이지 단위로 이동한다. 하드웨어 일관성을 사용하는 모델은 캐시 라인 단위로도 접근할 수 있고, Limited 모델은 가상 페이지보다 큰 단위로 옮길 수 있다.
+GPU가 CPU 메모리의 데이터를 복사하지 않고 직접 읽도록 주소 연결만 설정하면 배치는 바뀌지 않는다. 반면 migration(이동)은 최신 데이터를 다른 물리 메모리로 옮기므로 배치를 바꾼다.
 
 최신 값이 언제나 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 캐시에 남을 수 있다. 다음 처리 장치가 최신 값을 보려면 올바른 접근 순서와 캐시 상태가 함께 보장돼야 한다.
 
@@ -125,6 +125,8 @@ Shared DRAM을 쓴다고 full Unified Memory인 것은 아니다. 반대로 phys
 Limited Unified Memory에서는 CPU와 GPU의 접근 시점이 크게 나뉜다. 기본 규칙에서는 GPU kernel이 실행되는 동안 CPU가 managed memory에 접근하면 안 된다. Kernel launch와 completion synchronization이 접근 주체를 넘기는 경계가 된다. Oversubscription, 즉 GPU memory보다 큰 managed allocation을 사용하는 기능도 지원하지 않는다.
 
 Full Unified Memory에서는 GPU의 실제 접근 시점에 page migration이나 remote-access mapping으로 접근을 처리할 수 있고, CPU와 GPU가 서로 다른 managed 위치를 동시에 사용할 수 있다. GPU memory보다 큰 managed allocation도 만들 수 있다. discrete GPU 환경에서는 필요한 pages를 GPU memory에 두고 나머지는 system memory에 둘 수도 있다. 그래도 synchronization 없이 같은 위치를 동시에 수정하는 data race까지 허용되는 것은 아니다.
+
+이동하는 단위도 지원 방식에 따라 다르다. software coherence를 쓰는 full 모델은 보통 페이지 단위로 옮기고, hardware coherence를 쓰는 모델은 캐시 라인 단위로도 접근한다. limited 모델은 가상 페이지보다 큰 단위로 옮길 수 있다.
 
 CUDA 공식 [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)의 `Placement Policy`는 새 기능 이름이 아니라, 메모리 할당 API마다 데이터의 저장 위치를 어떻게 정하는지 비교하는 열 제목이다. `cudaMallocManaged` 행의 `First touch/hint`는 첫 접근과 권고 정보라는 두 배치 기준을 묶어 쓴 것이다. `First touch`는 각 페이지를 CPU나 GPU가 처음 읽거나 쓸 때, 보통 그 처리 장치의 메모리에 데이터를 두는 방식이다. `hint`는 프로그램이 CUDA에 예상 접근 방식이나 선호 위치를 알려 주는 정보이며 정확성이 아니라 성능에만 영향을 준다. 이 가운데 선호 위치를 알려 주는 정보는 데이터를 즉시 옮기지 않으며, 실제 위치를 그곳으로 고정하지도 않는다.
 
