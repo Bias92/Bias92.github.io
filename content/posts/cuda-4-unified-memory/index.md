@@ -133,8 +133,22 @@ Coherence는 data race를 허용하는 기능이 아니다. CPU와 GPU가 synchr
 
 ## Unified Memory 지원 모델
 
-- `Full model`: GPU가 managed memory를 실제로 접근할 때 필요한 page를 옮기거나, 데이터가 있는 memory를 직접 읽도록 주소를 연결할 수 있다. CPU와 GPU가 같은 managed allocation의 서로 다른 주소를 동시에 사용할 수 있으며 GPU memory 용량보다 큰 managed allocation도 사용할 수 있다. 다만 synchronization 없이 같은 위치를 동시에 수정하는 data race는 여전히 허용되지 않는다.
-- `Limited model`: `cudaMallocManaged`는 사용할 수 있지만 CPU와 GPU의 접근 시점이 분리된다. CUDA는 kernel을 시작하기 전에 GPU가 managed memory를 사용할 수 있도록 준비하고, synchronization이 끝난 뒤 CPU가 다시 접근할 수 있게 한다. GPU가 실행되는 동안 CPU는 managed memory에 접근할 수 없다. GPU가 필요한 page만 접근 시점에 가져오는 방식과 GPU memory 용량보다 큰 managed allocation도 지원하지 않는다.
+CUDA는 managed memory의 접근 방식을 `Full model`과 `Limited model`로 나눈다. 두 이름은 CPU와 GPU가 물리 메모리를 공유하는지를 나타내지 않는다. GPU가 managed memory를 언제 준비하고, GPU가 실행되는 동안 CPU 접근을 허용하는지를 구분한다.
+
+### Full model
+
+`concurrentManagedAccess=1`인 지원 방식이다. GPU가 managed memory를 실제로 접근할 때 필요한 page를 옮기거나, 데이터가 있는 memory를 직접 읽도록 주소를 연결할 수 있다. CPU와 GPU는 같은 managed allocation의 서로 다른 주소를 동시에 사용할 수 있다. 같은 주소를 동시에 수정할 때는 synchronization이 필요하다.
+
+### Limited model
+
+`concurrentManagedAccess=0`인 지원 방식이다. `cudaMallocManaged`는 사용할 수 있지만 CPU와 GPU의 접근 시점이 분리된다. CUDA는 kernel을 시작하기 전에 GPU가 managed memory를 사용할 수 있도록 준비한다. GPU가 실행되는 동안 CPU는 managed memory에 접근할 수 없으며, synchronization이 끝난 뒤 다시 접근할 수 있다.
+
+| 비교 항목 | Full model | Limited model |
+|---|---|---|
+| `cudaMallocManaged` | 사용할 수 있음 | 사용할 수 있음 |
+| GPU가 data를 준비하는 시점 | GPU가 실제로 접근할 때 필요한 page를 처리할 수 있음 | Kernel을 시작하기 전에 CUDA가 준비함 |
+| GPU 실행 중 CPU의 managed-memory 접근 | 가능함. 같은 주소의 충돌은 synchronization이 필요함 | 허용되지 않음 |
+| GPU가 사용할 수 있는 physical memory보다 큰 managed allocation | 사용할 수 있음 | 사용할 수 없음 |
 
 이 분류는 CPU와 GPU가 물리 메모리를 공유하는지와 별개다. Shared DRAM을 사용하는 장치도 `Limited model`일 수 있고, CPU DRAM과 GPU VRAM이 분리된 discrete GPU도 `Full model`일 수 있다.
 
@@ -150,7 +164,7 @@ CUDA 공식 [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-prog
 
 ## Page Fault와 Migration
 
-Page fault와 migration은 `Full model`의 자동 배치를 이해하기 위해 필요한 개념이다. Software coherence는 hardware protocol 대신 memory manager와 driver가 mapping과 migration을 관리하는 방식이다. 다음 설명은 CPU DRAM과 GPU memory가 분리되고 software coherence를 사용하는 `Full model`의 한 경로다. 뒤에서 다룰 Orin의 실제 경로가 아니다.
+Page fault와 migration은 앞에서 정리한 [`Full model`](#full-model)의 자동 배치를 이해하기 위해 필요한 개념이다. Software coherence는 hardware protocol 대신 memory manager와 driver가 mapping과 migration을 관리하는 방식이다. 다음 설명은 CPU DRAM과 GPU memory가 분리되고 software coherence를 사용하는 `Full model`의 한 경로다. 뒤에서 다룰 Orin의 실제 경로가 아니다.
 
 CPU가 managed allocation을 먼저 쓰면 해당 virtual page에 대응하는 physical frame이 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 GPU page table에 유효한 mapping이 없거나 GPU가 현재 그 physical frame에 직접 접근할 수 없다면 page fault가 발생한다. 이 문맥의 fault는 program crash가 아니라 “현재 상태로 이 memory access를 바로 완료할 수 없다”는 event다.
 
