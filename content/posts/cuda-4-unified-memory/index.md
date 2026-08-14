@@ -34,7 +34,7 @@ CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치
 
 MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근의 virtual-page-to-physical-frame 변환 결과를 찾는다. TLB는 data가 아니라 주소 변환 결과를 보관하는 cache다. TLB에 결과가 없으면 page table을 조회한다. 따라서 **TLB miss는 page fault가 아니다**. Page table에도 유효한 mapping이 없거나 접근 권한이 맞지 않을 때 fault가 발생할 수 있다.
 
-![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.svg?v=2#wide)
+![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=3#medium)
 
 변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. Physical frame의 위치는 hardware topology에 따라 달라진다. Discrete system에서는 CPU가 연결된 system DRAM 또는 GPU의 VRAM에 놓일 수 있다. Integrated system에서는 CPU와 GPU가 공유하는 system DRAM에 놓일 수 있다. 이 글에서 측정한 Jetson AGX Orin은 integrated system에 해당한다. 특정 page가 현재 어느 memory에 놓여 있는지를 **placement** 또는 **residency**라고 한다.
 

@@ -909,6 +909,15 @@ html { scroll-behavior: smooth; }
     margin: 1rem auto;
 }
 
+/* --- 중간 폭 도식: 데스크톱 680px, 좁은 화면에서는 본문 폭에 맞춤 --- */
+.sb-post-content img[src*="#medium"],
+.post-content img[src*="#medium"] {
+    width: 680px;
+    max-width: 100% !important;
+    display: block;
+    margin: 1rem auto;
+}
+
 /* --- 언어 스위처 (EN/KR) --- */
 .sb-lang-switch { display: inline-flex; gap: 2px; align-items: center; margin-right: 10px; font-size: 13px; }
 .sb-lang-switch .sb-lang { color: var(--sb-muted); text-decoration: none; padding: 2px 6px; border-radius: 4px; transition: color .15s, background .15s; }
