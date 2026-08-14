@@ -22,9 +22,9 @@ Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 �
 
 Discrete GPU가 달린 일반적인 PC에서는 CPU DRAM과 GPU 전용 memory(VRAM)가 물리적으로 분리돼 있다. 앞 글처럼 CPU의 `malloc` allocation과 GPU의 `cudaMalloc` allocation을 따로 쓰는 방식에서는 계산 전 H2D(Host to Device) copy가 필요하고, GPU 결과를 CPU에서 읽기 전 D2H(Device to Host) copy가 필요하다.
 
-Integrated GPU는 CPU와 GPU가 같은 physical system memory를 공유할 수 있다는 점에서 discrete GPU와 다르다. 이 경우에는 CPU DRAM과 별도 VRAM 사이를 건너는 copy가 필요하지 않다. 그러나 같은 DRAM을 써도 heterogeneous한 두 processor가 virtual address를 변환하는 방식과, 자주 쓰는 data의 cached copy를 관리하는 방식은 서로 다를 수 있다. 따라서 shared DRAM이라는 사실만으로 CPU pointer를 GPU가 곧바로 사용할 수 있다거나, 한쪽이 쓴 최신 값이 다른 쪽에 자동으로 보인다고 결론낼 수 없다. **Physical topology**는 memory가 hardware에 어떻게 연결됐는지를 설명하고, **programming model**은 software가 그 memory에 어떻게 접근할 수 있는지를 정한다.
+통합 GPU에서는 CPU와 GPU가 같은 시스템 DRAM을 사용하므로 별도 VRAM을 오가는 복사가 없다. 그러나 두 처리 장치는 주소 변환 장치와 캐시를 각각 사용한다. 따라서 CPU 포인터를 GPU가 아무 조건 없이 사용할 수 있는 것은 아니다. 한쪽이 쓴 최신 값을 다른 쪽이 보려면 두 처리 장치에 맞는 주소 연결과 올바른 접근 순서가 필요하다.
 
-그래서 CUDA는 이 간극을 다루는 programming model 중 하나로 Unified Memory를 제공한다. Unified Memory는 hardware 구조를 바꾸는 기능이 아니다. 대신 CPU code와 GPU kernel이 같은 allocation을 가리키고, 허용된 순서로 접근했을 때 다음 processor가 최신 값을 보게 한다. 이를 위해 현재 system의 Runtime, driver, hardware가 support model에 맞춰 address mapping, data placement, cache 상태를 관리한다.
+Unified Memory는 이 주소 연결과 접근 순서를 CUDA가 관리하는 방식이다. 하드웨어 구조 자체를 바꾸지는 않는다. CPU 코드와 GPU 커널이 같은 할당 영역을 가리키고 정해진 순서로 접근하면 최신 값을 볼 수 있게 한다. CUDA 런타임과 드라이버, 하드웨어가 현재 시스템의 지원 방식에 맞춰 주소 연결과 데이터 배치, 캐시 상태를 관리한다.
 
 ## Virtual Address와 Physical Memory
 
