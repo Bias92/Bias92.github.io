@@ -172,8 +172,6 @@ CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반�
 
 HMM(Heterogeneous Memory Management)은 Linux kernel에서 CPU page table의 변경, GPU fault, page migration을 연결하는 subsystem이다. HMM을 사용하는 `Full model`에서는 `malloc`, `new`, `mmap`으로 만든 system allocation도 GPU가 사용할 수 있다. Device attributes는 이 지원 범위를 분류하고, `nvidia-smi -q`의 `Addressing Mode`는 현재 HMM 사용 여부를 보여 준다.
 
-지금까지의 fault와 migration은 driver가 개입하는 software coherence 쪽 경로다. Hardware coherence system에서는 CPU와 GPU가 같은 host page table을 쓰고 interconnect가 cache 상태를 맞추므로, page를 옮기지 않아도 양쪽이 같은 데이터를 쓸 수 있다. Grace Hopper의 NVLink-C2C, Jetson Thor의 Sysmem Full Coherency가 여기에 해당한다. 다음 절의 Orin은 둘 다 아니다.
-
 ## Jetson AGX Orin: Shared DRAM과 Limited model
 
 앞의 개념을 실제 장치에 적용했다. 환경은 Jetson AGX Orin Developer Kit, Jetson Linux 배포판인 L4T R36.5.0, CUDA 개발 도구를 묶은 JetPack 6.2.2, CUDA 12.6이다. Orin은 CPU와 GPU를 하나의 chip에 넣은 SoC(System on Chip)다. Device 0은 compute capability 8.7인 integrated GPU였다. Compute capability는 GPU가 지원하는 CUDA hardware 기능 세대를 나타낸다.
