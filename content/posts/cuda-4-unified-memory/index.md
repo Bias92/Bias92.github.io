@@ -40,7 +40,7 @@ MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근의 virtual-page
 
 변환된 physical address는 cache와 physical memory로 이어지는 memory hierarchy에서 사용된다. [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#unified-and-system-memory)는 heterogeneous system에 여러 physical memory가 있으며, CUDA가 data의 allocation, **placement**, migration을 관리한다고 설명한다. [세부 allocator 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)에서도 `Placement Policy`를 별도 항목으로 두고, full-support 환경의 `cudaMallocManaged`를 `First touch/hint`로 분류한다. First touch는 보통 data를 처음 접근한 processor 쪽 memory에 초기 배치한다는 뜻이다. Hint는 driver의 배치 결정을 유도할 뿐, 즉시 migration하거나 실제 placement를 보장하지 않는다.
 
-이 공식 용례에 따라 이 글에서 **placement**는 managed allocation의 각 page 또는 memory range를 backing하는 data가 현재 어느 physical memory에 저장돼 있는지를 뜻한다. **Mapping**이 `virtual page → physical frame`의 주소 연결이라면, placement는 그 backing data를 담은 physical memory의 위치다. Discrete system의 후보는 CPU의 system DRAM과 각 GPU의 memory다. CPU와 iGPU가 system DRAM을 공유하는 구조에서는 둘 사이에 별도 DRAM↔VRAM placement가 없다.
+이 공식 용례에 따라 이 글에서 **placement**는 managed allocation의 각 page 또는 memory range에 대응하는 실제 data가 현재 어느 physical memory에 저장돼 있는지를 뜻한다. **Mapping**이 `virtual page → physical frame`의 주소 연결이라면, placement는 그 data를 담은 physical memory의 위치다. Discrete system의 후보는 CPU의 system DRAM과 각 GPU의 memory다. CPU와 iGPU가 system DRAM을 공유하는 구조에서는 둘 사이에 별도 DRAM↔VRAM placement가 없다.
 
 GPU가 CPU memory의 data를 remote access할 수 있도록 mapping만 추가하면 placement는 유지된다. 반면 **migration**은 data의 최신 내용을 다른 physical memory로 옮기므로 placement를 바꾼다. 처리 단위는 support model에 따라 다르다. Software-coherent full model은 보통 page 단위로 이동하고, hardware-coherent model은 cache-line 단위 접근도 가능하며, limited model은 virtual page보다 큰 단위로 이동할 수 있다.
 
@@ -105,7 +105,7 @@ CPU와 GPU는 DRAM 접근을 줄이려고 최근 data를 각자의 **cache**에 
 
 **Cache coherence**는 올바르게 synchronization된 접근에서 다음 processor가 최신 값을 보도록 cached copy의 상태를 관리하는 규칙이다. Write-back은 변경된 값을 아래 memory에 반영하고, invalidation은 오래된 cached copy를 무효화한다. Hardware가 processor 사이의 cache 상태 전달을 지원할 수도 있고, driver가 synchronization 경계에서 필요한 cache maintenance를 수행할 수도 있다.
 
-Synchronization과 coherence는 별도 API 두 개를 뜻하지 않는다. Program은 `cudaDeviceSynchronize()`로 실행 순서를 만들고, CUDA의 memory model과 현재 system의 driver 또는 hardware가 그 경계에서 값의 가시성을 보장한다. Placement는 backing data가 어느 physical memory에 있는가의 문제이고, coherence는 다음 processor가 최신 값을 보는가의 문제다.
+Synchronization과 coherence는 별도 API 두 개를 뜻하지 않는다. Program은 `cudaDeviceSynchronize()`로 실행 순서를 만들고, CUDA의 memory model과 현재 system의 driver 또는 hardware가 그 경계에서 값의 가시성을 보장한다. Placement는 실제 data가 어느 physical memory에 있는가의 문제이고, coherence는 다음 processor가 최신 값을 보는가의 문제다.
 
 Coherence는 data race를 허용하는 기능이 아니다. CPU와 GPU가 synchronization 없이 같은 위치를 동시에 읽고 쓰면 full Unified Memory에서도 결과를 보장할 수 없다. 앞 예제의 `41 → 42`는 순차 접근과 값의 가시성을 확인할 뿐, 내부 cache operation의 종류와 비용까지 측정하지 않는다.
 
@@ -138,7 +138,7 @@ Limited도 `cudaMallocManaged`로 pointer 하나를 만들고 CPU → GPU → CP
 
 Page fault와 migration은 full Unified Memory의 automatic placement를 이해하기 위해 필요한 개념이다. **Software coherence**는 hardware protocol 대신 memory manager와 driver가 mapping과 migration을 관리하는 방식이다. 다음 설명은 CPU DRAM과 GPU memory가 분리된 software-coherent full model의 한 경로다. 뒤에서 다룰 Orin의 실제 경로가 아니다.
 
-CPU가 managed allocation을 먼저 쓰면 해당 virtual page를 backing하는 physical frame이 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 GPU page table에 유효한 mapping이 없거나 GPU가 현재 backing frame에 직접 접근할 수 없다면 **page fault**가 발생한다. 이 문맥의 fault는 program crash가 아니라 “현재 상태로 이 memory access를 바로 완료할 수 없다”는 event다.
+CPU가 managed allocation을 먼저 쓰면 해당 virtual page에 대응하는 physical frame이 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 GPU page table에 유효한 mapping이 없거나 GPU가 현재 그 physical frame에 직접 접근할 수 없다면 **page fault**가 발생한다. 이 문맥의 fault는 program crash가 아니라 “현재 상태로 이 memory access를 바로 완료할 수 없다”는 event다.
 
 Memory manager와 CUDA driver는 GPU memory에 physical frame을 준비하고 virtual page의 최신 내용을 옮긴 뒤 GPU mapping을 설치한다. 멈췄던 GPU instruction은 그다음 재개된다. Virtual page의 내용을 한 memory domain의 physical frame에서 다른 memory domain의 frame으로 옮기는 작업이 **migration**이다. Pointer 값은 바뀌지 않는다.
 
@@ -190,7 +190,7 @@ after kernel:  42
 
 이번 Orin 실행은 CPU write → GPU write → CPU read의 순서와 값의 가시성만 확인했다. Cache-maintenance 비용과 explicit copy 대비 성능은 측정하지 않았으므로 빠르거나 느리다는 결론은 내리지 않는다.
 
-Unified Memory가 통합하는 것은 physical memory chip이 아니다. CPU와 GPU가 같은 allocation을 가리키고, 허용된 순서에서 최신 값을 볼 수 있게 관리하는 규칙이다. 이 Orin에서 backing storage는 shared SoC DRAM이다. Limited model이므로 CPU와 GPU의 managed-memory 접근 시점이 분리되고, driver는 kernel launch와 synchronization 경계에서 coherence와 cache maintenance를 처리한다.
+Unified Memory가 통합하는 것은 physical memory chip이 아니다. CPU와 GPU가 같은 allocation을 가리키고, 허용된 순서에서 최신 값을 볼 수 있게 관리하는 규칙이다. 이 Orin의 managed allocation은 shared SoC DRAM에 저장된다. Limited model이므로 CPU와 GPU의 managed-memory 접근 시점이 분리되고, driver는 kernel launch와 synchronization 경계에서 coherence와 cache maintenance를 처리한다.
 
 ## 참고
 
