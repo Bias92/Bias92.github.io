@@ -26,9 +26,11 @@ Unified Memory는 모든 hardware를 같은 구조로 바꾸지 않는다. 서�
 
 ## Virtual Address와 Physical Memory
 
-프로그램의 pointer에 저장된 값은 **virtual address**다. 프로그램은 이 주소를 사용하지만, 실제 byte는 DRAM의 physical address에 저장된다. Operating system과 processor의 memory management unit은 virtual address를 physical memory에 연결한다.
+이 글의 pointer `x`가 담는 값은 process의 **virtual address**다. 이 값은 DRAM이나 VRAM chip의 물리적 위치를 직접 가리키는 physical address가 아니다. CPU나 GPU가 `x`를 읽거나 쓸 때 각 processor의 주소 변환 장치인 **Memory Management Unit(MMU)**이 page table을 조회해 virtual address를 현재 접근 가능한 physical memory에 연결한다. CPU와 GPU는 서로 다른 page table을 사용할 수 있으므로 pointer 값이 같아도 양쪽에 유효한 연결이 필요하다.
 
-Virtual memory는 보통 **page**라는 일정 크기의 단위로 관리된다. **Page table**은 virtual page가 어느 physical page에 연결되는지 기록한다. 이 연결을 **mapping**이라고 한다. 현재 data가 CPU memory나 GPU memory 중 어디에 놓여 있는지는 **placement** 또는 **residency**라고 부른다.
+Virtual memory는 보통 **page**라는 일정 크기의 단위로 관리된다. **Page table**은 virtual page가 어느 physical page에 연결되는지와 그 page에 허용된 접근을 기록한다. 이 연결을 **mapping**이라고 한다. Physical page가 놓이는 곳은 system에 따라 CPU DRAM, discrete GPU의 VRAM, Orin의 shared SoC DRAM일 수 있다.
+
+최신 값이 매 순간 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 cache에 남을 수 있다. **Placement** 또는 **residency**는 physical page가 놓인 memory를 뜻한다. 다음 processor가 최신 값을 볼 수 있는지는 mapping뿐 아니라 synchronization과 cache coherence에도 달려 있다.
 
 CUDA의 **Unified Virtual Addressing(UVA)**은 한 process 안의 CPU memory와 각 GPU memory를 하나의 virtual address space에 배치한다. Pointer 값으로 어느 memory range인지 구분하고 `cudaMemcpyDefault`가 copy 방향을 판단할 수 있다. 그러나 UVA 자체는 GPU-only allocation을 CPU가 역참조하게 만들지 않으며, data를 옮기거나 cache를 일관되게 유지하지도 않는다.
 
