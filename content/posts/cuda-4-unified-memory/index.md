@@ -30,9 +30,9 @@ integrated GPU에서는 CPU와 GPU가 같은 system DRAM을 사용한다. 두 �
 
 ### 주소 변환
 
-CUDA process의 pointer에는 virtual address가 담긴다. MMU(Memory Management Unit)는 이 주소를 DRAM이나 VRAM의 physical address로 변환하는 장치다.
+Process는 실행 중인 프로그램 하나를 가리키는 OS 단위로, processor(CPU·GPU)와는 다른 말이다. CUDA process의 pointer에는 virtual address가 담긴다. MMU(Memory Management Unit)는 이 주소를 DRAM이나 VRAM의 physical address로 변환하는 장치다.
 
-Virtual address space는 한 process가 사용할 수 있는 virtual address의 전체 범위다. 이 범위는 보통 page라는 일정 크기의 단위로 나뉜다. Physical memory는 같은 크기의 frame(page frame)으로 나뉜다. Page table은 virtual page가 어느 physical frame에 연결됐는지와 어떤 접근이 허용되는지 기록한다. 이 연결을 mapping이라고 한다. 아직 physical frame에 연결되지 않은 virtual page도 있다.
+Virtual address space는 한 process가 사용할 수 있는 virtual address의 전체 범위다. 이 범위는 보통 page라는 일정 크기의 단위로 나뉜다. Physical memory는 같은 크기의 frame(page frame)으로 나뉜다. Page table은 virtual page가 어느 physical frame에 연결됐는지와 어떤 접근이 허용되는지 기록한다. 이 연결을 mapping이라고 하며, 앞에서 말한 주소 연결이 바로 이것이다. 아직 physical frame에 연결되지 않은 virtual page도 있다.
 
 CPU나 GPU가 pointer를 읽거나 쓸 때 각 처리 장치의 MMU가 virtual address를 physical address로 변환한다. Virtual address는 virtual page number와 page 안의 위치를 나타내는 offset으로 나뉜다. 주소 변환은 virtual page number를 physical frame number로 바꾸고 offset은 그대로 사용한다.
 
@@ -109,7 +109,7 @@ int main() {
 }
 ```
 
-`__global__`은 kernel을 선언한다. Block은 함께 배치되는 GPU thread의 묶음이다. `<<<1, 1>>>`은 block 하나에 thread 하나를 배치한다. Kernel launch 직후 CPU는 다음 코드를 계속 실행하므로 GPU write와 CPU read 사이에 `cudaDeviceSynchronize()`를 뒀다.
+`__global__`은 kernel을 선언한다. Block은 함께 배치되는 GPU thread의 묶음이다. `<<<1, 1>>>`은 block 하나에 thread 하나를 배치한다. Kernel launch 직후 CPU는 다음 코드를 계속 실행하므로, GPU 작업이 끝날 때까지 기다리는 `cudaDeviceSynchronize()`를 GPU write와 CPU read 사이에 뒀다.
 
 ## Synchronization과 Cache Coherence
 
@@ -146,9 +146,9 @@ Jetson AGX Orin은 shared DRAM과 `Limited model`을 함께 사용한다. CPU DR
 
 `Full model`에서 `cudaMallocManaged`로 만든 page는 보통 그 page를 처음 읽거나 쓴 처리 장치 쪽에 배치된다. CUDA 문서는 이를 `First touch`라고 부른다. 프로그램은 `cudaMemAdvise`로 선호 위치를 driver에 알려 줄 수 있다. 이 정보를 `hint`라고 하며, driver는 이를 이후 배치 결정에 사용한다.
 
-현재 지원 모델은 operating system, operating-system kernel, CUDA driver, GPU, CPU–GPU 연결 구조의 조합에서 결정된다. 따라서 현재 환경의 지원 값은 `cudaDeviceGetAttribute`로 확인한다.
+현재 지원 모델은 operating system과 그 핵심부인 OS kernel(앞의 GPU kernel과는 다른 말이다), CUDA driver, GPU, CPU–GPU 연결 구조의 조합에서 결정된다. 따라서 현재 환경의 지원 값은 `cudaDeviceGetAttribute`로 확인한다.
 
-`managedMemory`는 explicit managed allocation을 만들 수 있는지 알려 준다. 그다음 세 attribute는 아래 순서로 읽는다.
+`managedMemory`는 `cudaMallocManaged`처럼 명시적으로 요청해 만드는 managed allocation을 지원하는지 알려 준다. 그다음 세 attribute는 아래 순서로 읽는다.
 
 1. `concurrentManagedAccess`가 `0`이면 `Limited model`이다.
 2. 그 값이 `1`이면 `Full model`이며, `pageableMemoryAccess`가 `0`일 때는 CUDA API로 명시적으로 만든 managed allocation만 이 모델을 사용한다.
@@ -170,11 +170,11 @@ CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반�
 
 ### HMM
 
-HMM(Heterogeneous Memory Management)은 Linux kernel에서 CPU page table의 변경, GPU fault, page migration을 연결하는 subsystem이다. HMM을 사용하는 `Full model`에서는 `malloc`, `new`, `mmap`으로 만든 system allocation도 GPU가 사용할 수 있다. Device attributes는 이 지원 범위를 분류하고, `nvidia-smi -q`의 `Addressing Mode`는 현재 HMM 사용 여부를 보여 준다.
+HMM(Heterogeneous Memory Management)은 Linux kernel에서 CPU page table의 변경, GPU fault, page migration을 연결하는 subsystem이다. HMM을 사용하는 `Full model`에서는 `malloc`, `new`, `mmap`으로 만든 system allocation도 GPU가 사용할 수 있다. Device attributes는 이 지원 범위를 분류하고, NVIDIA driver에 딸린 명령줄 도구 `nvidia-smi`를 `-q`로 실행하면 `Addressing Mode` 항목이 현재 HMM 사용 여부를 보여 준다.
 
 ## Jetson AGX Orin: Shared DRAM과 Limited model
 
-앞의 개념을 실제 장치에 적용했다. 환경은 Jetson AGX Orin Developer Kit, Jetson Linux 배포판인 L4T R36.5.0, CUDA 개발 도구를 묶은 JetPack 6.2.2, CUDA 12.6이다. Orin은 CPU와 GPU를 하나의 chip에 넣은 SoC(System on Chip)다. Device 0은 compute capability 8.7인 integrated GPU였다. Compute capability는 GPU가 지원하는 CUDA hardware 기능 세대를 나타낸다.
+앞의 개념을 실제 장치에 적용했다. 환경은 Jetson AGX Orin Developer Kit, Jetson Linux 배포판인 L4T(Linux for Tegra) R36.5.0, CUDA 개발 도구를 묶은 JetPack 6.2.2, CUDA 12.6이다. Tegra는 Orin이 속한 NVIDIA의 SoC 제품군 이름이다. Orin은 CPU와 GPU를 하나의 chip에 넣은 SoC(System on Chip)다. Device 0은 compute capability 8.7인 integrated GPU였다. Compute capability는 GPU가 지원하는 CUDA hardware 기능 세대를 나타낸다.
 
 ```text
 device=0 name=Orin cc=8.7 integrated=1
@@ -201,7 +201,7 @@ Tegra 문서는 `concurrentManagedAccess=0`인 환경의 kernel launch와 synchr
 
 ![Jetson AGX Orin의 one-way I/O coherency와 driver-managed GPU cache](images/orin-shared-dram.svg)
 
-실제로 `managed_add.cu`를 compute capability 8.7의 compile target인 `sm_87`로 빌드해 실행한 결과는 다음과 같았다.
+실제로 앞의 예제 코드(`managed_add.cu`)를 compute capability 8.7의 compile target인 `sm_87`로 빌드해 실행한 결과는 다음과 같았다.
 
 ```text
 before kernel: 41
