@@ -20,6 +20,8 @@ Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 �
 
 `malloc`은 CPU process의 heap allocator를 사용하고, `cudaMalloc`은 CUDA Runtime과 driver를 거쳐 device allocation을 만든다. 두 allocation은 서로 다른 memory domain에 놓일 수 있다. Allocation이 항상 모든 physical frame의 즉시 배정을 뜻하는 것도 아니다. 예를 들어 CPU의 `malloc`은 virtual address range를 먼저 반환하고, 실제 physical frame은 page를 처음 접근할 때 연결될 수 있다.
 
+Allocator는 여러 thread의 allocation 요청을 동시에 받을 수 있으므로 free block 목록이나 arena 같은 내부 상태를 **mutex** 또는 **atomic operation**으로 보호할 수 있다. Mutex는 한 번에 한 thread만 해당 상태를 수정하게 하고, atomic operation은 값을 중간에 끼어드는 변경 없이 하나의 연산으로 갱신하는 CPU instruction이다. 경쟁이 없으면 mutex의 빠른 경로가 atomic instruction만으로 끝날 수 있고, 기다려야 하면 operating system이 thread를 재우고 깨운다. **Semaphore**는 사용할 수 있는 resource의 개수를 counter로 관리하는 별도의 synchronization primitive다. 따라서 mutex와 semaphore는 allocator보다 아래에 있는 memory 계층이 아니라, allocator 구현이 필요에 따라 사용하는 synchronization 도구다.
+
 Discrete GPU가 달린 일반적인 PC에서는 CPU DRAM과 GPU 전용 memory(VRAM)가 물리적으로 분리돼 있다. 앞 글처럼 CPU의 `malloc` allocation과 GPU의 `cudaMalloc` allocation을 따로 쓰는 방식에서는 계산 전 H2D(Host to Device) copy가 필요하고, GPU 결과를 CPU에서 읽기 전 D2H(Device to Host) copy가 필요하다.
 
 Integrated GPU는 다르다. CPU와 GPU가 같은 physical system memory를 공유할 수 있다. 그렇다고 CPU pointer를 GPU가 언제나 그대로 읽을 수 있는 것은 아니다. 같은 DRAM을 써도 두 processor가 memory를 찾아가는 주소 변환 방식과, 자주 쓰는 data의 임시 사본을 보관하는 cache는 서로 다를 수 있다. **Physical topology**와 **programming model**은 별개의 문제다.
