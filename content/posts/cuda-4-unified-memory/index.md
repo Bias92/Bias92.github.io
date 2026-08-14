@@ -88,19 +88,27 @@ int main() {
 }
 ```
 
-`__global__`은 GPU에서 실행되는 kernel을 선언한다. `<<<1, 1>>>`은 block 하나에 thread 하나를 배치한다. Kernel launch는 CPU에 대해 asynchronous하므로 CPU는 GPU가 끝나기 전에 다음 줄로 진행할 수 있다. `cudaDeviceSynchronize()`는 copy 함수가 아니라, 앞서 제출한 GPU 작업이 끝날 때까지 CPU를 기다리게 하는 synchronization 함수다.
-
-따라서 `42`는 CPU write → GPU write → CPU read의 순서와 값의 visibility가 맞았음을 확인한다. Page fault 횟수나 성능을 재는 코드는 아니다.
+`__global__`은 GPU에서 실행되는 kernel을 선언한다. `<<<1, 1>>>`은 block 하나에 thread 하나를 배치한다. Kernel launch는 CPU에 대해 asynchronous하므로 GPU write와 CPU read 사이에 `cudaDeviceSynchronize()`를 뒀다. GPU가 끝나기를 기다리는 일과 CPU가 최신 값을 보는 일은 서로 다른 문제다.
 
 ## Synchronization과 Coherence
 
-**Synchronization**은 작업의 순서를 정한다. GPU가 `x`에 쓰기를 끝낸 다음 CPU가 읽게 만드는 것이 앞 코드의 `cudaDeviceSynchronize()`다. 같은 위치를 한쪽이 쓰는 동안 다른 쪽이 synchronization 없이 읽거나 쓰면 data race가 된다. Full Unified Memory도 이 C++ memory rule을 없애지 않는다.
+앞 코드는 두 문제를 함께 해결해야 한다. 첫째, GPU write가 끝난 뒤 CPU read가 시작돼야 한다. 둘째, CPU는 GPU가 쓴 최신 값 `42`를 읽어야 한다. 첫째가 synchronization이고 둘째가 coherence다.
 
-**Coherence**는 앞 processor가 쓴 최신 값이 다음 processor에게 보이도록 memory 상태를 맞추는 성질이다. CPU와 GPU는 느린 DRAM 접근을 줄이려고 각자의 **cache**에 data 사본을 둘 수 있다. CPU cache에만 최신 값이 있고 GPU cache에는 이전 값이 남아 있다면, 같은 physical DRAM을 사용해도 두 processor가 같은 값을 본다고 보장할 수 없다.
+**Synchronization**은 이 실행 순서를 만든다. `cudaDeviceSynchronize()`는 현재 device에 앞서 제출한 작업이 끝날 때까지 CPU thread를 기다리게 한다. 앞 예제에서는 GPU의 `*x += 1`이 끝난 뒤에만 CPU의 `printf`가 실행된다. 이 함수는 memory copy나 범용 cache-flush API가 아니다. 먼저 보장하는 것은 GPU completion과 CPU 후속 접근의 순서다.
 
-Coherence를 만드는 방법은 hardware마다 다르다. Hardware-coherent system은 CPU와 GPU를 잇는 **interconnect**와 cache protocol이 최신 값을 추적한다. Software-coherent system은 operating system과 driver가 page mapping을 바꾸고, 필요한 data를 옮기거나 cache 상태를 정리한다. 개발자에게 보이는 pointer는 같아도 그 아래의 작업은 같지 않다.
+`cudaDeviceSynchronize()`는 device 전체를 기다리는 넓은 경계다. 실제 pipeline에서는 stream이나 event로 필요한 작업 사이에만 dependency를 두면 불필요한 대기를 줄일 수 있다. GPU thread block 안에서 쓰는 `__syncthreads()`는 범위가 다르므로 CPU와 GPU 사이의 synchronization을 대신하지 못한다.
 
-Synchronization과 coherence는 서로 대신할 수 없다. Synchronization은 “누가 먼저인가”를 정하고, coherence는 “다음 실행 주체가 최신 값을 보는가”를 해결한다. CUDA의 memory model은 둘을 함께 만족해야 올바른 결과를 보장한다.
+순서만 정했다고 cache라는 문제가 사라지지는 않는다. CPU와 GPU는 DRAM 접근을 줄이려고 최근 data의 사본을 각자의 **cache**에 둔다. Cache는 보통 **cache line**이라는 연속된 byte 묶음으로 data를 가져온다. Processor가 cache line을 고친 뒤 그 변경이 아직 아래 memory에 반영되지 않은 상태를 **dirty**라고 한다. 다른 processor의 cache에 예전 사본이 남아 있으면 그 사본은 **stale**하다.
+
+CPU와 GPU가 같은 physical DRAM을 사용해도 cache는 서로 다를 수 있다. CPU가 `41`을 쓴 최신 사본이 CPU cache에만 있고 GPU가 stale한 사본을 읽으면 계산은 틀린다. GPU가 만든 `42`가 GPU cache에만 남아 있는데 CPU가 예전 `41`을 읽어도 마찬가지다. 같은 address와 같은 DRAM만으로 최신 값의 가시성이 자동으로 보장되지는 않는다.
+
+**Cache coherence**는 같은 memory 위치의 여러 cached copy 가운데 최신 값을 다음 접근자가 보도록 유지하는 규칙이다. 한 processor의 변경을 memory에 반영하는 write-back, 다른 cache의 오래된 사본을 무효화하는 invalidation, coherent interconnect를 통한 cache-to-cache 전달 등이 가능한 방법이다. 정확히 어느 operation을 쓰는지는 hardware와 memory type에 따라 달라진다.
+
+Unified Memory에서는 cache coherence와 placement도 구분해야 한다. Coherence는 최신 값이 보이는가의 문제다. Placement는 physical page가 CPU memory, GPU memory, shared DRAM 중 어디에 있는가의 문제다. Page가 shared DRAM에 그대로 있어도 cache 상태 정리는 필요할 수 있다. 반대로 page를 migration했어도 synchronization 없이 같은 위치를 동시에 수정하면 data race는 남는다.
+
+Coherence가 data race까지 해결하는 것은 아니다. 일반 load와 store로 같은 위치를 동시에 갱신하면 full Unified Memory에서도 결과가 정의되지 않는다. 같은 위치를 공유하려면 실행 순서를 분리하거나 CPU와 GPU 범위를 모두 지원하는 atomic operation을 사용해야 한다. Coherence는 정해진 순서에서 최신 값을 보이게 할 뿐, 순서 자체를 만들거나 두 update를 하나로 합치지 않는다.
+
+앞 예제에서는 세 단계가 차례로 일어난다. CPU가 `41`을 쓰고, GPU가 `1`을 더하고, `cudaDeviceSynchronize()` 뒤 CPU가 `42`를 읽는다. Synchronization이 producer와 consumer의 순서를 만들고, system의 coherence mechanism이 다음 processor가 최신 값을 보게 한다. `41 → 42`는 이 결과를 확인하지만 내부 cache operation의 종류와 비용까지 측정하지는 않는다.
 
 ## Limited와 Full Unified Memory
 
@@ -163,7 +171,11 @@ NVIDIA의 Tegra 문서에 따르면 Tegra의 CPU와 iGPU는 SoC DRAM을 공유�
 
 ![Jetson AGX Orin의 shared DRAM과 순차 managed access](images/orin-shared-dram.svg)
 
-Tegra 문서는 `concurrentManagedAccess=0`인 Unified Memory가 CPU와 iGPU 양쪽에서 cached되며 kernel launch와 synchronization 과정에 coherence와 cache-maintenance 작업이 필요하다고 설명한다. Orin에는 별도 VRAM copy가 없지만 “아무 작업도 없다”는 뜻은 아니다. CUDA driver가 CPU와 iGPU가 올바른 최신 값을 보도록 필요한 상태 전환을 처리한다.
+Tegra에서 `concurrentManagedAccess=0`인 Unified Memory는 CPU와 iGPU 양쪽에서 cached된다. Orin에는 별도 VRAM copy가 없지만 CPU cache와 GPU cache가 하나로 합쳐진 것은 아니다. 같은 SoC DRAM 위의 cached copy가 어느 processor의 최신 값인지 맞추는 일이 남는다.
+
+Orin은 **I/O coherency**, 즉 one-way coherency를 지원한다. GPU는 CPU cache의 최신 update를 읽을 수 있으므로 application이 CPU cache를 직접 clean할 필요가 없다. 반대 방향까지 hardware가 대칭으로 처리하는 full coherency는 아니다. GPU cache의 최신 값을 CPU가 읽게 만드는 데 필요한 GPU cache-management operation은 CUDA driver가 managed memory 내부에서 처리한다.
+
+또한 Tegra 문서는 `concurrentManagedAccess=0`인 환경에서 kernel launch와 synchronization에 추가 coherency·cache-maintenance operation이 필요하다고 명시한다. 이 작업은 다른 GPU work와 동기적으로 수행될 수 있어 latency를 늘릴 수 있다. 정확히 어느 cache line이 write-back 또는 invalidation됐는지와 그 비용은 이번 실행에서 측정하지 않았다.
 
 실제로 `managed_add.cu`를 `-arch=sm_87`로 빌드해 실행한 결과는 다음과 같았다.
 
