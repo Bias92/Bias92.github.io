@@ -32,6 +32,18 @@ Mutex 구현도 보통 atomic compare-and-swap으로 잠금 상태를 기록하�
 
 ![Google TCMalloc의 local front-end cache, shared middle-end, OS page heap 구조](images/tcmalloc-internals.png#medium)
 
+그림의 Central Free List가 lock을 사용하는 방식은 [TCMalloc의 실제 source](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L58-L72)에서도 확인할 수 있다. 설계 문서의 `mutex lock`은 상호배제 잠금이라는 일반 표현이다. 현재 구현이 사용하는 구체적인 type은 `std::mutex`가 아니라 Abseil의 `SpinLock`이다. 다음은 설명용으로 다시 만든 코드가 아니라, 해당 commit의 서로 다른 위치에서 가져온 실제 두 줄이다.
+
+```cpp
+absl::base_internal::SpinLock lock_;
+```
+
+```cpp
+CentralFreeListLockHolder h(lock_);
+```
+
+첫 줄은 [mutable member를 보호하는 lock의 선언](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L290-L291)이다. 두 번째 줄은 [`InsertRange`가 shared free list를 수정하기 직전에 lock holder를 만드는 부분](https://github.com/google/tcmalloc/blob/a4ae583028a3fcedae01768a4b530b9273e749a0/tcmalloc/central_freelist.h#L641-L645)이다. Holder의 constructor는 실제로 `lock_.lock()`을 호출하고, scope가 끝나 destructor가 실행되면 `lock_.unlock()`을 호출한다. 따라서 `h`가 살아 있는 block이 critical section이 된다. 그 아래 구현에서는 [atomic compare-and-swap으로 lock을 얻고](https://github.com/abseil/abseil-cpp/blob/20260526.0/absl/base/internal/spinlock.h#L281-L304), 경쟁이 계속되면 [slow path에서 기다린다](https://github.com/abseil/abseil-cpp/blob/20260526.0/absl/base/internal/spinlock.cc#L98-L168).
+
 Discrete GPU가 달린 일반적인 PC에서는 CPU DRAM과 GPU 전용 memory(VRAM)가 물리적으로 분리돼 있다. 앞 글처럼 CPU의 `malloc` allocation과 GPU의 `cudaMalloc` allocation을 따로 쓰는 방식에서는 계산 전 H2D(Host to Device) copy가 필요하고, GPU 결과를 CPU에서 읽기 전 D2H(Device to Host) copy가 필요하다.
 
 Integrated GPU는 CPU와 GPU가 같은 physical system memory를 공유할 수 있다는 점에서 discrete GPU와 다르다. 이 경우에는 CPU DRAM과 별도 VRAM 사이를 건너는 copy가 필요하지 않다. 그러나 같은 DRAM을 써도 heterogeneous한 두 processor가 virtual address를 변환하는 방식과, 자주 쓰는 data의 cached copy를 관리하는 방식은 서로 다를 수 있다. 따라서 shared DRAM이라는 사실만으로 CPU pointer를 GPU가 곧바로 사용할 수 있다거나, 한쪽이 쓴 최신 값이 다른 쪽에 자동으로 보인다고 결론낼 수 없다. **Physical topology**는 memory가 hardware에 어떻게 연결됐는지를 설명하고, **programming model**은 software가 그 memory에 어떻게 접근할 수 있는지를 정한다.
