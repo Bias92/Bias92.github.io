@@ -8,7 +8,7 @@ series: ["CUDA C"]
 summary: "CPU와 GPU가 하나의 메모리 할당을 함께 사용하는 원리를 가상 주소, 데이터 배치와 이동, 동기화, 캐시 일관성으로 설명하고 Jetson AGX Orin의 실제 장치 속성에 적용한다."
 ---
 
-CUDA 프로그램은 CPU와 GPU라는 서로 다른 processor를 함께 사용한다. CPU를 Host, GPU를 Device라고 부른다. 두 processor는 명령을 실행하는 방식뿐 아니라 memory에 접근하는 방식도 다르다. 이런 구조를 heterogeneous system이라고 한다.
+CUDA 프로그램은 CPU와 GPU라는 서로 다른 processor를 함께 사용한다. CPU를 Host, GPU를 Device라고 부른다. 두 processor는 명령 실행 방식과 memory 접근 방식이 다르다. 이런 구조를 heterogeneous system이라고 한다.
 
 [Host-Device 데이터 흐름]({{< relref "/posts/cuda-c-basics" >}}#host-device-데이터-흐름)에서는 CPU용 `h_data`와 GPU용 `d_data`를 따로 만들고, 두 memory 사이의 데이터를 `cudaMemcpy`로 복사했다. 위치와 이동 시점이 코드에 그대로 보이는 explicit memory management다. 자료구조가 복잡해질수록 두 memory 영역과 copy 방향, 수명을 모두 개발자가 맞춘다.
 
@@ -36,7 +36,7 @@ Virtual address space는 한 process가 사용할 수 있는 virtual address의 
 
 CPU나 GPU가 pointer를 읽거나 쓸 때 각 처리 장치의 MMU가 virtual address를 physical address로 변환한다. Virtual address는 virtual page number와 page 안의 위치를 나타내는 offset으로 나뉜다. 주소 변환은 virtual page number를 physical frame number로 바꾸고 offset은 그대로 사용한다.
 
-MMU는 먼저 TLB(Translation Lookaside Buffer)에서 최근의 가상 페이지→물리 프레임 변환 결과를 찾는다. 캐시는 자주 쓰는 것을 가까운 곳에 작게 복사해 두고 먼저 찾아보는 저장소다. TLB는 데이터가 아니라 주소 변환 결과를 보관하는 캐시다.
+MMU는 먼저 TLB(Translation Lookaside Buffer)에서 최근의 가상 페이지→물리 프레임 변환 결과를 찾는다. 캐시는 자주 쓰는 것을 가까운 곳에 작게 복사해 두고 먼저 찾아보는 저장소다. TLB는 주소 변환 결과를 보관하는 캐시다.
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
@@ -78,7 +78,7 @@ int *x = nullptr;
 cudaMallocManaged(&x, sizeof(*x));
 ```
 
-`sizeof(*x)`만큼의 공간을 확보하고, 그 시작 주소를 pointer 변수 `x`에 기록한다. 함수가 `x`의 값을 바꿔야 하므로 첫 번째 인자는 `x`가 아니라 `&x`다. 이 allocation은 `cudaFree(x)`로 해제한다.
+`sizeof(*x)`만큼의 공간을 확보하고, 그 시작 주소를 pointer 변수 `x`에 기록한다. `&x`는 pointer 변수 `x` 자체의 주소를 함수에 전달하므로 함수가 `x`에 시작 주소를 기록할 수 있게 한다. 이 allocation은 `cudaFree(x)`로 해제한다.
 
 Explicit-copy 방식은 CPU용 `h_data`, GPU용 `d_data`, H2D, D2H를 코드에 둔다. Managed 방식은 CPU와 GPU가 `x` 하나를 사용하고, 데이터 이동은 Runtime과 driver, hardware가 현재 system의 지원 수준에 맞춰 처리한다.
 
@@ -109,7 +109,7 @@ int main() {
 }
 ```
 
-`__global__`은 kernel을 선언한다. Block은 함께 배치되는 GPU thread의 묶음이다. `<<<1, 1>>>`은 block 하나에 thread 하나를 배치한다. Kernel launch는 CPU의 다음 코드를 기다리지 않고 시작되므로 GPU write와 CPU read 사이에 `cudaDeviceSynchronize()`를 뒀다.
+`__global__`은 kernel을 선언한다. Block은 함께 배치되는 GPU thread의 묶음이다. `<<<1, 1>>>`은 block 하나에 thread 하나를 배치한다. Kernel launch 직후 CPU는 다음 코드를 계속 실행하므로 GPU write와 CPU read 사이에 `cudaDeviceSynchronize()`를 뒀다.
 
 ## Synchronization과 Cache Coherence
 
@@ -117,7 +117,7 @@ int main() {
 
 첫 번째는 synchronization이다. `cudaDeviceSynchronize()`는 앞서 제출한 GPU 작업이 끝날 때까지 CPU thread를 기다리게 한다. 따라서 GPU write가 끝난 뒤 CPU read가 시작된다.
 
-두 번째는 cache coherence다. CPU와 GPU는 DRAM 접근을 줄이려고 최근 데이터를 각자의 cache에 보관한다. Cache는 cache line이라는 연속된 byte 묶음 단위로 데이터를 가져온다. GPU가 `42`를 cache에 쓴 뒤 CPU가 이전 값 `41`을 다시 사용하지 않도록 cache 상태를 맞춰야 한다.
+두 번째는 cache coherence다. CPU와 GPU는 DRAM 접근을 줄이려고 최근 데이터를 각자의 cache에 보관한다. Cache는 cache line이라는 연속된 byte 묶음 단위로 데이터를 가져온다. GPU가 `42`를 cache에 쓴 뒤 CPU의 다음 read가 `42`를 얻도록 cache 상태를 맞춘다.
 
 Hardware coherence를 사용하는 system에서는 hardware가 processor 사이의 cache 상태를 직접 맞춘다. Driver가 맡는 system에서는 access와 synchronization 경계에서 주소 연결, 데이터 이동, cache 상태를 조정해 다음 처리 장치가 최신 값을 읽게 한다. 이 가운데 cache의 변경값을 다른 처리 장치에 보이게 하거나 이전 cache 사본을 폐기하는 작업을 cache maintenance라고 한다.
 
@@ -129,7 +129,7 @@ CUDA는 managed allocation의 접근 방식을 `Full model`과 `Limited model`�
 
 ### Full model
 
-`concurrentManagedAccess`는 CPU와 GPU가 managed memory를 동시에 사용할 수 있는지를 나타내는 device attribute다. 이 값이 `1`이면 `Full model`이다. GPU가 실제로 접근한 page를 그때 준비할 수 있고, CPU와 GPU는 같은 managed allocation의 서로 다른 주소를 동시에 사용할 수 있다.
+`concurrentManagedAccess`는 CPU와 GPU가 managed allocation을 동시에 사용할 수 있는지를 나타내는 device attribute다. 이 값이 `1`이면 `Full model`이다. GPU가 실제로 접근한 page를 그때 준비할 수 있고, CPU와 GPU는 같은 managed allocation의 서로 다른 주소를 동시에 사용할 수 있다.
 
 ### Limited model
 
@@ -158,7 +158,7 @@ Jetson AGX Orin은 shared DRAM과 `Limited model`을 함께 사용한다. CPU DR
 
 다음은 CPU DRAM과 GPU memory가 분리된 software-coherent [`Full model`](#full-model)에서 GPU page fault를 migration으로 처리하는 경우다. Software coherence는 CPU와 GPU의 주소 연결과 데이터 이동을 driver가 관리하는 방식이다.
 
-초기에는 managed page가 CPU memory에 있고 GPU mapping은 아직 준비되지 않은 상태다. GPU가 그 virtual address를 읽으면 page fault가 발생하고 memory access가 멈춘다. Page fault는 요청한 virtual page를 현재 GPU mapping으로 찾지 못했다는 신호다.
+초기 상태에는 CPU memory의 managed page와 CPU 쪽 mapping이 있다. GPU가 그 virtual address를 처음 읽으면 page fault가 발생하고 memory access가 멈춘다. Page fault는 해당 virtual page에 사용할 GPU mapping을 준비하라는 신호다.
 
 Fault를 처리하는 방법에는 migration과 remote mapping이 있다. 아래 그림은 migration 경로다. Page table과 physical frame을 관리하는 operating-system memory manager가 CUDA driver와 함께 GPU memory에 physical frame을 준비하고 page 내용을 옮긴 뒤 GPU mapping을 설치한다. Mapping이 준비되면 멈췄던 GPU instruction이 재개된다.
 
@@ -171,6 +171,8 @@ CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반�
 ### HMM
 
 HMM(Heterogeneous Memory Management)은 Linux kernel에서 CPU page table의 변경, GPU fault, page migration을 연결하는 subsystem이다. HMM을 사용하는 `Full model`에서는 `malloc`, `new`, `mmap`으로 만든 system allocation도 GPU가 사용할 수 있다. Device attributes는 이 지원 범위를 분류하고, `nvidia-smi -q`의 `Addressing Mode`는 현재 HMM 사용 여부를 보여 준다.
+
+지금까지의 fault와 migration은 driver가 개입하는 software coherence 쪽 경로다. Hardware coherence system에서는 CPU와 GPU가 같은 host page table을 쓰고 interconnect가 cache 상태를 맞추므로, page를 옮기지 않아도 양쪽이 같은 데이터를 쓸 수 있다. Grace Hopper의 NVLink-C2C, Jetson Thor의 Sysmem Full Coherency가 여기에 해당한다. 다음 절의 Orin은 둘 다 아니다.
 
 ## Jetson AGX Orin: Shared DRAM과 Limited model
 
@@ -186,8 +188,6 @@ pageableMemoryAccess=0
 ### 판정
 
 `managedMemory=1`은 explicit managed allocation 지원을, `concurrentManagedAccess=0`은 `Limited model`을 뜻한다. `pageableMemoryAccess=0`은 Unified Memory의 범위를 `cudaMallocManaged` 같은 explicit managed allocation으로 제한한다.
-
-이 Orin은 `concurrentManagedAccess=0`이므로 GPU 대상 `cudaMemPrefetchAsync`를 지원하지 않는다.
 
 위 장치 출력은 `Limited model`을 판정한다. NVIDIA Tegra memory model은 shared SoC DRAM과 cache 동작을 설명한다.
 
