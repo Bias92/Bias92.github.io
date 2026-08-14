@@ -54,7 +54,7 @@ CUDA 문서는 이 셋을 구분해서 쓴다. 아래는 discrete GPU에서 `x`�
 | placement (배치) | 데이터가 현재 어느 물리 메모리에 저장돼 있는가 | `41`이 시스템 DRAM의 프레임 A에 있으면 배치는 시스템 DRAM이다. 이동 후 프레임 B에 있으면 배치는 VRAM이다. |
 | migration (이동) | 데이터를 다른 물리 메모리로 옮겨 배치를 바꾸는 일 | `41`이 든 페이지를 시스템 DRAM의 프레임 A에서 VRAM의 프레임 B로 복사하고, GPU의 주소 연결을 프레임 B로 바꾼다. |
 
-![값 41이 든 관리형 페이지가 시스템 DRAM에서 메모리 컨트롤러와 PCIe를 거쳐 discrete GPU의 VRAM으로 이동하는 경로](images/migration-placement.gif?v=2#medium)
+![값 41이 든 관리형 페이지가 시스템 DRAM에서 메모리 컨트롤러와 PCIe를 거쳐 discrete GPU의 VRAM으로 이동하는 경로](images/migration-placement.gif?v=3#compact)
 
 이 경로는 CPU DRAM과 VRAM이 분리된 discrete GPU의 단순화된 예시다. Orin에는 별도 VRAM과 이 PCIe 경로가 없다.
 
