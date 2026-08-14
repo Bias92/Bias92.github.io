@@ -113,13 +113,13 @@ int main() {
 
 ## Synchronization과 Coherence
 
-앞 코드에는 실행 순서와 최신 값의 가시성이라는 두 층이 있다. `cudaDeviceSynchronize()`는 현재 device에 제출한 작업이 끝날 때까지 CPU thread를 기다리게 하여 GPU write를 CPU read보다 앞에 둔다.
+앞 코드에는 실행 순서와 최신 값의 가시성이라는 두 층이 있다. 우선 `cudaDeviceSynchronize()`는 현재 device에 제출한 작업이 끝날 때까지 CPU thread를 기다리게 하여 GPU write를 CPU read보다 앞에 둔다.
 
 CPU와 GPU는 DRAM 접근을 줄이려고 최근 데이터를 각자의 캐시에 보관한다. 이렇게 캐시에 올라간 값을 캐시 사본이라고 한다. 캐시는 보통 캐시 라인이라는 연속된 바이트 묶음 단위로 데이터를 가져온다. 처리 장치가 캐시 라인을 고쳤는데 그 값이 아직 아래 메모리에 반영되지 않은 상태를 dirty(더러움, 미반영), 다른 캐시에 남은 옛 사본을 stale(낡음)이라고 한다.
 
-Synchronization은 write와 다음 read의 순서를 만든다. CUDA memory model은 synchronization 뒤 다음 처리 장치가 최신 값을 보도록 값의 가시성을 정한다. Cache coherence는 이 순서에 맞춰 cache 상태를 관리한다. 구현은 지원 모델에 따라 hardware coherence 또는 driver cache maintenance를 사용한다. Write-back은 변경된 값을 아래 메모리에 반영하고, invalidation은 낡은 cache entry를 무효화한다.
+Synchronization은 write와 다음 read의 순서를 만든다. CUDA memory model은 synchronization 뒤 다음 처리 장치가 최신 값을 보도록 값의 가시성을 정한다. Cache coherence는 이 순서에 맞춰 cache 상태를 관리한다. 이때 구현은 지원 모델에 따라 hardware coherence 또는 driver cache maintenance를 사용한다. Write-back은 변경된 값을 아래 메모리에 반영하고, invalidation은 낡은 cache entry를 무효화한다.
 
-같은 위치를 동시에 수정하는 접근에는 synchronization이 필요하다. 앞 예제의 `41 → 42`는 GPU write 뒤 CPU read가 최신 값을 본 결과다. Placement는 data의 물리적 위치를, coherence는 다음 처리 장치에 보이는 값을 다룬다.
+다만 같은 위치를 동시에 수정하는 접근에는 synchronization이 필요하다. 실제로 앞 예제의 `41 → 42`는 GPU write 뒤 CPU read가 최신 값을 본 결과다. 정리하면 placement는 data의 물리적 위치를, coherence는 다음 처리 장치에 보이는 값을 다룬다.
 
 ## Unified Memory 지원 모델
 
@@ -140,11 +140,11 @@ CUDA는 managed memory의 접근 방식을 `Full model`과 `Limited model`로 �
 | GPU 실행 중 CPU의 managed-memory 접근 | 가능함. 같은 주소의 충돌은 synchronization이 필요함 | 허용되지 않음 |
 | GPU가 사용할 수 있는 physical memory보다 큰 managed allocation | 사용할 수 있음 | 사용할 수 없음 |
 
-Jetson AGX Orin은 shared DRAM과 `Limited model`을 함께 사용한다. 다른 시스템에서는 CPU DRAM과 GPU VRAM이 분리된 discrete GPU가 `Full model`로 동작할 수 있다.
+Jetson AGX Orin은 shared DRAM과 `Limited model`을 함께 사용한다. 반면 다른 시스템에서는 CPU DRAM과 GPU VRAM이 분리된 discrete GPU가 `Full model`로 동작할 수 있다.
 
 CUDA 공식 [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)의 `Placement Policy` 열은 allocation API별 데이터 배치 기준을 나타낸다. `cudaMallocManaged`의 `First touch/hint`는 처음 접근한 처리 장치와 프로그램이 전달한 성능 정보를 배치에 반영한다. Preferred-location hint는 선호 위치를 제시하며 실제 이동 시점과 최종 배치는 Runtime이 정한다.
 
-현재 지원 모델은 operating system, kernel, driver, GPU, CPU-GPU interconnect의 조합에서 결정된다. `cudaDeviceGetAttribute`가 현재 환경의 지원 값을 반환한다.
+현재 지원 모델은 operating system, kernel, driver, GPU, CPU-GPU interconnect의 조합에서 결정된다. 따라서 현재 환경의 지원 값은 `cudaDeviceGetAttribute`로 확인한다.
 
 `managedMemory`는 explicit managed allocation을 만들 수 있는지 알려 준다. 그다음 세 attribute는 아래 순서로 읽는다.
 
@@ -156,17 +156,17 @@ CUDA 공식 [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-prog
 
 다음은 CPU DRAM과 GPU memory가 분리된 software-coherent [`Full model`](#full-model)에서 GPU page fault를 migration으로 처리하는 경우다.
 
-CPU가 managed allocation을 먼저 쓰면 해당 virtual page의 physical frame이 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 유효한 GPU mapping이 없으면 page fault가 발생한다. 이 fault는 mapping 준비가 끝날 때까지 GPU memory access를 중단시키는 recoverable event다.
+CPU가 managed allocation을 먼저 쓰면 해당 virtual page의 physical frame이 CPU memory에 놓일 수 있다. 이 상태에서 GPU가 그 virtual address를 처음 읽으면 유효한 GPU mapping이 없으므로 page fault가 발생한다. 이 fault는 mapping 준비가 끝날 때까지 GPU memory access를 중단시키는 recoverable event다.
 
-Memory manager와 CUDA driver는 GPU memory에 physical frame을 준비하고 page의 최신 내용을 옮긴 뒤 GPU mapping을 설치한다. 이어서 멈췄던 GPU instruction이 재개된다. Migration은 page 내용을 다른 physical memory로 옮기며 virtual address는 유지한다.
+그러면 memory manager와 CUDA driver는 GPU memory에 physical frame을 준비하고 page의 최신 내용을 옮긴 뒤 GPU mapping을 설치한다. 이어서 멈췄던 GPU instruction이 재개된다. Migration은 page 내용을 다른 physical memory로 옮기며 virtual address는 유지한다.
 
 ![Software coherence를 사용하는 Full model의 page fault와 migration](images/demand-paging.svg)
 
-Fault는 처리를 시작시키고, migration은 가능한 해결 방법 중 하나다. Remote mapping을 사용하는 환경에서는 page가 CPU memory에 머문 상태로 GPU mapping이 설치된다.
+즉 fault는 처리를 시작시키고, migration은 가능한 해결 방법 중 하나다. 예를 들어 remote mapping을 사용하는 환경에서는 page가 CPU memory에 머문 상태로 GPU mapping이 설치된다.
 
-CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반복되는 page ping-pong이 생길 수 있다. `cudaMemPrefetchAsync`는 지정한 범위의 데이터를 미리 옮겨 placement 시점을 앞당긴다. 실행 순서는 CUDA synchronization으로 정한다.
+CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반복되는 page ping-pong이 생길 수 있다. 이럴 때 `cudaMemPrefetchAsync`로 지정한 범위의 데이터를 미리 옮겨 placement 시점을 앞당길 수 있다. 다만 실행 순서는 여전히 CUDA synchronization으로 정한다.
 
-HMM(Heterogeneous Memory Management)은 Linux kernel이 CPU와 GPU의 page-table 변경, device fault, page migration을 연결하는 infrastructure다. 호환되는 Linux PCIe system에서는 HMM이 system allocation을 지원하는 software-coherent `Full model`을 구현한다. Device attributes는 지원 모델을 분류하고, `nvidia-smi -q`의 Addressing Mode가 현재 HMM 사용 여부를 보여 준다.
+한편 HMM(Heterogeneous Memory Management)은 Linux kernel이 CPU와 GPU의 page-table 변경, device fault, page migration을 연결하는 infrastructure다. 호환되는 Linux PCIe system에서는 HMM이 system allocation을 지원하는 software-coherent `Full model`을 구현한다. Device attributes는 지원 모델을 분류하고, `nvidia-smi -q`의 Addressing Mode가 현재 HMM 사용 여부를 보여 준다.
 
 ## Jetson AGX Orin: Shared DRAM과 Limited model
 
@@ -183,19 +183,19 @@ pageableMemoryAccess=0
 
 `managedMemory=1`은 explicit managed allocation 지원을, `concurrentManagedAccess=0`은 `Limited model`을 뜻한다. `pageableMemoryAccess=0`은 Unified Memory의 범위를 `cudaMallocManaged` 같은 explicit managed allocation으로 제한한다.
 
-이 Orin은 `concurrentManagedAccess=0`이므로 GPU 대상 `cudaMemPrefetchAsync`를 지원하지 않는다. 측정 프로그램은 해당 호출을 건너뛰었다.
+이 Orin은 `concurrentManagedAccess=0`이므로 GPU 대상 `cudaMemPrefetchAsync`를 지원하지 않는다. 그래서 측정 프로그램은 해당 호출을 건너뛰었다.
 
-`Limited model` 판정은 위 장치 출력에 근거한다. Shared SoC DRAM과 cache 동작은 NVIDIA Tegra memory model을 이 장치에 적용한 결과다.
+`Limited model` 판정은 위 장치 출력에 근거한다. 반면 shared SoC DRAM과 cache 동작은 NVIDIA Tegra memory model을 이 장치에 적용한 결과다.
 
 ### 공유 DRAM과 캐시
 
 Tegra 문서에 따르면 Tegra의 CPU와 integrated GPU는 SoC DRAM을 공유하며 device memory, host memory, unified memory가 같은 physical SoC DRAM에 할당된다. 실제 출력의 `integrated=1`도 Orin GPU의 integrated 구조를 확인한다.
 
-Orin의 managed allocation은 shared SoC DRAM에 놓인다. CPU와 GPU는 managed data를 각각의 cache에 저장할 수 있다. 다음 처리 장치가 최신 값을 읽도록 cache 상태를 맞추는 과정이 coherence다.
+Orin의 managed allocation은 shared SoC DRAM에 놓인다. 하지만 CPU와 GPU는 managed data를 각각의 cache에 저장할 수 있다. 그래서 다음 처리 장치가 최신 값을 읽도록 cache 상태를 맞추는 과정이 필요하고, 이 과정이 coherence다.
 
-Orin의 one-way I/O coherency는 GPU가 CPU cache의 최신 update를 읽게 한다. GPU가 쓴 값을 CPU가 읽는 방향은 CUDA driver가 synchronization 경계에서 GPU cache를 관리한다.
+Orin의 one-way I/O coherency는 GPU가 CPU cache의 최신 update를 읽게 한다. 반대로 GPU가 쓴 값을 CPU가 읽는 방향은 CUDA driver가 synchronization 경계에서 GPU cache를 관리한다.
 
-Tegra 문서는 `concurrentManagedAccess=0`인 환경의 kernel launch와 synchronization에 coherency·cache-maintenance operation이 추가되며, 이 작업이 latency를 늘릴 수 있다고 설명한다.
+또한 Tegra 문서는 `concurrentManagedAccess=0`인 환경의 kernel launch와 synchronization에 coherency·cache-maintenance operation이 추가되며, 이 작업이 latency를 늘릴 수 있다고 설명한다.
 
 ![Jetson AGX Orin의 one-way I/O coherency와 driver-managed GPU cache](images/orin-shared-dram.svg)
 
@@ -206,7 +206,7 @@ before kernel: 41
 after kernel:  42
 ```
 
-`41 → 42`는 synchronization 뒤 CPU가 GPU의 최신 값을 읽었음을 확인한다. 이번 실행은 device attributes와 값의 가시성을 기록했으며 timing은 측정하지 않았다.
+`41 → 42`는 synchronization 뒤 CPU가 GPU의 최신 값을 읽었음을 확인한다. 다만 이번 실행은 device attributes와 값의 가시성을 기록했을 뿐 timing은 측정하지 않았다.
 
 실행 가능한 전체 코드는 [managed_add.cu](/code/cuda-04/managed_add.cu), attribute 조회 코드는 [orin_um_probe.cu](/code/cuda-04/orin_um_probe.cu), 실제 출력은 [Orin observation](/code/cuda-04/orin-jetpack-6.2.2.txt)에 있다.
 
