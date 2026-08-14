@@ -40,6 +40,8 @@ MMU는 먼저 TLB(Translation Lookaside Buffer)에서 최근의 가상 페이지
 
 변환된 물리 주소는 캐시와 물리 메모리로 이어지는 메모리 계층에서 사용된다. [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#unified-and-system-memory)는 이기종 시스템에 여러 물리 메모리가 있으며, CUDA가 데이터의 할당과 배치, 이동을 관리한다고 설명한다. [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)에는 `Placement Policy`가 별도 항목으로 나온다. Full 지원 환경의 `cudaMallocManaged`는 `First touch/hint`로 분류된다. First touch는 보통 데이터를 처음 접근한 처리 장치의 메모리에 배치한다는 뜻이다. Hint는 드라이버의 배치 결정을 돕는 정보일 뿐, 데이터를 즉시 옮기거나 실제 배치 위치를 보장하지 않는다.
 
+여기서 관리형 할당(managed allocation)은 `cudaMallocManaged`로 만든 할당을 말한다. 어느 메모리에 둘지, 언제 옮길지, 어느 처리 장치에 매핑을 걸지를 개발자가 아니라 CUDA 런타임과 드라이버가 정하기 때문에 관리형이라고 부른다. `cudaMalloc`으로 만든 할당은 개발자가 `cudaMemcpy`로 직접 옮기므로 여기에 해당하지 않는다.
+
 CUDA 문서에서 placement(배치)는 관리형 할당의 각 페이지에 해당하는 데이터가 현재 어느 물리 메모리에 저장되어 있는지를 뜻한다. Mapping(매핑)은 가상 페이지를 물리 프레임에 연결하는 주소 관계이고, 배치는 그 물리 프레임이 어느 메모리에 속하는지를 가리킨다. discrete GPU에서는 관리형 데이터가 CPU의 시스템 DRAM이나 GPU의 VRAM에 저장될 수 있다. 반면 integrated GPU는 CPU와 시스템 DRAM을 공유하므로, 데이터를 별도의 VRAM으로 옮기는 과정이 없다.
 
 GPU가 CPU 메모리의 데이터를 복사하지 않고 직접 읽도록 주소 연결만 설정하면 배치는 바뀌지 않는다. 반면 migration(이동)은 최신 데이터를 다른 물리 메모리로 옮기므로 배치를 바꾼다. 처리 단위는 Unified Memory 지원 방식에 따라 다르다. 소프트웨어 일관성을 사용하는 Full 모델은 보통 페이지 단위로 이동한다. 하드웨어 일관성을 사용하는 모델은 캐시 라인 단위로도 접근할 수 있고, Limited 모델은 가상 페이지보다 큰 단위로 옮길 수 있다.
