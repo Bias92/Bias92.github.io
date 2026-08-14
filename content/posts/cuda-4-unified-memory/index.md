@@ -28,6 +28,8 @@ Unified Memory는 이 주소 연결과 접근 순서를 CUDA가 관리하는 방
 
 ## Virtual Address와 Physical Memory
 
+### 주소 변환
+
 이 글에서 다루는 일반적인 CUDA process에서 pointer에 담기는 값은 virtual address다. 이 값은 DRAM이나 VRAM chip의 물리적 위치를 직접 나타내는 physical address가 아니다.
 
 Virtual memory는 virtual address space를 보통 page라는 일정 크기의 단위로 나눈다. Physical memory는 같은 크기의 frame(page frame)으로 나뉜다. Page table은 virtual page가 어느 physical frame에 연결됐는지와 어떤 접근이 허용되는지 기록한다. 이 연결을 mapping이라고 한다. 아직 유효한 mapping이 없는 virtual page도 있다.
@@ -39,6 +41,8 @@ MMU는 먼저 TLB(Translation Lookaside Buffer)에서 최근의 가상 페이지
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
 변환된 물리 주소는 캐시와 물리 메모리로 이어지는 메모리 계층에서 사용된다. [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#unified-and-system-memory)는 이기종 시스템에 여러 물리 메모리가 있으며, CUDA가 데이터의 할당과 배치, 이동을 관리한다고 설명한다.
+
+### 배치와 이동
 
 여기서 관리형 할당(managed allocation)은 `cudaMallocManaged`로 만든 할당을 말한다. 어느 메모리에 둘지, 언제 옮길지, 어느 처리 장치에 매핑을 걸지를 개발자가 아니라 CUDA 런타임과 드라이버가 정하기 때문에 관리형이라고 부른다. `cudaMalloc`으로 만든 할당은 개발자가 `cudaMemcpy`로 직접 옮기므로 여기에 해당하지 않는다.
 
@@ -61,6 +65,8 @@ CUDA 문서는 이 셋을 구분해서 쓴다.
 
 최신 값이 언제나 DRAM이나 VRAM에만 있는 것도 아니다. CPU나 GPU가 값을 쓰면 변경된 값이 한동안 캐시에 남을 수 있다. 다음 처리 장치가 최신 값을 보려면 올바른 접근 순서와 캐시 상태가 함께 보장돼야 한다.
 
+### UVA와 Unified Memory
+
 CUDA의 UVA(Unified Virtual Addressing)는 한 프로세스 안의 CPU 메모리와 각 GPU 메모리를 하나의 가상 주소 공간에 배치한다. CPU와 GPU는 서로 다른 페이지 테이블을 사용할 수 있으므로 같은 포인터 값을 쓰더라도 각 처리 장치에 유효한 매핑이 필요하다. UVA 자체는 `cudaMalloc`로 만든 장치 메모리 할당을 CPU가 읽게 만들지 않으며, 데이터 배치나 캐시 상태도 관리하지 않는다.
 
 Unified Memory는 그 다음 층이다. CUDA는 CPU와 GPU의 접근을 관리하는 관리형 할당(managed allocation)을 제공하고, 시스템이 지원하는 방식으로 매핑과 배치, 최신 값이 보이도록 관리한다. 정리하면 UVA는 주소 체계, Unified Memory는 접근과 관리 규칙이다.
@@ -78,12 +84,16 @@ cudaMallocManaged(&x, sizeof(*x));
 
 Explicit-copy 방식에서는 CPU용 `h_data`, GPU용 `d_data`, H2D, D2H가 필요했다. Managed 방식에서는 CPU와 GPU가 `x` 하나를 사용하며 소스에 두 copy를 적지 않는다. Driver는 GPU와 memory 상태를 제어하는 system software다. Runtime, driver, hardware가 현재 system의 지원 방식에 따라 address mapping, physical placement, 최신 값의 가시성을 구현한다.
 
+### 보장하는 것과 하지 않는 것
+
 여기까지가 `cudaMallocManaged`의 보장이다. 다음 내용은 보장하지 않는다.
 
 - 동일한 내용의 완전한 physical copy가 CPU memory와 GPU memory 양쪽에 항상 존재한다.
 - 물리적인 data copy가 전혀 없다.
 - CPU와 GPU가 synchronization 없이 같은 위치를 동시에 읽고 쓸 수 있다.
 - Explicit copy보다 항상 빠르다.
+
+### 최소 예제
 
 아래 코드는 같은 managed allocation을 CPU와 GPU가 차례로 사용하는 기본 형태다. `41`은 값이 바뀌었는지 확인하려고 고른 임의의 수다. GPU thread 하나가 한 번 `1`을 더하므로 예상 결과는 `42`다.
 
@@ -168,9 +178,13 @@ concurrentManagedAccess=0
 pageableMemoryAccess=0
 ```
 
+### 판정
+
 이 출력에서 `managedMemory=1`은 명시적으로 만든 관리형 할당을 지원한다는 뜻이다. `concurrentManagedAccess=0`이므로 지원 방식은 `Limited model`로 판정된다. `pageableMemoryAccess=0`이므로 일반 `malloc`이나 `new` 할당은 Unified Memory 대상이 아니다. 앞 절의 HMM 경로도 아니다. `pageableMemoryAccessUsesHostPageTables`는 앞의 두 조건이 모두 `1`일 때만 해석하므로 이 Orin 판정에는 사용하지 않는다.
 
 여기까지는 실제 장치 출력으로 판정한 결과다. 다음 shared-memory와 cache 설명은 이번 probe에서 내부 operation을 관측한 결과가 아니라 NVIDIA의 Tegra memory model을 이 Orin에 적용한 것이다.
+
+### 공유 DRAM과 캐시
 
 Tegra 문서에 따르면 Tegra의 CPU와 integrated GPU는 SoC DRAM을 공유하며 device memory, host memory, unified memory가 같은 physical SoC DRAM에 할당된다. `integrated=1`이라는 실제 출력도 이 장치가 integrated GPU임을 확인한다. 따라서 Orin의 managed allocation을 CPU DRAM에서 별도 VRAM으로 PCIe migration한다고 설명하면 틀린다.
 
