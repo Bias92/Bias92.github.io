@@ -5,14 +5,14 @@ draft: false
 tags: ["CUDA", "GPU Programming", "Unified Memory", "Managed Memory", "Heterogeneous Memory", "Jetson"]
 categories: ["CUDA"]
 series: ["CUDA C"]
-summary: "Unified Memory가 통합하는 것은 물리 메모리가 아니라 CPU와 GPU의 접근 모델이다. 가상 주소, page, migration, coherence, limited/full 지원을 정리하고 Jetson AGX Orin의 실제 장치 속성에 적용한다."
+summary: "Unified Memory가 통합하는 것은 물리 메모리가 아니라 CPU와 GPU의 접근 모델이다. 가상 주소, page, migration, coherence, 두 가지 지원 모델을 정리하고 Jetson AGX Orin의 실제 장치 속성에 적용한다."
 ---
 
 CUDA 프로그램은 CPU와 GPU라는 서로 다른 processor를 함께 사용한다. CPU를 Host, GPU를 Device라고 부른다. 두 processor는 명령을 실행하는 방식뿐 아니라 memory에 접근하는 방식도 다르다. 이런 구조를 heterogeneous system이라고 한다.
 
 [Host-Device 데이터 흐름]({{< relref "/posts/cuda-c-basics" >}}#host-device-데이터-흐름)에서는 CPU용 `h_data`와 GPU용 `d_data`를 따로 만들고, 계산 전후에 `cudaMemcpy`를 호출했다. 위치와 이동 시점이 코드에 그대로 보이는 explicit memory management다. 대신 자료구조가 복잡해질수록 host pointer, device pointer, copy 방향, 수명을 모두 개발자가 맞춰야 한다.
 
-Unified Memory는 CPU와 GPU가 하나의 메모리 할당을 CUDA가 정한 접근 규칙 아래 사용하게 한다. CPU DRAM과 GPU 메모리를 하나의 물리 메모리로 합치는 기능은 아니다. 이 글은 가상 주소와 물리 프레임, 동기화와 캐시 일관성을 차례로 설명한다. 마지막에는 Jetson AGX Orin의 실제 장치 속성을 이용해, CPU와 GPU가 DRAM을 공유한다는 사실과 Limited Unified Memory라는 지원 방식이 별개임을 확인한다.
+Unified Memory는 CPU와 GPU가 하나의 메모리 할당을 CUDA가 정한 접근 규칙 아래 사용하게 한다. CPU DRAM과 GPU 메모리를 하나의 물리 메모리로 합치는 기능은 아니다. 이 글은 가상 주소와 물리 프레임, 동기화와 캐시 일관성을 차례로 설명한다. 마지막에는 Jetson AGX Orin의 실제 장치 속성을 이용해, CPU와 GPU가 DRAM을 공유하더라도 관리형 메모리의 접근 방식에는 제한이 있음을 확인한다.
 
 ## CPU Memory와 GPU Memory
 
@@ -109,54 +109,42 @@ Cache coherence는 올바르게 synchronization된 접근에서 다음 처리 �
 
 Synchronization과 coherence는 별도 API 두 개를 뜻하지 않는다. Program은 `cudaDeviceSynchronize()`로 실행 순서를 만들고, CUDA의 memory model과 현재 system의 driver 또는 hardware가 그 경계에서 값의 가시성을 보장한다. Placement는 실제 data가 어느 physical memory에 있는가의 문제이고, coherence는 다음 processor가 최신 값을 보는가의 문제다.
 
-Coherence는 data race를 허용하는 기능이 아니다. CPU와 GPU가 synchronization 없이 같은 위치를 동시에 읽고 쓰면 full Unified Memory에서도 결과를 보장할 수 없다. 앞 예제의 `41 → 42`는 순차 접근과 값의 가시성을 확인할 뿐, 내부 cache operation의 종류와 비용까지 측정하지 않는다.
+Coherence는 data race를 허용하는 기능이 아니다. CPU와 GPU가 synchronization 없이 같은 위치를 동시에 읽고 쓰면 Unified Memory에서도 결과를 보장할 수 없다. 앞 예제의 `41 → 42`는 순차 접근과 값의 가시성을 확인할 뿐, 내부 cache operation의 종류와 비용까지 측정하지 않는다.
 
-## Limited와 Full Unified Memory
+## Unified Memory 지원 모델
 
-CPU와 GPU의 물리 메모리가 연결된 방식과 Unified Memory 지원 방식은 서로 다른 문제다.
+- `Full model`: GPU가 managed memory를 실제로 접근할 때 필요한 page를 옮기거나, 데이터가 있는 memory를 직접 읽도록 주소를 연결할 수 있다. CPU와 GPU가 같은 managed allocation의 서로 다른 주소를 동시에 사용할 수 있으며 GPU memory 용량보다 큰 managed allocation도 사용할 수 있다. 다만 synchronization 없이 같은 위치를 동시에 수정하는 data race는 여전히 허용되지 않는다.
+- `Limited model`: `cudaMallocManaged`는 사용할 수 있지만 CPU와 GPU의 접근 시점이 분리된다. CUDA는 kernel을 시작하기 전에 GPU가 managed memory를 사용할 수 있도록 준비하고, synchronization이 끝난 뒤 CPU가 다시 접근할 수 있게 한다. GPU가 실행되는 동안 CPU는 managed memory에 접근할 수 없다. GPU가 필요한 page만 접근 시점에 가져오는 방식과 GPU memory 용량보다 큰 managed allocation도 지원하지 않는다.
 
-| 질문 | 가능한 구조 |
-|---|---|
-| CPU와 GPU의 physical memory가 분리됐는가 | CPU DRAM + GPU VRAM / shared SoC DRAM |
-| Unified Memory를 어떤 방식으로 지원하는가 | limited / full |
-
-Shared DRAM을 쓴다고 full Unified Memory인 것은 아니다. 반대로 physical memory가 분리된 discrete GPU도 operating system과 driver 조합에 따라 full Unified Memory를 지원할 수 있다.
-
-Limited Unified Memory에서는 CPU와 GPU의 접근 시점이 크게 나뉜다. 기본 규칙에서는 GPU kernel이 실행되는 동안 CPU가 managed memory에 접근하면 안 된다. Kernel launch와 completion synchronization이 접근 주체를 넘기는 경계가 된다. Oversubscription, 즉 GPU memory보다 큰 managed allocation을 사용하는 기능도 지원하지 않는다.
-
-Full Unified Memory에서는 GPU의 실제 접근 시점에 page migration이나 remote-access mapping으로 접근을 처리할 수 있고, CPU와 GPU가 서로 다른 managed 위치를 동시에 사용할 수 있다. GPU memory보다 큰 managed allocation도 만들 수 있다. discrete GPU 환경에서는 필요한 pages를 GPU memory에 두고 나머지는 system memory에 둘 수도 있다. 그래도 synchronization 없이 같은 위치를 동시에 수정하는 data race까지 허용되는 것은 아니다.
-
-이동하는 단위도 지원 방식에 따라 다르다. software coherence를 쓰는 full 모델은 보통 페이지 단위로 옮기고, hardware coherence를 쓰는 모델은 캐시 라인 단위로도 접근한다. limited 모델은 가상 페이지보다 큰 단위로 옮길 수 있다.
+이 분류는 CPU와 GPU가 물리 메모리를 공유하는지와 별개다. Shared DRAM을 사용하는 장치도 `Limited model`일 수 있고, CPU DRAM과 GPU VRAM이 분리된 discrete GPU도 `Full model`일 수 있다.
 
 CUDA 공식 [메모리 할당 방식 표](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html#overview-of-memory-allocators-for-unified-memory)의 `Placement Policy`는 새 기능 이름이 아니라, 메모리 할당 API마다 데이터의 저장 위치를 어떻게 정하는지 비교하는 열 제목이다. `cudaMallocManaged` 행의 `First touch/hint`는 첫 접근과 권고 정보라는 두 배치 기준을 묶어 쓴 것이다. `First touch`는 각 페이지를 CPU나 GPU가 처음 읽거나 쓸 때, 보통 그 처리 장치의 메모리에 데이터를 두는 방식이다. `hint`는 프로그램이 CUDA에 예상 접근 방식이나 선호 위치를 알려 주는 정보이며 정확성이 아니라 성능에만 영향을 준다. 이 가운데 선호 위치를 알려 주는 정보는 데이터를 즉시 옮기지 않으며, 실제 위치를 그곳으로 고정하지도 않는다.
 
-현재 장치가 어느 model인지 GPU 이름이나 compute capability만으로 판단하면 안 된다. Operating system, kernel, driver, GPU, CPU-GPU interconnect의 조합이 결과를 바꾼다. CUDA는 `cudaDeviceGetAttribute`로 현재 환경을 직접 조회하게 한다.
+현재 장치가 어느 지원 모델인지 GPU 이름이나 compute capability만으로 판단하면 안 된다. Operating system, kernel, driver, GPU, CPU-GPU interconnect의 조합이 결과를 바꾼다. CUDA는 `cudaDeviceGetAttribute`로 현재 환경을 직접 조회하게 한다.
 
 `managedMemory`는 explicit managed allocation을 만들 수 있는지 알려 준다. 그다음 세 attribute는 아래 순서로 읽는다.
 
-1. `concurrentManagedAccess`가 `0`이면 limited Unified Memory다.
-2. 그 값이 `1`이면 full support이며, `pageableMemoryAccess`가 `0`일 때는 CUDA API로 명시적으로 만든 managed allocation만 full model을 사용한다.
+1. `concurrentManagedAccess`가 `0`이면 `Limited model`이다.
+2. 그 값이 `1`이면 `Full model`이며, `pageableMemoryAccess`가 `0`일 때는 CUDA API로 명시적으로 만든 managed allocation만 이 모델을 사용한다.
 3. 두 값이 모두 `1`이면 `malloc`, `new`, `mmap` 같은 system allocation까지 Unified Memory 범위에 들어간다. 이때만 `pageableMemoryAccessUsesHostPageTables`를 읽는다. `0`은 software coherence, 즉 driver가 mapping과 migration을 관리해 앞의 cache coherence를 달성하는 방식이다. `1`은 hardware coherence로, CPU와 GPU가 같은 host page table을 쓰고 cache 상태를 hardware가 직접 맞춘다.
-
-Limited도 `cudaMallocManaged`로 pointer 하나를 만들고 CPU → GPU → CPU 순서로 사용할 수 있다. “Limited”는 API가 동작하지 않는다는 뜻이 아니다. GPU 실행 중 CPU의 managed-memory 접근, fine-grained on-demand migration, oversubscription을 지원하지 않는다는 뜻이다.
 
 ## Page Fault와 Migration
 
-Page fault와 migration은 full Unified Memory의 automatic placement를 이해하기 위해 필요한 개념이다. Software coherence는 hardware protocol 대신 memory manager와 driver가 mapping과 migration을 관리하는 방식이다. 다음 설명은 CPU DRAM과 GPU memory가 분리된 software-coherent full model의 한 경로다. 뒤에서 다룰 Orin의 실제 경로가 아니다.
+Page fault와 migration은 `Full model`의 자동 배치를 이해하기 위해 필요한 개념이다. Software coherence는 hardware protocol 대신 memory manager와 driver가 mapping과 migration을 관리하는 방식이다. 다음 설명은 CPU DRAM과 GPU memory가 분리되고 software coherence를 사용하는 `Full model`의 한 경로다. 뒤에서 다룰 Orin의 실제 경로가 아니다.
 
 CPU가 managed allocation을 먼저 쓰면 해당 virtual page에 대응하는 physical frame이 CPU memory에 놓일 수 있다. GPU가 그 virtual address를 처음 읽을 때 GPU page table에 유효한 mapping이 없거나 GPU가 현재 그 physical frame에 직접 접근할 수 없다면 page fault가 발생한다. 이 문맥의 fault는 program crash가 아니라 “현재 상태로 이 memory access를 바로 완료할 수 없다”는 event다.
 
 Memory manager와 CUDA driver는 GPU memory에 physical frame을 준비하고 virtual page의 최신 내용을 옮긴 뒤 GPU mapping을 설치한다. 멈췄던 GPU instruction은 그다음 재개된다. Virtual page의 내용을 한 memory domain의 physical frame에서 다른 memory domain의 frame으로 옮기는 작업이 migration이다. Pointer 값은 바뀌지 않는다.
 
-![Software-coherent full Unified Memory의 page fault와 migration](images/demand-paging.svg)
+![Software coherence를 사용하는 Full model의 page fault와 migration](images/demand-paging.svg)
 
-Page fault와 migration은 동의어가 아니다. 그림의 경로에서는 fault가 처리를 시작하게 만든 event이고 migration이 그 해결 방법이다. 예를 들어 GPU가 interconnect를 통해 CPU memory에 있는 page를 remote access하는 full-support system은 page를 복사하지 않고 mapping만 설치할 수 있다.
+Page fault와 migration은 동의어가 아니다. 그림의 경로에서는 fault가 처리를 시작하게 만든 event이고 migration이 그 해결 방법이다. 예를 들어 GPU가 interconnect를 통해 CPU memory에 있는 page를 직접 읽을 수 있는 `Full model` 환경에서는 page를 복사하지 않고 mapping만 설치할 수 있다.
 
 CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반복되는 page ping-pong이 생길 수 있다. Managed code가 짧아도 data movement 비용은 커질 수 있다는 뜻이다. `cudaMemPrefetchAsync`는 지정한 범위의 데이터를 특정 처리 장치 가까운 메모리로 미리 옮기도록 요청한다. 이 호출은 성능을 조정할 뿐, 올바른 실행 순서를 보장하는 synchronization 함수가 아니다.
 
-HMM(Heterogeneous Memory Management)은 Linux kernel이 CPU와 GPU의 page-table 변경, device fault, page migration을 연결하는 infrastructure다. 호환되는 Linux PCIe system에서는 HMM이 system allocation을 지원하는 software-coherent full model을 구현할 수 있다. 앞의 attribute 조합만으로 HMM 사용을 확정할 수는 없으며, 실제 addressing mode는 `nvidia-smi -q`에서 확인한다.
+HMM(Heterogeneous Memory Management)은 Linux kernel이 CPU와 GPU의 page-table 변경, device fault, page migration을 연결하는 infrastructure다. 호환되는 Linux PCIe system에서는 HMM이 system allocation을 지원하고 software coherence를 사용하는 `Full model`을 구현할 수 있다. 앞의 attribute 조합만으로 HMM 사용을 확정할 수는 없으며, 실제 addressing mode는 `nvidia-smi -q`에서 확인한다.
 
-## Jetson AGX Orin: Shared DRAM과 Limited Unified Memory
+## Jetson AGX Orin: Shared DRAM과 Limited model
 
 앞의 개념을 실제 장치에 적용했다. 환경은 Jetson AGX Orin Developer Kit, L4T R36.5.0, JetPack 6.2.2, CUDA 12.6이다. Orin은 CPU와 GPU를 하나의 chip에 넣은 SoC(System on Chip)다. Device 0은 compute capability 8.7인 integrated GPU였다. Compute capability는 GPU가 지원하는 CUDA hardware 기능 세대를 나타낸다.
 
@@ -167,7 +155,7 @@ concurrentManagedAccess=0
 pageableMemoryAccess=0
 ```
 
-이 출력에서 `managedMemory=1`은 명시적으로 만든 관리형 할당을 지원한다는 뜻이다. `concurrentManagedAccess=0`이므로 지원 방식은 Limited로 판정된다. `pageableMemoryAccess=0`이므로 일반 `malloc`이나 `new` 할당은 Unified Memory 대상이 아니다. 앞 절의 HMM 경로도 아니다. `pageableMemoryAccessUsesHostPageTables`는 앞의 두 조건이 모두 `1`일 때만 해석하므로 이 Orin 판정에는 사용하지 않는다.
+이 출력에서 `managedMemory=1`은 명시적으로 만든 관리형 할당을 지원한다는 뜻이다. `concurrentManagedAccess=0`이므로 지원 방식은 `Limited model`로 판정된다. `pageableMemoryAccess=0`이므로 일반 `malloc`이나 `new` 할당은 Unified Memory 대상이 아니다. 앞 절의 HMM 경로도 아니다. `pageableMemoryAccessUsesHostPageTables`는 앞의 두 조건이 모두 `1`일 때만 해석하므로 이 Orin 판정에는 사용하지 않는다.
 
 여기까지는 실제 장치 출력으로 판정한 결과다. 다음 shared-memory와 cache 설명은 이번 probe에서 내부 operation을 관측한 결과가 아니라 NVIDIA의 Tegra memory model을 이 Orin에 적용한 것이다.
 
@@ -188,7 +176,7 @@ before kernel: 41
 after kernel:  42
 ```
 
-실측으로 확인한 것은 `integrated=1`, `concurrentManagedAccess=0`, 그리고 synchronization 뒤의 `41 → 42`다. 이 값들로 Orin을 shared physical DRAM + limited Unified Memory로 판정했다. NVIDIA Tegra 문서상 `concurrentManagedAccess=0`인 장치는 GPU를 destination으로 하는 `cudaMemPrefetchAsync`를 지원하지 않으므로 probe에서도 실행하지 않았다.
+실측으로 확인한 것은 `integrated=1`, `concurrentManagedAccess=0`, 그리고 synchronization 뒤의 `41 → 42`다. 이 값들로 Orin을 shared physical DRAM + `Limited model`로 판정했다. NVIDIA Tegra 문서상 `concurrentManagedAccess=0`인 장치는 GPU를 destination으로 하는 `cudaMemPrefetchAsync`를 지원하지 않으므로 probe에서도 실행하지 않았다.
 
 실행 가능한 전체 코드는 [managed_add.cu](/code/cuda-04/managed_add.cu), attribute 조회 코드는 [orin_um_probe.cu](/code/cuda-04/orin_um_probe.cu), 실제 출력은 [Orin observation](/code/cuda-04/orin-jetpack-6.2.2.txt)에 있다.
 
@@ -196,10 +184,10 @@ after kernel:  42
 
 이번 Orin 실행은 CPU write → GPU write → CPU read의 순서와 값의 가시성만 확인했다. Cache-maintenance 비용과 explicit copy 대비 성능은 측정하지 않았으므로 빠르거나 느리다는 결론은 내리지 않는다.
 
-Unified Memory가 통합하는 것은 physical memory chip이 아니다. CPU와 GPU가 같은 allocation을 가리키고, 허용된 순서에서 최신 값을 볼 수 있게 관리하는 규칙이다. 이 Orin의 managed allocation은 shared SoC DRAM에 저장된다. Limited model이므로 CPU와 GPU의 managed-memory 접근 시점이 분리되고, driver는 kernel launch와 synchronization 경계에서 coherence와 cache maintenance를 처리한다.
+Unified Memory가 통합하는 것은 physical memory chip이 아니다. CPU와 GPU가 같은 allocation을 가리키고, 허용된 순서에서 최신 값을 볼 수 있게 관리하는 규칙이다. 이 Orin의 managed allocation은 shared SoC DRAM에 저장된다. `Limited model`이므로 CPU와 GPU의 managed-memory 접근 시점이 분리되고, driver는 kernel launch와 synchronization 경계에서 coherence와 cache maintenance를 처리한다.
 
 ## 참고
 
-- [CUDA Programming Guide: Unified and System Memory](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html): UVA, Unified Memory, limited/full model, device attributes, prefetch, HMM.
+- [CUDA Programming Guide: Unified and System Memory](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html): UVA, Unified Memory 지원 모델, device attributes, prefetch, HMM.
 - [CUDA Programming Guide: Unified Memory](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html): page fault, migration, coherence, performance behavior의 상세 설명.
-- [CUDA for Tegra: Memory Management](https://docs.nvidia.com/cuda/cuda-for-tegra-appnote/index.html#memory-management): Tegra의 shared SoC DRAM, cache coherence, limited Unified Memory 지침.
+- [CUDA for Tegra: Memory Management](https://docs.nvidia.com/cuda/cuda-for-tegra-appnote/index.html#memory-management): Tegra의 shared SoC DRAM, cache coherence, `Limited model` 지침.
