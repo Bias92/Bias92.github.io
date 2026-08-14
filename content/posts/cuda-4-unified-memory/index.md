@@ -14,7 +14,7 @@ summary: "CPU가 41을 쓰고 GPU가 42로 만든 뒤 CPU가 다시 읽는 코�
 
 ![explicit copy versus managed memory](images/models-compared.svg#wide)
 
-`cudaMemcpy` 호출과 host/device 포인터 한 짝이 없어졌고, 가운데 PCIe 칸은 두 쪽에서 같다.
+`cudaMemcpy` 호출과 host/device 포인터 한 짝이 없어졌다. 위 그림은 CPU DRAM과 GPU memory가 분리된 discrete GPU의 경로다. CPU와 integrated GPU가 physical DRAM을 공유하는 경우에는 이 PCIe 구간 자체가 없다.
 
 ## 최소 예제
 
@@ -117,15 +117,29 @@ gpu.id = device;
 cudaMemPrefetchAsync(x, bytes, gpu, /*flags=*/0, stream);
 ```
 
-`cudaMemAdvise(x, bytes, advice, gpu)`도 같은 `cudaMemLocation`을 쓴다. GPU target prefetch는 destination GPU와 stream이 연결된 device 모두 `concurrentManagedAccess != 0`이어야 하며, GPU를 location으로 지정하는 `SetPreferredLocation`·`SetAccessedBy`도 target device에서 같은 조건을 요구한다. 두 CUDA 세대의 API 분기와 limited 환경의 실패를 확인하는 전체 코드는 [prefetch_demo.cu](/code/cuda-04/prefetch_demo.cu)에 있다.
+`cudaMemAdvise(x, bytes, advice, gpu)`도 같은 `cudaMemLocation`을 쓴다. GPU target prefetch는 destination GPU와 stream이 연결된 device 모두 `concurrentManagedAccess != 0`이어야 하며, GPU를 location으로 지정하는 `SetPreferredLocation`·`SetAccessedBy`도 target device에서 같은 조건을 요구한다. 두 CUDA 세대의 API 분기와 attribute 출력은 [prefetch_demo.cu](/code/cuda-04/prefetch_demo.cu)에 있다. `concurrentManagedAccess == 0`이면 이 프로그램은 capability만 출력하고 prefetch 구간을 건너뛴다.
 
 ## Unified Memory 실행 모델
 
 방금 설명한 것은 **full support + separate memory**라는 조건의 한 경로였다. 같은 separate-memory system이라도 `concurrentManagedAccess == 0`인 **limited Unified Memory**에서는 동작이 다르다. GPU가 실행 중 필요한 page를 하나씩 가져오는 대신, runtime은 일반적으로 kernel launch 또는 실행 시작 경계에서 managed data를 GPU가 접근할 수 있는 상태로 전환한다. GPU work가 끝날 때까지 CPU의 managed-memory 접근은 허용되지 않고, synchronization 뒤에 CPU 접근 상태가 복구된다. GPU memory 용량보다 큰 working set을 host memory와 나눠 유지하는 **oversubscription**도 지원하지 않는다.
 
-이 시리즈의 측정 환경인 RTX 4060 Ti + native Windows 조합은 compute capability 8.9여도 `concurrentManagedAccess == 0`, 즉 limited model에 속한다. compute capability가 새롭다는 사실은 Windows의 memory model을 full support로 바꾸지 않는다. WSL 2도 full managed-memory support와 concurrent CPU/GPU access를 제공하지 않으므로 이 분류에서는 limited다. 따라서 classifier가 `limited unified memory`를 출력한다면 GPU 세대가 낮아서가 아니라 현재 OS와 driver model까지 포함한 실행 환경의 결과다.
+CUDA 문서에서 native Windows는 limited model로 분류된다. 따라서 이 시리즈의 RTX 4060 Ti도 compute capability 8.9와 무관하게 native Windows에서는 `concurrentManagedAccess == 0`이 예상되지만, 이 글에는 아직 해당 장비의 raw attribute 출력을 넣지 않았다. WSL 2도 full managed-memory support와 concurrent CPU/GPU access를 제공하지 않는다. classifier가 `limited unified memory`를 출력한다면 GPU 세대가 낮아서가 아니라 현재 OS와 driver model까지 포함한 실행 환경의 결과다.
 
 여기까지는 CPU DRAM과 GPU memory가 분리됐다고 가정했다. CPU와 integrated GPU가 같은 physical DRAM을 쓰는 system이라면 건너갈 별도 VRAM 자체가 없다. 그래도 page mapping과 coherence는 필요하다. driver-managed system에서는 launch와 synchronization 때 cache clean·invalidate가 일어날 수 있고, hardware-coherent system에서는 interconnect의 coherence protocol이 그 일을 맡는다. support model에 따라 fault로 physical page를 준비하는 과정도 남을 수 있다.
+
+Jetson AGX Orin에서도 같은 구분을 직접 확인했다. JetPack 6.2.2, L4T R36.5.0, CUDA 12.6 환경에서 device 0은 compute capability 8.7과 `integrated=1`을 보고했다. 같은 장치의 Unified Memory attribute는 다음과 같았다.
+
+```text
+device=0 name=Orin cc=8.7 integrated=1
+managedMemory=1
+concurrentManagedAccess=0
+pageableMemoryAccess=0
+usesHostPageTables=0
+directManagedMemAccessFromHost=0
+hostRegisterSupported=1
+```
+
+판정은 `concurrentManagedAccess=0`에서 끝난다. 이 Orin은 physical DRAM을 공유하는 integrated GPU이면서 limited Unified Memory를 사용한다. `pageableMemoryAccess=0`이므로 `malloc`을 관리 범위에 넣는 뒤의 HMM 경로도 열리지 않는다. 이 분기에서는 `usesHostPageTables=0`을 software coherence나 HMM의 증거로 해석하지 않는다. `managed_add`는 같은 장비에서 `41 → 42`를 출력했지만, 이는 synchronization 뒤 값의 가시성만 확인한다. cache maintenance의 발생 시점이나 비용은 이번 실행으로 측정하지 않았다. 빌드 환경과 원문 출력은 [Orin observation](/code/cuda-04/orin-jetpack-6.2.2.txt)에 남겼다.
 
 ![같은 CPU→GPU→CPU 순서를 처리하는 세 memory-management 경로](images/three-models.svg)
 
@@ -165,7 +179,7 @@ print_um_support_class(p);
 
 ![device attribute 판정 경로](images/attribute-path.svg)
 
-classifier를 붙이면 출력 첫 줄은 아래 네 class 중 하나가 되고, 그 뒤의 41과 42는 변하지 않는다. 첫 줄은 이 글에서 측정한 특정 장비 값이 아니라 실행할 system에 따라 달라지는 capability 결과다.
+classifier를 붙이면 출력 첫 줄은 아래 네 class 중 하나가 되고, 그 뒤의 41과 42는 변하지 않는다. 아래 표기는 출력 형식의 예시다. 앞의 Orin 값은 실제 조회 결과지만, 다른 system의 class는 그 장비에서 코드를 실행해 확인해야 한다.
 
 ```text
 support class: <limited 또는 세 full class 중 하나>
@@ -227,6 +241,7 @@ HMM은 새로운 allocator의 이름도, migration을 없애는 기능도 아니
 - [CUDA Programming Guide: Programming Model — Unified Memory](https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/programming-model.html#unified-memory): Unified Memory가 제공하는 프로그래밍 모델의 기본 정의.
 - [CUDA Programming Guide: Unified and System Memory](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html): device attribute에 따른 지원 model과 HMM/ATS.
 - [CUDA Programming Guide: Unified Memory](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html): page migration, limited support, oversubscription과 performance tuning.
+- [CUDA for Tegra: Memory Management](https://docs.nvidia.com/cuda/cuda-for-tegra-appnote/index.html#memory-management): Tegra의 physical memory topology와 Unified Memory coherence 특성.
 - [CUDA Runtime API 13.0: Memory Management](https://docs.nvidia.com/cuda/archive/13.0.0/cuda-runtime-api/group__CUDART__MEMORY.html): `cudaMemLocation`을 받는 prefetch와 memory-advice 원형.
 - [CUDA on WSL User Guide](https://docs.nvidia.com/cuda/wsl-user-guide/index.html): WSL 2의 Unified Memory 제한.
 - [Nsight Systems User Guide: Unified Memory page faults](https://docs.nvidia.com/nsight-systems/UserGuide/index.html#unified-memory-cpu-page-faults): CPU/GPU page-fault trace의 의미와 overhead.

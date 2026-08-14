@@ -1,0 +1,33 @@
+# Jetson AGX Orin Unified Memory observation
+# Date: 2026-08-14 KST
+# Device: NVIDIA Jetson AGX Orin Developer Kit
+# L4T: R36.5.0
+# JetPack: 6.2.2+b24
+# CUDA toolkit/runtime/driver API: 12.6
+# Power mode: MODE_30W (unchanged)
+# Repository: Bias92/Bias92.github.io main @ b88fc745264bb4c19708028de129739a28fcb672
+
+$ nvcc -O2 -arch=sm_87 -std=c++17 /tmp/cuda04-orin-probe/orin_um_probe.cu -o /tmp/cuda04-orin-probe/orin_um_probe
+$ /tmp/cuda04-orin-probe/orin_um_probe 0
+CUDART_VERSION=12060
+runtimeVersion=12060 driverVersion=12060 deviceCount=1
+device=0 name=Orin cc=8.7 integrated=1
+selectedDevice=0 name=Orin cc=8.7 integrated=1
+managedMemory=1
+concurrentManagedAccess=0
+pageableMemoryAccess=0
+usesHostPageTables=0
+directManagedMemAccessFromHost=0
+hostRegisterSupported=1
+
+$ nvcc -O2 -arch=sm_87 -std=c++17 static/code/cuda-04/managed_add.cu -o /tmp/cuda04-orin-probe/managed_add
+$ CUDA_VISIBLE_DEVICES=0 /tmp/cuda04-orin-probe/managed_add
+before kernel: 41
+after kernel:  42
+
+# Interpretation boundary
+# - concurrentManagedAccess=0 classifies this environment as limited Unified Memory.
+# - pageableMemoryAccess=0 means system allocations are not in the full Unified Memory model.
+# - usesHostPageTables=0 is not interpreted after the classifier stops at the limited branch.
+# - 41 -> 42 confirms visibility after synchronization only.
+# - No page-fault, migration, cache-maintenance, prefetch, or performance measurement was made.

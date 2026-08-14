@@ -121,9 +121,10 @@ int main(int argc, char** argv)
                 "pageableMemoryAccess=%d  usesHostPageTables=%d\n",
                 CUDART_VERSION, managed, cma, pma, hpt);
     if (!cma) {
-        std::printf("NOTE: concurrentManagedAccess==0 (Windows/WDDM or pre-Pascal).\n"
-                    "      Device prefetch requires this to be non-zero; expect "
-                    "cudaErrorInvalidDevice below.\n");
+        std::printf("SKIP: concurrentManagedAccess==0.\n"
+                    "      GPU-target prefetch and GPU-target memory advice in this "
+                    "demo require a non-zero value.\n");
+        return 0;
     }
 
     const size_t N     = (argc > 1) ? (size_t)std::atoll(argv[1]) : (64ull << 20); // 64M floats

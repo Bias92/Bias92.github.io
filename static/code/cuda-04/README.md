@@ -8,6 +8,7 @@
 |---|---|---|
 | `managed_add.cu` | 본문의 CPU 41 → GPU +1 → CPU 42 최소 예제 | 정답 확인용, benchmark 아님 |
 | `prefetch_demo.cu` | device attributes, prefetch, range attributes 진단 | 환경 의존 진단용, 성능표용 실측 아님 |
+| `orin-jetpack-6.2.2.txt` | Jetson AGX Orin의 attribute와 `managed_add` 출력 | 2026-08-14 관찰 기록 |
 
 ## Build
 
@@ -56,6 +57,12 @@ before kernel: 41
 after kernel:  42
 ```
 
+### Jetson AGX Orin 관찰값
+
+Jetson AGX Orin Developer Kit, L4T R36.5.0, JetPack 6.2.2, CUDA 12.6에서 `sm_87`로 빌드했다. 실제 출력은 [`orin-jetpack-6.2.2.txt`](orin-jetpack-6.2.2.txt)에 있다.
+
+`integrated=1`과 `concurrentManagedAccess=0`이 함께 나왔다. 앞 값은 integrated topology, 뒤 값은 limited Unified Memory support class를 나타낸다. `managed_add`의 `41 → 42`는 synchronization 뒤의 correctness만 확인하며 cache maintenance나 성능을 측정한 값이 아니다.
+
 `prefetch_demo`의 첫 줄은 `CUDART_VERSION`, `managedMemory`, `concurrentManagedAccess`, `pageableMemoryAccess`, `usesHostPageTables`를 출력한다. 값은 실행 환경에 따라 달라진다. 끝까지 실행되는 환경의 correctness gate는 `checksum error = 0`이다.
 
 ## CUDA 12.2–12.x / 13.x API
@@ -73,7 +80,7 @@ cudaMemPrefetchAsync(ptr, bytes, dev, stream);
 #endif
 ```
 
-GPU destination prefetch는 destination GPU와 stream-associated device 모두 `concurrentManagedAccess != 0`을 요구한다. GPU를 location으로 지정하는 `cudaMemAdviseSetPreferredLocation`·`cudaMemAdviseSetAccessedBy`도 target device에서 같은 조건을 요구한다. `prefetch_demo`는 이 조건을 미리 건너뛰지 않고 limited 환경의 API 실패를 출력한다. native Windows와 WSL, 일부 Tegra에서 그 실패는 build 오류가 아니라 capability 차이다. kernel-only time은 warm-up 뒤 반복 median이 아니므로 benchmark 수치로 사용하지 않는다.
+GPU destination prefetch는 destination GPU와 stream-associated device 모두 `concurrentManagedAccess != 0`을 요구한다. GPU를 location으로 지정하는 `cudaMemAdviseSetPreferredLocation`·`cudaMemAdviseSetAccessedBy`도 target device에서 같은 조건을 요구한다. `prefetch_demo`는 이 값이 0이면 capability를 출력하고 prefetch 구간을 실행하지 않는다. native Windows와 WSL, 일부 Tegra에서 이 skip은 build 오류가 아니라 capability 차이다. kernel-only time은 warm-up 뒤 반복 median이 아니므로 benchmark 수치로 사용하지 않는다.
 
 ## Optional: Linux Workstation fault trace
 
