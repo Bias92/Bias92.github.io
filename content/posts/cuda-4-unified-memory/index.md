@@ -8,9 +8,13 @@ series: ["CUDA C"]
 summary: "CPU가 41을 쓰고 GPU가 42로 만든 뒤 CPU가 다시 읽는 코드로, managed memory가 숨기는 page placement와 coherence를 따라간다."
 ---
 
-[Host-Device 데이터 흐름]({{< relref "/posts/cuda-c-basics" >}}#host-device-데이터-흐름)에서는 `h_x`와 `d_x`를 따로 만들고 H2D, D2H 복사를 직접 적었다. `cudaMallocManaged`를 쓰면 두 배열과 두 `cudaMemcpy`가 포인터 `x` 하나로 줄어든다.
+[Host-Device 데이터 흐름]({{< relref "/posts/cuda-c-basics" >}}#host-device-데이터-흐름)에서는 `h_data`와 `d_data`를 따로 만들고 H2D, D2H 복사를 직접 적었다. `cudaMallocManaged`를 쓰면 그 두 포인터와 두 `cudaMemcpy`가 포인터 하나로 줄어든다.
 
 코드는 짧아지지만 질문이 하나 생긴다. CPU가 쓴 값은 어떻게 GPU에 도착하고, GPU가 고친 값은 어떻게 CPU에 돌아오는가? 이 글은 정수 하나에 1을 더하는 코드로 그 과정을 따라간다.
+
+![explicit copy versus managed memory](images/models-compared.svg#wide)
+
+`cudaMemcpy` 호출과 host/device 포인터 한 짝이 없어졌고, 가운데 PCIe 칸은 두 쪽에서 같다.
 
 ## 최소 예제
 

@@ -1,0 +1,94 @@
+<svg width="1080" height="330" viewBox="0 0 1080 330" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Explicit copy versus managed memory, side by side</title>
+  <desc>Both halves use the same layout: a CPU lane and a GPU lane separated by the PCIe corridor, with time flowing downward. On the left the programmer allocates twice and writes both PCIe crossings as cudaMemcpy. On the right one managed allocation spans both lanes and the crossings are driver-initiated, sitting between the statements instead of on them.</desc>
+  <style>
+    text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;fill:#cfe9f2}
+    .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace}
+    .head{font-size:13px;fill:#dff0f7}
+    .lane{font-size:10.5px;fill:#9fdcec;letter-spacing:.04em}
+    .num{font-size:9.5px;fill:#0d0e10;font-weight:700}
+    .code{font-size:10px;fill:#dff0f7}
+    .alloc{font-size:9.5px;fill:#8fb0bd}
+    .tag{font-size:9px;fill:#6f8b96;letter-spacing:.06em}
+    .drv{font-size:8.5px;fill:#c98ebd;letter-spacing:.04em}
+  </style>
+
+  <rect width="1080" height="330" fill="#0d0e10"/>
+  <line x1="546" y1="20" x2="546" y2="310" stroke="#22323a"/>
+
+  <!-- ============ LEFT: explicit copy ============ -->
+  <text x="40" y="30" class="head mono">explicit copy</text>
+  <text x="120" y="58" class="lane" text-anchor="middle">CPU</text>
+  <text x="246" y="58" class="tag" text-anchor="middle">PCIe</text>
+  <text x="372" y="58" class="lane" text-anchor="middle">GPU</text>
+
+  <rect x="220" y="68" width="52" height="218" fill="#0a1216" stroke="#2b3a42" stroke-dasharray="4 4"/>
+  <rect x="20" y="68" width="200" height="218" rx="7" fill="#12171b" stroke="#22323a"/>
+  <rect x="272" y="68" width="200" height="218" rx="7" fill="#12171b" stroke="#22323a"/>
+
+  <rect x="30" y="78" width="180" height="22" rx="4" fill="none" stroke="#4a5f68" stroke-dasharray="5 4"/>
+  <text x="120" y="93" class="mono alloc" text-anchor="middle">malloc &#8594; h_data</text>
+  <rect x="282" y="78" width="180" height="22" rx="4" fill="none" stroke="#4a5f68" stroke-dasharray="5 4"/>
+  <text x="372" y="93" class="mono alloc" text-anchor="middle">cudaMalloc &#8594; d_data</text>
+
+  <rect x="30" y="116" width="180" height="28" rx="4" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="45" cy="130" r="8" fill="#40cdef"/>
+  <text x="45" y="133" class="num" text-anchor="middle">1</text>
+  <text x="58" y="134" class="mono code">cudaMemcpy(d,h,n,H2D)</text>
+  <line x1="220" y1="130" x2="264" y2="130" stroke="#40cdef" stroke-width="1.6"/>
+  <path d="M272 130L262 125V135Z" fill="#40cdef"/>
+
+  <rect x="282" y="174" width="180" height="28" rx="4" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="297" cy="188" r="8" fill="#40cdef"/>
+  <text x="297" y="191" class="num" text-anchor="middle">2</text>
+  <text x="310" y="192" class="mono code">kernel&lt;&lt;&lt;g,b&gt;&gt;&gt;(d_data)</text>
+
+  <rect x="30" y="232" width="180" height="28" rx="4" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="45" cy="246" r="8" fill="#40cdef"/>
+  <text x="45" y="249" class="num" text-anchor="middle">3</text>
+  <text x="58" y="250" class="mono code">cudaMemcpy(h,d,n,D2H)</text>
+  <line x1="272" y1="246" x2="228" y2="246" stroke="#40cdef" stroke-width="1.6"/>
+  <path d="M220 246L230 241V251Z" fill="#40cdef"/>
+
+  <line x1="20" y1="300" x2="44" y2="300" stroke="#40cdef" stroke-width="1.6"/>
+  <text x="52" y="303" class="tag">PCIe 횡단 = 내가 쓴 줄</text>
+
+  <!-- ============ RIGHT: managed ============ -->
+  <text x="620" y="30" class="head mono">managed</text>
+  <text x="700" y="58" class="lane" text-anchor="middle">CPU</text>
+  <text x="826" y="58" class="tag" text-anchor="middle">PCIe</text>
+  <text x="952" y="58" class="lane" text-anchor="middle">GPU</text>
+
+  <rect x="800" y="68" width="52" height="218" fill="#0a1216" stroke="#2b3a42" stroke-dasharray="4 4"/>
+  <rect x="600" y="68" width="200" height="218" rx="7" fill="#12171b" stroke="#22323a"/>
+  <rect x="852" y="68" width="200" height="218" rx="7" fill="#12171b" stroke="#22323a"/>
+
+  <rect x="610" y="78" width="432" height="22" rx="4" fill="none" stroke="#e46fd6" stroke-dasharray="5 4"/>
+  <text x="826" y="93" class="mono" font-size="9.5" fill="#e9a2dd" text-anchor="middle">cudaMallocManaged &#8594; int *x</text>
+
+  <rect x="610" y="116" width="180" height="28" rx="4" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="625" cy="130" r="8" fill="#40cdef"/>
+  <text x="625" y="133" class="num" text-anchor="middle">1</text>
+  <text x="638" y="134" class="mono code">*x = 41;</text>
+
+  <line x1="800" y1="159" x2="844" y2="159" stroke="#e46fd6" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M852 159L842 154V164Z" fill="#e46fd6"/>
+  <text x="822" y="152" class="drv" text-anchor="middle">driver</text>
+
+  <rect x="862" y="174" width="180" height="28" rx="4" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="877" cy="188" r="8" fill="#40cdef"/>
+  <text x="877" y="191" class="num" text-anchor="middle">2</text>
+  <text x="890" y="192" class="mono code">add_one&lt;&lt;&lt;1,1&gt;&gt;&gt;(x)</text>
+
+  <line x1="852" y1="217" x2="808" y2="217" stroke="#e46fd6" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M800 217L810 212V222Z" fill="#e46fd6"/>
+  <text x="830" y="210" class="drv" text-anchor="middle">driver</text>
+
+  <rect x="610" y="232" width="180" height="28" rx="4" fill="#0f2b34" stroke="#2f7f95"/>
+  <circle cx="625" cy="246" r="8" fill="#40cdef"/>
+  <text x="625" y="249" class="num" text-anchor="middle">3</text>
+  <text x="638" y="250" class="mono code">cudaDeviceSynchronize()</text>
+
+  <line x1="600" y1="300" x2="624" y2="300" stroke="#e46fd6" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="632" y="303" class="tag">PCIe 횡단 = 드라이버</text>
+</svg>

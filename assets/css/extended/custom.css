@@ -914,3 +914,17 @@ html { scroll-behavior: smooth; }
 .sb-lang-switch .sb-lang { color: var(--sb-muted); text-decoration: none; padding: 2px 6px; border-radius: 4px; transition: color .15s, background .15s; }
 .sb-lang-switch .sb-lang:hover { color: var(--sb-text); background: rgba(255,255,255,.06); }
 .sb-lang-switch .sb-lang.active { color: var(--sb-accent); font-weight: 600; }
+
+/* --- 넓은 도식: 이미지 주소 끝에 #wide 붙이면 좁은 화면에서 축소 대신 가로 스크롤 --- */
+@media (max-width: 1100px) {
+    .sb-post-content p:has(> img[src*="#wide"]),
+    .post-content p:has(> img[src*="#wide"]) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .sb-post-content img[src*="#wide"],
+    .post-content img[src*="#wide"] {
+        max-width: none !important;
+        width: 900px;
+    }
+}
