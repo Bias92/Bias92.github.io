@@ -16,7 +16,9 @@ Unified Memory는 CPU와 GPU가 하나의 memory allocation을 CUDA가 정한 �
 
 ## CPU Memory와 GPU Memory
 
-**Allocation**은 프로그램이 사용할 memory 공간을 확보하는 일이다. **Pointer**는 object나 memory 위치를 가리키는 address다. Allocation API가 처음 반환한 pointer는 확보한 영역의 시작을 가리킨다. CPU에서 `malloc`으로 만든 allocation과 GPU에서 `cudaMalloc`으로 만든 allocation은 서로 다른 memory domain에 놓일 수 있다.
+**Allocation**은 프로그램이 사용할 address range와 그 memory의 관리 규칙을 확보하는 일이다. **Allocator**는 요청받은 크기와 alignment에 맞는 range를 찾아 allocation을 만드는 software component다. **Pointer**는 object나 memory 위치를 가리키는 address이며, allocation API가 반환한 pointer는 프로그램이 사용할 수 있는 range의 시작을 가리킨다.
+
+`malloc`은 CPU process의 heap allocator를 사용하고, `cudaMalloc`은 CUDA Runtime과 driver를 거쳐 device allocation을 만든다. 두 allocation은 서로 다른 memory domain에 놓일 수 있다. Allocation이 항상 모든 physical frame의 즉시 배정을 뜻하는 것도 아니다. 예를 들어 CPU의 `malloc`은 virtual address range를 먼저 반환하고, 실제 physical frame은 page를 처음 접근할 때 연결될 수 있다.
 
 Discrete GPU가 달린 일반적인 PC에서는 CPU DRAM과 GPU 전용 memory(VRAM)가 물리적으로 분리돼 있다. 앞 글처럼 CPU의 `malloc` allocation과 GPU의 `cudaMalloc` allocation을 따로 쓰는 방식에서는 계산 전 H2D(Host to Device) copy가 필요하고, GPU 결과를 CPU에서 읽기 전 D2H(Device to Host) copy가 필요하다.
 
