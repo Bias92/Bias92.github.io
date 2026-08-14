@@ -34,7 +34,7 @@ Virtual memory는 virtual address space를 보통 **page**라는 일정 크기�
 
 CPU나 GPU가 pointer를 읽거나 쓸 때 각 processor의 주소 변환 장치인 **MMU**(Memory Management Unit)가 virtual address를 현재 접근 가능한 physical address로 변환한다. Virtual address는 virtual page number와 page 안의 위치를 나타내는 offset으로 나뉜다. 주소 변환은 virtual page number를 physical frame number로 바꾸지만 offset은 그대로 유지한다.
 
-MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근의 virtual-page-to-physical-frame 변환 결과를 찾는다. TLB는 data가 아니라 주소 변환 결과를 보관하는 cache다. TLB에 결과가 없으면 page table을 조회한다. 따라서 **TLB miss는 page fault가 아니다**. Page table에도 유효한 mapping이 없거나 접근 권한이 맞지 않을 때 fault가 발생할 수 있다.
+MMU는 먼저 **TLB**(Translation Lookaside Buffer)에서 최근의 가상 페이지→물리 프레임 변환 결과를 찾는다. TLB는 데이터가 아니라 주소 변환 결과를 보관하는 캐시다.
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
@@ -130,7 +130,7 @@ Shared DRAM을 쓴다고 full Unified Memory인 것은 아니다. 반대로 phys
 
 1. `concurrentManagedAccess`가 `0`이면 limited Unified Memory다.
 2. 그 값이 `1`이면 full support이며, `pageableMemoryAccess`가 `0`일 때는 CUDA API로 명시적으로 만든 managed allocation만 full model을 사용한다.
-3. 두 값이 모두 `1`이면 `malloc`, `new`, `mmap` 같은 system allocation까지 Unified Memory 범위에 들어간다. 이때만 `pageableMemoryAccessUsesHostPageTables`를 읽는다. `0`은 software coherence, `1`은 host page table을 사용하는 hardware coherence를 뜻한다.
+3. 두 값이 모두 `1`이면 `malloc`, `new`, `mmap` 같은 system allocation까지 Unified Memory 범위에 들어간다. 이때만 `pageableMemoryAccessUsesHostPageTables`를 읽는다. `0`은 **software coherence**, 즉 driver가 mapping과 migration을 관리해 앞의 cache coherence를 달성하는 방식이다. `1`은 **hardware coherence**로, CPU와 GPU가 같은 host page table을 쓰고 cache 상태를 hardware가 직접 맞춘다.
 
 Limited도 `cudaMallocManaged`로 pointer 하나를 만들고 CPU → GPU → CPU 순서로 사용할 수 있다. “Limited”는 API가 동작하지 않는다는 뜻이 아니다. GPU 실행 중 CPU의 managed-memory 접근, fine-grained on-demand migration, oversubscription을 지원하지 않는다는 뜻이다.
 
