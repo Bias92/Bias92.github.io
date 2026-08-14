@@ -60,7 +60,7 @@ Why the split? It comes down to two design philosophies. A CPU puts a few cores 
 
 ### Host-Device Data Flow
 
-In the explicit-copy model this post uses, the CPU (Host) and GPU (Device) have separate physical memories: a variable allocated on the CPU is not visible to a kernel, so you move the data yourself. ([`cudaMallocManaged` and Unified Memory](/posts/cuda-4-unified-memory/#cudamallocmanaged), and integrated GPUs can share physical memory, so their placement rules differ; this post first establishes the explicit model.) Under it, every CUDA program goes through these three stages to bridge the memory gap.
+In the explicit-copy model this post uses, the CPU (Host) and GPU (Device) have separate physical memories: a variable allocated on the CPU is not visible to a kernel, so you move the data yourself. ([`cudaMallocManaged` and Unified Memory](/posts/cuda-4-unified-memory/#unified-memory와-managed-allocation), and integrated GPUs can share physical memory, so their placement rules differ; this post first establishes the explicit model.) Under it, every CUDA program goes through these three stages to bridge the memory gap.
 
 1. Host to Device (`cudaMemcpy`)
 

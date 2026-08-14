@@ -1,72 +1,43 @@
-<svg width="720" height="390" viewBox="0 0 720 390" xmlns="http://www.w3.org/2000/svg" role="img">
-  <title>GPU page fault followed by software-managed page migration</title>
-  <desc>A simplified sequence for one managed page in a separate-memory full unified-memory system. CPU first touch makes page P resident in CPU memory. The first GPU load faults. The UVM driver allocates GPU space, revokes the CPU mapping, copies P, installs the GPU mapping, and resumes the GPU load.</desc>
+<svg width="560" height="390" viewBox="0 0 560 390" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Software-coherent full Unified Memory page migration</title>
+  <desc>A simplified sequence: CPU first-touch places page P in CPU memory, a GPU load faults, the driver moves the page and installs a GPU mapping, and the GPU load resumes.</desc>
   <style>
-    text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
-    .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace}
+    text { font-family: 'Roboto', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .actor { fill: #d7e2e6; font-size: 18px; font-weight: 700; }
+    .event { fill: #d7e2e6; font-size: 18px; }
+    .note { fill: #8f9aa0; font-size: 16px; }
+    .accent { fill: #7fe0f7; font-size: 18px; font-weight: 700; }
   </style>
   <defs>
-    <filter id="page-glow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="2.5" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <linearGradient id="copy-line" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#1c6f88" stop-opacity=".5"/>
-      <stop offset="1" stop-color="#40cdef" stop-opacity="1"/>
-    </linearGradient>
-    <marker id="seq-steel" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M1 1L9 5L1 9Z" fill="#93a3aa"/>
-    </marker>
-    <marker id="seq-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M1 1L9 5L1 9Z" fill="#40cdef"/>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#4fc9e8"/>
     </marker>
   </defs>
 
-  <rect width="720" height="390" fill="#0d0e10"/>
+  <rect width="560" height="390" fill="#0d0e10"/>
 
-  <!-- Three functional lifelines. -->
-  <g font-size="12" font-weight="650" text-anchor="middle">
-    <text x="100" y="31" fill="#aeb8bd">CPU / DRAM</text>
-    <text x="360" y="31" fill="#7fe0f7">UVM driver</text>
-    <text x="620" y="31" fill="#aeb8bd">GPU / memory</text>
-  </g>
-  <g stroke="#30373c" stroke-width="1" stroke-dasharray="3 5">
-    <line x1="100" y1="45" x2="100" y2="365"/>
-    <line x1="360" y1="45" x2="360" y2="365"/>
-    <line x1="620" y1="45" x2="620" y2="365"/>
-  </g>
+  <text x="72" y="35" text-anchor="middle" class="actor">CPU memory</text>
+  <text x="280" y="35" text-anchor="middle" class="actor">Driver</text>
+  <text x="488" y="35" text-anchor="middle" class="actor">GPU memory</text>
 
-  <!-- 1: CPU first touch establishes CPU residency. -->
-  <circle cx="100" cy="76" r="4" fill="#93a3aa"/>
-  <text x="116" y="72" fill="#bbc2c7" font-size="10.5">CPU first touch</text>
-  <rect x="70" y="86" width="60" height="32" rx="4" fill="#172830" stroke="#40cdef" filter="url(#page-glow)"/>
-  <text x="100" y="107" fill="#eaf6fa" font-size="12" text-anchor="middle" class="mono">page P</text>
-  <text x="144" y="107" fill="#6f767c" font-size="9.5">resident</text>
+  <line x1="72" y1="52" x2="72" y2="350" stroke="#344249" stroke-width="1.5"/>
+  <line x1="280" y1="52" x2="280" y2="350" stroke="#344249" stroke-width="1.5"/>
+  <line x1="488" y1="52" x2="488" y2="350" stroke="#344249" stroke-width="1.5"/>
 
-  <!-- 2: first GPU access faults and enters the software path. -->
-  <circle cx="620" cy="142" r="4" fill="#93a3aa"/>
-  <text x="604" y="137" fill="#bbc2c7" font-size="10.5" text-anchor="end">first GPU load P</text>
-  <line x1="616" y1="142" x2="369" y2="142" stroke="#93a3aa" stroke-width="1.5" marker-end="url(#seq-steel)"/>
-  <text x="490" y="132" fill="#aeb8bd" font-size="10.5" text-anchor="middle">page fault</text>
-  <circle cx="360" cy="142" r="7" fill="#172830" stroke="#40cdef"/>
+  <circle cx="72" cy="88" r="7" fill="#4fc9e8"/>
+  <text x="91" y="84" class="event">CPU first touch</text>
+  <text x="91" y="105" class="note">page P is resident here</text>
 
-  <!-- Fault resolution is shown as ordered messages, not a decorative card. -->
-  <line x1="367" y1="184" x2="612" y2="184" stroke="#93a3aa" stroke-width="1.2" marker-end="url(#seq-steel)"/>
-  <text x="380" y="176" fill="#8e999f" font-size="10">allocate GPU page</text>
+  <line x1="488" y1="146" x2="294" y2="146" stroke="#4fc9e8" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <text x="390" y="134" text-anchor="middle" class="event">GPU load: page P</text>
 
-  <line x1="353" y1="218" x2="108" y2="218" stroke="#93a3aa" stroke-width="1.2" marker-end="url(#seq-steel)"/>
-  <text x="340" y="210" fill="#8e999f" font-size="10" text-anchor="end">revoke CPU mapping</text>
+  <circle cx="280" cy="183" r="9" fill="#15242a" stroke="#4fc9e8" stroke-width="2"/>
+  <text x="299" y="189" class="accent">page fault</text>
 
-  <line x1="130" y1="260" x2="608" y2="260" stroke="url(#copy-line)" stroke-width="2.4" marker-end="url(#seq-cyan)" filter="url(#page-glow)"/>
-  <text x="369" y="250" fill="#7fe0f7" font-size="10.5" text-anchor="middle">copy page P</text>
+  <path d="M88 245 C180 245 366 245 472 245" fill="none" stroke="#4fc9e8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="280" y="231" text-anchor="middle" class="event">migrate page P to GPU</text>
+  <text x="280" y="270" text-anchor="middle" class="note">install a valid GPU mapping</text>
 
-  <line x1="367" y1="300" x2="612" y2="300" stroke="#93a3aa" stroke-width="1.2" marker-end="url(#seq-steel)"/>
-  <text x="380" y="292" fill="#8e999f" font-size="10">install GPU mapping</text>
-
-  <!-- 3: the stalled load can continue with P resident on the GPU side. -->
-  <rect x="590" y="318" width="60" height="32" rx="4" fill="#172830" stroke="#40cdef" filter="url(#page-glow)"/>
-  <text x="620" y="339" fill="#eaf6fa" font-size="12" text-anchor="middle" class="mono">page P</text>
-  <text x="574" y="339" fill="#6f767c" font-size="9.5" text-anchor="end">resident</text>
-  <circle cx="620" cy="369" r="4" fill="#40cdef" filter="url(#page-glow)"/>
-  <text x="604" y="373" fill="#bbc2c7" font-size="10.5" text-anchor="end">GPU load resumes</text>
+  <circle cx="488" cy="322" r="7" fill="#4fc9e8"/>
+  <text x="469" y="327" text-anchor="end" class="event">GPU load resumes</text>
 </svg>

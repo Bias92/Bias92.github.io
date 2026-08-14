@@ -1,0 +1,32 @@
+<svg width="560" height="220" viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Jetson AGX Orin CPU and integrated GPU sharing SoC DRAM</title>
+  <desc>The CPU and integrated GPU connect to one physical SoC DRAM containing managed allocation x.</desc>
+  <style>
+    text { font-family: 'Roboto', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .label { fill: #d7e2e6; font-size: 20px; font-weight: 700; }
+    .small { fill: #8f9aa0; font-size: 16px; }
+    .accent { fill: #7fe0f7; font-size: 18px; font-weight: 700; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#4fc9e8"/>
+    </marker>
+  </defs>
+
+  <rect width="560" height="220" fill="#0d0e10"/>
+
+  <rect x="45" y="24" width="140" height="58" rx="4" fill="#11171a" stroke="#52636b"/>
+  <text x="115" y="50" text-anchor="middle" class="label">CPU</text>
+  <text x="115" y="71" text-anchor="middle" class="small">Host</text>
+
+  <rect x="375" y="24" width="140" height="58" rx="4" fill="#11171a" stroke="#52636b"/>
+  <text x="445" y="50" text-anchor="middle" class="label">iGPU</text>
+  <text x="445" y="71" text-anchor="middle" class="small">Device</text>
+
+  <path d="M115 82 V116 H215" fill="none" stroke="#4fc9e8" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M445 82 V116 H345" fill="none" stroke="#4fc9e8" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="130" y="116" width="300" height="70" rx="4" fill="#15242a" stroke="#4fc9e8"/>
+  <text x="280" y="146" text-anchor="middle" class="label">Shared SoC DRAM</text>
+  <text x="280" y="171" text-anchor="middle" class="accent">managed allocation x</text>
+</svg>
