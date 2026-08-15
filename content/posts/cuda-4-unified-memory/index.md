@@ -63,11 +63,11 @@ CUDA 문서는 이 셋을 구분해서 쓴다. 아래는 discrete GPU에서 `x`�
 | discrete GPU | 시스템 DRAM 또는 VRAM | 있음 |
 | integrated GPU | 공유 system DRAM | 공유 DRAM 안에서 접근 |
 
-최신 값은 그 주소에 가장 마지막으로 쓴 값이다. 이 값은 CPU나 GPU 캐시에 머물 수 있으므로 다음 처리 장치의 접근 순서와 캐시 상태를 함께 관리해야 한다.
+한 주소에서 읽어야 할 값은 synchronization으로 정해진 순서에서 마지막으로 완료된 write의 결과다. 그 결과가 CPU나 GPU cache에 있을 수 있으므로 다음 처리 장치가 같은 주소를 읽기 전에 접근 순서와 cache 상태를 맞춘다.
 
 ### UVA와 Unified Memory
 
-CUDA의 UVA(Unified Virtual Addressing)는 한 프로세스 안의 CPU 메모리와 각 GPU 메모리를 하나의 가상 주소 공간에 배치한다. CPU와 GPU는 각자 유효한 매핑을 사용한다. UVA는 메모리를 구분하는 주소 체계를 제공한다. `cudaMalloc` allocation의 접근 주체는 GPU다. Unified Memory는 managed allocation의 접근과 배치를 관리하고, 앞선 처리 장치가 쓴 최신 값을 다음 처리 장치가 읽게 한다.
+CUDA의 UVA(Unified Virtual Addressing)는 한 프로세스 안의 CPU 메모리와 각 GPU 메모리를 하나의 가상 주소 공간에 배치한다. CPU와 GPU는 각자 유효한 매핑을 사용한다. UVA는 메모리를 구분하는 주소 체계를 제공한다. `cudaMalloc` allocation의 접근 주체는 GPU다. Unified Memory는 managed allocation의 접근과 배치를 관리하고, CUDA synchronization으로 순서가 정해진 write의 결과를 다음 처리 장치가 읽게 한다.
 
 ## Unified Memory와 Managed Allocation
 
@@ -113,13 +113,13 @@ int main() {
 
 ## Synchronization과 Cache Coherence
 
-앞 예제는 CPU가 `41`을 쓰고, GPU가 `42`로 바꾼 뒤, CPU가 그 값을 읽는 순서다. 여기에는 두 가지 일이 필요하다. CPU는 GPU 작업이 끝난 뒤 읽어야 하고, 그때 GPU가 만든 최신 값 `42`를 읽어야 한다.
+앞 예제는 CPU가 `41`을 쓰고, GPU가 `42`로 바꾼 뒤, CPU가 그 값을 읽는 순서다. 여기에는 두 가지 일이 필요하다. CPU는 GPU 작업이 끝난 뒤 읽어야 하고, 그때 GPU write의 결과인 `42`를 읽어야 한다.
 
 첫 번째는 synchronization이다. `cudaDeviceSynchronize()`는 앞서 제출한 GPU 작업이 끝날 때까지 CPU thread를 기다리게 한다. 따라서 GPU write가 끝난 뒤 CPU read가 시작된다.
 
 두 번째는 cache coherence다. CPU와 GPU는 DRAM 접근을 줄이려고 최근 데이터를 각자의 cache에 보관한다. Cache는 cache line이라는 연속된 byte 묶음 단위로 데이터를 가져온다. GPU가 `42`를 cache에 쓴 뒤 CPU의 다음 read가 `42`를 얻도록 cache 상태를 맞춘다.
 
-이 cache coherence를 달성하는 방식은 둘로 나뉜다. Hardware가 processor 사이의 cache 상태를 직접 맞추면 hardware coherence다. Driver가 access와 synchronization 경계에서 주소 연결, 데이터 이동, cache 상태를 조정해 다음 처리 장치가 최신 값을 읽게 하면 software coherence다. 이 가운데 cache의 변경값을 다른 처리 장치에 보이게 하거나 이전 cache 사본을 폐기하는 작업을 cache maintenance라고 한다.
+이 cache coherence를 달성하는 방식은 둘로 나뉜다. Hardware가 processor 사이의 cache 상태를 직접 맞추면 hardware coherence다. Driver가 access와 synchronization 경계에서 주소 연결, 데이터 이동, cache 상태를 조정해 앞선 처리 장치의 write 결과를 다음 처리 장치가 읽게 하면 software coherence다. 이 가운데 cache의 변경값을 다른 처리 장치에 보이게 하거나 이전 cache 사본을 폐기하는 작업을 cache maintenance라고 한다.
 
 Synchronization은 CPU가 언제 읽는지를 정하고, cache coherence는 그때 어떤 값이 보이는지를 정한다. Placement는 data가 놓인 physical memory를 나타낸다. 같은 위치를 여러 처리 장치가 수정할 때는 synchronization으로 접근 순서를 정한다.
 
@@ -193,9 +193,9 @@ pageableMemoryAccess=0
 
 Tegra 문서에 따르면 Tegra의 CPU와 integrated GPU는 SoC DRAM을 공유하며 device memory, host memory, unified memory가 같은 physical SoC DRAM에 할당된다. 실제 출력의 `integrated=1`도 Orin GPU의 integrated 구조를 확인한다.
 
-Orin의 managed allocation은 shared SoC DRAM에 놓인다. Shared DRAM 위에서 CPU와 GPU는 managed data를 각각의 cache에 저장할 수 있다. 다음 처리 장치가 최신 값을 읽도록 cache 상태를 맞추는 과정이 cache coherence다.
+Orin의 managed allocation은 shared SoC DRAM에 놓인다. Shared DRAM 위에서 CPU와 GPU는 managed data를 각각의 cache에 저장할 수 있다. 앞선 처리 장치의 write 결과를 다음 처리 장치가 읽도록 cache 상태를 맞추는 과정이 cache coherence다.
 
-Orin의 one-way I/O coherency는 GPU가 CPU cache의 최신 변경값을 읽게 한다. GPU가 쓴 값을 CPU가 읽는 방향에서는 CUDA driver가 synchronization 경계에서 GPU cache 상태를 관리한다.
+Orin의 one-way I/O coherency는 CPU가 cache에 기록한 값을 GPU가 읽게 한다. GPU가 쓴 값을 CPU가 읽는 방향에서는 CUDA driver가 synchronization 경계에서 GPU cache 상태를 관리한다.
 
 Tegra 문서는 `concurrentManagedAccess=0`인 환경의 kernel launch와 synchronization에 cache maintenance 작업이 추가되며, 이 작업이 실행 지연 시간을 늘릴 수 있다고 설명한다.
 
@@ -208,7 +208,7 @@ before kernel: 41
 after kernel:  42
 ```
 
-출력의 `41 → 42`는 GPU 작업이 끝난 뒤 CPU가 최신 값 `42`를 읽은 결과다. 함께 기록한 device attributes는 이 Orin의 Unified Memory 지원 범위를 보여 준다.
+출력의 `41 → 42`는 GPU 작업이 끝난 뒤 CPU가 GPU write의 결과인 `42`를 읽은 것이다. 함께 기록한 device attributes는 이 Orin의 Unified Memory 지원 범위를 보여 준다.
 
 실행 가능한 전체 코드는 [managed_add.cu](/code/cuda-04/managed_add.cu), attribute 조회 코드는 [orin_um_probe.cu](/code/cuda-04/orin_um_probe.cu), 실제 출력은 [Orin observation](/code/cuda-04/orin-jetpack-6.2.2.txt)에 있다.
 
