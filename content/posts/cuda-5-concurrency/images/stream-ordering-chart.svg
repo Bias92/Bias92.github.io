@@ -1,0 +1,58 @@
+<svg width="720" height="300" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>CUDA stream ordering</title>
+  <desc>Operations in one stream occupy consecutive positions on the timeline. Kernels in different streams may occupy overlapping time ranges.</desc>
+  <defs>
+    <linearGradient id="copy-fill" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
+    <linearGradient id="kernel-fill" x1="0" x2="1"><stop offset="0" stop-color="#35142f"/><stop offset="1" stop-color="#a84498"/></linearGradient>
+    <filter id="cyan-halo-wide" x="-60" y="-60" width="840" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="cyan-halo-near" x="-60" y="-60" width="840" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="magenta-halo-wide" x="-60" y="-60" width="840" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="magenta-halo-near" x="-60" y="-60" width="840" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+
+  <rect width="720" height="300" fill="#0d0e10"/>
+  <g stroke="#1e252b" stroke-width="1">
+    <line x1="180" y1="28" x2="180" y2="280"/><line x1="280" y1="28" x2="280" y2="280"/>
+    <line x1="380" y1="28" x2="380" y2="280"/><line x1="480" y1="28" x2="480" y2="280"/>
+    <line x1="580" y1="28" x2="580" y2="280"/><line x1="680" y1="28" x2="680" y2="280"/>
+    <line x1="32" y1="132" x2="688" y2="132"/>
+  </g>
+
+  <g fill="#d5d8dc" font-size="15" font-weight="650" letter-spacing="0.7">
+    <text x="40" y="40">SAME STREAM</text><text x="40" y="166">DIFFERENT STREAMS</text>
+  </g>
+  <g fill="#8c949d" font-size="14" font-weight="600">
+    <text x="116" y="91">S0</text><text x="116" y="218">S0</text><text x="116" y="266">S1</text>
+  </g>
+
+  <line x1="182" y1="88" x2="602" y2="88" stroke="#354047" stroke-width="2"/>
+  <g opacity="0.18" filter="url(#cyan-halo-wide)" fill="#46d9ff">
+    <rect x="182" y="66" width="124" height="44" rx="22"/><rect x="472" y="66" width="130" height="44" rx="22"/>
+  </g>
+  <g opacity="0.82" filter="url(#cyan-halo-near)" fill="none" stroke="#46d9ff" stroke-width="3">
+    <rect x="182" y="66" width="124" height="44" rx="22"/><rect x="472" y="66" width="130" height="44" rx="22"/>
+  </g>
+  <rect x="182" y="66" width="124" height="44" rx="22" fill="url(#copy-fill)" stroke="#46d9ff" stroke-width="1.5"/>
+  <rect x="472" y="66" width="130" height="44" rx="22" fill="url(#copy-fill)" stroke="#46d9ff" stroke-width="1.5"/>
+  <rect x="308" y="66" width="162" height="44" rx="22" fill="#d95cc5" opacity="0.16" filter="url(#magenta-halo-wide)"/>
+  <rect x="308" y="66" width="162" height="44" rx="22" fill="none" stroke="#ed72d9" stroke-width="3" opacity="0.74" filter="url(#magenta-halo-near)"/>
+  <rect x="308" y="66" width="162" height="44" rx="22" fill="url(#kernel-fill)" stroke="#ed72d9" stroke-width="1.5"/>
+  <g fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">
+    <text x="244" y="93">H2D</text><text x="389" y="93">KERNEL</text><text x="537" y="93">D2H</text>
+  </g>
+
+  <rect x="346" y="188" width="142" height="88" fill="#46d9ff" opacity="0.045"/>
+  <g stroke="#46d9ff" stroke-width="1" stroke-dasharray="4 6" opacity="0.35">
+    <line x1="346" y1="180" x2="346" y2="282"/><line x1="488" y1="180" x2="488" y2="282"/>
+  </g>
+  <text x="417" y="181" fill="#8c949d" font-size="14" font-weight="600" text-anchor="middle">POSSIBLE</text>
+  <rect x="206" y="196" width="282" height="38" rx="19" fill="#35c8e8" opacity="0.18" filter="url(#cyan-halo-wide)"/>
+  <rect x="206" y="196" width="282" height="38" rx="19" fill="none" stroke="#46d9ff" stroke-width="3" opacity="0.82" filter="url(#cyan-halo-near)"/>
+  <rect x="206" y="196" width="282" height="38" rx="19" fill="url(#copy-fill)" stroke="#46d9ff" stroke-width="1.5"/>
+  <rect x="346" y="244" width="258" height="38" rx="19" fill="#d95cc5" opacity="0.16" filter="url(#magenta-halo-wide)"/>
+  <rect x="346" y="244" width="258" height="38" rx="19" fill="none" stroke="#ed72d9" stroke-width="3" opacity="0.74" filter="url(#magenta-halo-near)"/>
+  <rect x="346" y="244" width="258" height="38" rx="19" fill="url(#kernel-fill)" stroke="#ed72d9" stroke-width="1.5"/>
+  <g fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">
+    <text x="347" y="220">KERNEL A</text><text x="475" y="268">KERNEL B</text>
+  </g>
+</svg>

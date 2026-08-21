@@ -1,0 +1,96 @@
+<svg width="720" height="320" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>CPU submission to streams on two GPUs with peer-to-peer transfer</title>
+  <desc>The CPU submits work to one stream on each GPU. A direct peer-to-peer path connects memory on GPU zero and GPU one.</desc>
+  <defs>
+    <linearGradient id="multi-kernel-fill" x1="0" x2="1"><stop offset="0" stop-color="#35142f"/><stop offset="1" stop-color="#a84498"/></linearGradient>
+    <linearGradient id="multi-copy-fill" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
+    <linearGradient id="multi-submit-fill" x1="0" x2="1"><stop offset="0" stop-color="#292f33"/><stop offset="1" stop-color="#6f7a80"/></linearGradient>
+    <filter id="multi-cyan-node-glow" x="-220%" y="-220%" width="540%" height="540%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.58"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <filter id="multi-magenta-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <filter id="multi-grey-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.16"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.46"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <marker id="multi-grey-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#87939a"/></marker>
+    <marker id="multi-cyan-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#46d9ff"/></marker>
+  </defs>
+
+  <rect width="720" height="320" fill="#0d0e10"/>
+  <g stroke="#1e252b" stroke-width="1">
+    <line x1="176" y1="24" x2="176" y2="296"/><line x1="276" y1="24" x2="276" y2="296"/>
+    <line x1="376" y1="24" x2="376" y2="296"/><line x1="476" y1="24" x2="476" y2="296"/>
+    <line x1="576" y1="24" x2="576" y2="296"/><line x1="676" y1="24" x2="676" y2="296"/>
+  </g>
+
+  <g fill="#8c949d" font-size="14" font-weight="650">
+    <text x="102" y="70">CPU</text>
+    <text x="54" y="166">GPU 0 · S0</text>
+    <text x="54" y="262">GPU 1 · S1</text>
+  </g>
+  <g stroke="#354047" stroke-width="2">
+    <line x1="178" y1="65" x2="654" y2="65"/>
+    <line x1="178" y1="161" x2="654" y2="161"/>
+    <line x1="178" y1="257" x2="654" y2="257"/>
+  </g>
+
+  <g fill="#9eabb2" filter="url(#multi-grey-glow)">
+    <rect x="188" y="46" width="122" height="38" rx="19"/>
+    <rect x="326" y="46" width="122" height="38" rx="19"/>
+  </g>
+  <g fill="url(#multi-submit-fill)" stroke="#9eabb2" stroke-width="1.4">
+    <rect x="188" y="46" width="122" height="38" rx="19"/>
+    <rect x="326" y="46" width="122" height="38" rx="19"/>
+  </g>
+  <g fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">
+    <text x="249" y="70">SUBMIT S0</text>
+    <text x="387" y="70">SUBMIT S1</text>
+  </g>
+
+  <g fill="none" stroke="#87939a" stroke-width="1.4" marker-end="url(#multi-grey-arrow)">
+    <path d="M249 86L249 122L280 139"/>
+    <path d="M417 86L452 118L452 218L475 235"/>
+  </g>
+
+  <g fill="#d95cc5" filter="url(#multi-magenta-glow)">
+    <rect x="260" y="140" width="152" height="42" rx="21"/>
+    <rect x="398" y="236" width="152" height="42" rx="21"/>
+  </g>
+  <g fill="url(#multi-kernel-fill)" stroke="#ed72d9" stroke-width="1.5">
+    <rect x="260" y="140" width="152" height="42" rx="21"/>
+    <rect x="398" y="236" width="152" height="42" rx="21"/>
+  </g>
+  <g fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">
+    <text x="336" y="166">K0</text>
+    <text x="474" y="262">K1</text>
+  </g>
+
+  <g filter="url(#multi-cyan-node-glow)" fill="#46d9ff">
+    <circle cx="590" cy="161" r="12"/>
+    <circle cx="590" cy="257" r="12"/>
+  </g>
+  <g fill="url(#multi-copy-fill)" stroke="#46d9ff" stroke-width="1.6">
+    <circle cx="590" cy="161" r="9"/>
+    <circle cx="590" cy="257" r="9"/>
+  </g>
+  <line x1="590" y1="173" x2="590" y2="243" stroke="#46d9ff" stroke-width="2" marker-end="url(#multi-cyan-arrow)"/>
+  <text x="608" y="214" fill="#46d9ff" font-size="14" font-weight="650">P2P</text>
+  <g fill="#b6c0c6" font-size="14" font-weight="600" text-anchor="middle">
+    <text x="590" y="133">MEM0</text>
+    <text x="590" y="290">MEM1</text>
+  </g>
+</svg>
