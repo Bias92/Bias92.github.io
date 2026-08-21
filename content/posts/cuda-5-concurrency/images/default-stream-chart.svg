@@ -1,0 +1,78 @@
+<svg width="720" height="300" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>Legacy default stream barrier</title>
+  <desc>Work submitted to the legacy default stream forms an implicit synchronization point between earlier and later work in ordinary streams.</desc>
+  <defs>
+    <linearGradient id="default-copy-fill" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
+    <linearGradient id="default-kernel-fill" x1="0" x2="1"><stop offset="0" stop-color="#35142f"/><stop offset="1" stop-color="#a84498"/></linearGradient>
+    <linearGradient id="default-barrier-fill" x1="0" x2="1"><stop offset="0" stop-color="#30373c"/><stop offset="1" stop-color="#7b878e"/></linearGradient>
+    <filter id="default-cyan-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <filter id="default-magenta-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <filter id="default-grey-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.16"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.46"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="720" height="300" fill="#0d0e10"/>
+  <g stroke="#1e252b" stroke-width="1">
+    <line x1="176" y1="28" x2="176" y2="276"/><line x1="276" y1="28" x2="276" y2="276"/>
+    <line x1="376" y1="28" x2="376" y2="276"/><line x1="476" y1="28" x2="476" y2="276"/>
+    <line x1="576" y1="28" x2="576" y2="276"/><line x1="676" y1="28" x2="676" y2="276"/>
+  </g>
+
+  <g fill="#8c949d" font-size="14" font-weight="650">
+    <text x="112" y="82">S1</text>
+    <text x="57" y="154">DEFAULT</text>
+    <text x="112" y="226">S2</text>
+  </g>
+
+  <g stroke="#354047" stroke-width="2">
+    <line x1="178" y1="77" x2="654" y2="77"/>
+    <line x1="178" y1="149" x2="654" y2="149"/>
+    <line x1="178" y1="221" x2="654" y2="221"/>
+  </g>
+
+  <rect x="344" y="38" width="112" height="222" fill="#9eabb2" opacity="0.035"/>
+  <g stroke="#9eabb2" stroke-width="1" stroke-dasharray="4 6" opacity="0.42">
+    <line x1="344" y1="34" x2="344" y2="266"/>
+    <line x1="456" y1="34" x2="456" y2="266"/>
+  </g>
+  <text x="400" y="27" fill="#8c949d" font-size="14" font-weight="650" text-anchor="middle">BARRIER</text>
+
+  <g fill="#d95cc5" filter="url(#default-magenta-glow)">
+    <rect x="196" y="58" width="126" height="38" rx="19"/>
+    <rect x="484" y="58" width="136" height="38" rx="19"/>
+    <rect x="216" y="202" width="106" height="38" rx="19"/>
+    <rect x="484" y="202" width="150" height="38" rx="19"/>
+  </g>
+  <g fill="url(#default-kernel-fill)" stroke="#ed72d9" stroke-width="1.5">
+    <rect x="196" y="58" width="126" height="38" rx="19"/>
+    <rect x="484" y="58" width="136" height="38" rx="19"/>
+    <rect x="216" y="202" width="106" height="38" rx="19"/>
+    <rect x="484" y="202" width="150" height="38" rx="19"/>
+  </g>
+
+  <rect x="346" y="130" width="108" height="38" rx="19" fill="#9eabb2" filter="url(#default-grey-glow)"/>
+  <rect x="346" y="130" width="108" height="38" rx="19" fill="url(#default-barrier-fill)" stroke="#aab5bb" stroke-width="1.5"/>
+
+  <g fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">
+    <text x="259" y="82">K1</text><text x="552" y="82">K3</text>
+    <text x="400" y="154">K0</text>
+    <text x="269" y="226">K2</text><text x="559" y="226">K4</text>
+  </g>
+</svg>

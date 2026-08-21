@@ -1,0 +1,80 @@
+<svg width="720" height="350" viewBox="0 0 720 350" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>Chunked copy and kernel pipeline</title>
+  <desc>A serialized H2D, kernel, and D2H sequence is compared with a possible three-stage pipeline over four chunks.</desc>
+  <defs>
+    <linearGradient id="copy-fill" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
+    <linearGradient id="kernel-fill" x1="0" x2="1"><stop offset="0" stop-color="#35142f"/><stop offset="1" stop-color="#a84498"/></linearGradient>
+    <filter id="cyan-halo-wide" x="-60" y="-60" width="840" height="470" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="cyan-halo-near" x="-60" y="-60" width="840" height="470" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="magenta-halo-wide" x="-60" y="-60" width="840" height="470" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="magenta-halo-near" x="-60" y="-60" width="840" height="470" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+
+  <rect width="720" height="350" fill="#0d0e10"/>
+  <g stroke="#1e252b" stroke-width="1">
+    <line x1="176" y1="24" x2="176" y2="326"/><line x1="256" y1="24" x2="256" y2="326"/>
+    <line x1="336" y1="24" x2="336" y2="326"/><line x1="416" y1="24" x2="416" y2="326"/>
+    <line x1="496" y1="24" x2="496" y2="326"/><line x1="576" y1="24" x2="576" y2="326"/>
+    <line x1="656" y1="24" x2="656" y2="326"/><line x1="32" y1="118" x2="688" y2="118"/>
+  </g>
+
+  <g fill="#d5d8dc" font-size="15" font-weight="650" letter-spacing="0.7">
+    <text x="40" y="38">SERIAL</text><text x="40" y="154">PIPELINE</text>
+  </g>
+  <text x="680" y="154" fill="#8c949d" font-size="14" font-weight="600" text-anchor="end">POSSIBLE</text>
+
+  <g opacity="0.18" filter="url(#cyan-halo-wide)" fill="#46d9ff">
+    <rect x="178" y="58" width="126" height="38" rx="19"/><rect x="464" y="58" width="126" height="38" rx="19"/>
+  </g>
+  <g opacity="0.82" filter="url(#cyan-halo-near)" fill="none" stroke="#46d9ff" stroke-width="3">
+    <rect x="178" y="58" width="126" height="38" rx="19"/><rect x="464" y="58" width="126" height="38" rx="19"/>
+  </g>
+  <rect x="178" y="58" width="126" height="38" rx="19" fill="url(#copy-fill)" stroke="#46d9ff" stroke-width="1.5"/>
+  <rect x="464" y="58" width="126" height="38" rx="19" fill="url(#copy-fill)" stroke="#46d9ff" stroke-width="1.5"/>
+  <rect x="306" y="58" width="156" height="38" rx="19" fill="#d95cc5" opacity="0.16" filter="url(#magenta-halo-wide)"/>
+  <rect x="306" y="58" width="156" height="38" rx="19" fill="none" stroke="#ed72d9" stroke-width="3" opacity="0.74" filter="url(#magenta-halo-near)"/>
+  <rect x="306" y="58" width="156" height="38" rx="19" fill="url(#kernel-fill)" stroke="#ed72d9" stroke-width="1.5"/>
+  <g fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">
+    <text x="241" y="82">H2D</text><text x="384" y="82">KERNEL</text><text x="527" y="82">D2H</text>
+  </g>
+
+  <g fill="#8c949d" font-size="14" font-weight="600">
+    <text x="92" y="205">H2D</text><text x="76" y="257">KERNEL</text><text x="91" y="309">D2H</text>
+  </g>
+  <g fill="#46d9ff" opacity="0.18" filter="url(#cyan-halo-wide)">
+    <rect x="178" y="181" width="76" height="34" rx="17"/><rect x="258" y="181" width="76" height="34" rx="17"/>
+    <rect x="338" y="181" width="76" height="34" rx="17"/><rect x="418" y="181" width="76" height="34" rx="17"/>
+    <rect x="338" y="285" width="76" height="34" rx="17"/><rect x="418" y="285" width="76" height="34" rx="17"/>
+    <rect x="498" y="285" width="76" height="34" rx="17"/><rect x="578" y="285" width="76" height="34" rx="17"/>
+  </g>
+  <g fill="none" stroke="#46d9ff" stroke-width="3" opacity="0.82" filter="url(#cyan-halo-near)">
+    <rect x="178" y="181" width="76" height="34" rx="17"/><rect x="258" y="181" width="76" height="34" rx="17"/>
+    <rect x="338" y="181" width="76" height="34" rx="17"/><rect x="418" y="181" width="76" height="34" rx="17"/>
+    <rect x="338" y="285" width="76" height="34" rx="17"/><rect x="418" y="285" width="76" height="34" rx="17"/>
+    <rect x="498" y="285" width="76" height="34" rx="17"/><rect x="578" y="285" width="76" height="34" rx="17"/>
+  </g>
+  <g fill="url(#copy-fill)" stroke="#46d9ff" stroke-width="1.4">
+    <rect x="178" y="181" width="76" height="34" rx="17"/><rect x="258" y="181" width="76" height="34" rx="17"/>
+    <rect x="338" y="181" width="76" height="34" rx="17"/><rect x="418" y="181" width="76" height="34" rx="17"/>
+    <rect x="338" y="285" width="76" height="34" rx="17"/><rect x="418" y="285" width="76" height="34" rx="17"/>
+    <rect x="498" y="285" width="76" height="34" rx="17"/><rect x="578" y="285" width="76" height="34" rx="17"/>
+  </g>
+
+  <g fill="#d95cc5" opacity="0.16" filter="url(#magenta-halo-wide)">
+    <rect x="258" y="233" width="76" height="34" rx="17"/><rect x="338" y="233" width="76" height="34" rx="17"/>
+    <rect x="418" y="233" width="76" height="34" rx="17"/><rect x="498" y="233" width="76" height="34" rx="17"/>
+  </g>
+  <g fill="none" stroke="#ed72d9" stroke-width="3" opacity="0.74" filter="url(#magenta-halo-near)">
+    <rect x="258" y="233" width="76" height="34" rx="17"/><rect x="338" y="233" width="76" height="34" rx="17"/>
+    <rect x="418" y="233" width="76" height="34" rx="17"/><rect x="498" y="233" width="76" height="34" rx="17"/>
+  </g>
+  <g fill="url(#kernel-fill)" stroke="#ed72d9" stroke-width="1.4">
+    <rect x="258" y="233" width="76" height="34" rx="17"/><rect x="338" y="233" width="76" height="34" rx="17"/>
+    <rect x="418" y="233" width="76" height="34" rx="17"/><rect x="498" y="233" width="76" height="34" rx="17"/>
+  </g>
+  <g fill="#edf4f7" font-size="13" font-weight="650" text-anchor="middle">
+    <text x="216" y="203">H0</text><text x="296" y="203">H1</text><text x="376" y="203">H2</text><text x="456" y="203">H3</text>
+    <text x="296" y="255">K0</text><text x="376" y="255">K1</text><text x="456" y="255">K2</text><text x="536" y="255">K3</text>
+    <text x="376" y="307">D0</text><text x="456" y="307">D1</text><text x="536" y="307">D2</text><text x="616" y="307">D3</text>
+  </g>
+</svg>

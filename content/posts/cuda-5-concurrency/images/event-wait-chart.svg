@@ -1,0 +1,60 @@
+<svg width="720" height="300" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>CUDA event dependency across streams</title>
+  <desc>A producer kernel in stream zero records an event. A wait in stream one delays its consumer kernel until that event completes.</desc>
+  <defs>
+    <linearGradient id="event-kernel-fill" x1="0" x2="1"><stop offset="0" stop-color="#35142f"/><stop offset="1" stop-color="#a84498"/></linearGradient>
+    <linearGradient id="event-wait-fill" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
+    <filter id="event-cyan-node-glow" x="-220%" y="-220%" width="540%" height="540%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.58"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <filter id="event-magenta-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <marker id="event-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L8 4L0 8Z" fill="#46d9ff"/></marker>
+  </defs>
+
+  <rect width="720" height="300" fill="#0d0e10"/>
+  <g stroke="#1e252b" stroke-width="1">
+    <line x1="176" y1="28" x2="176" y2="276"/><line x1="276" y1="28" x2="276" y2="276"/>
+    <line x1="376" y1="28" x2="376" y2="276"/><line x1="476" y1="28" x2="476" y2="276"/>
+    <line x1="576" y1="28" x2="576" y2="276"/><line x1="676" y1="28" x2="676" y2="276"/>
+  </g>
+
+  <g fill="#8c949d" font-size="14" font-weight="650">
+    <text x="49" y="94">S0 · PRODUCER</text>
+    <text x="49" y="226">S1 · CONSUMER</text>
+  </g>
+  <g stroke="#354047" stroke-width="2">
+    <line x1="178" y1="89" x2="654" y2="89"/>
+    <line x1="178" y1="221" x2="654" y2="221"/>
+  </g>
+
+  <rect x="204" y="68" width="168" height="42" rx="21" fill="#d95cc5" filter="url(#event-magenta-glow)"/>
+  <rect x="204" y="68" width="168" height="42" rx="21" fill="url(#event-kernel-fill)" stroke="#ed72d9" stroke-width="1.5"/>
+  <text x="288" y="94" fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">KERNEL A</text>
+
+  <g fill="#46d9ff" filter="url(#event-cyan-node-glow)">
+    <circle cx="398" cy="89" r="9"/>
+    <circle cx="398" cy="221" r="9"/>
+  </g>
+  <line x1="398" y1="88" x2="398" y2="218" stroke="#46d9ff" stroke-width="1.6" marker-end="url(#event-arrow)"/>
+  <circle cx="398" cy="89" r="8" fill="#0d0e10" stroke="#46d9ff" stroke-width="2"/>
+  <circle cx="398" cy="221" r="8" fill="url(#event-wait-fill)" stroke="#46d9ff" stroke-width="2"/>
+
+  <g fill="#b6c0c6" font-size="14" font-weight="600" text-anchor="middle">
+    <text x="398" y="41">cudaEventRecord</text>
+    <text x="398" y="266">cudaStreamWaitEvent</text>
+  </g>
+
+  <rect x="430" y="200" width="188" height="42" rx="21" fill="#d95cc5" filter="url(#event-magenta-glow)"/>
+  <rect x="430" y="200" width="188" height="42" rx="21" fill="url(#event-kernel-fill)" stroke="#ed72d9" stroke-width="1.5"/>
+  <text x="524" y="226" fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">KERNEL B</text>
+</svg>
