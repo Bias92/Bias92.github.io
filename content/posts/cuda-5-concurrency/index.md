@@ -1,6 +1,6 @@
 ---
 title: "05 CUDA Concurrency: Streams, Async Copies, and Overlap"
-date: 2026-08-22
+date: 2026-08-22T00:00:00+09:00
 draft: false
 tags: ["CUDA", "GPU Programming", "CUDA Streams", "Asynchronous Execution", "Pinned Memory", "Nsight Systems"]
 categories: ["CUDA"]
