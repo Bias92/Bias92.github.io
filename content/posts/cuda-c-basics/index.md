@@ -129,31 +129,15 @@ GPU 내부 memory의 bandwidth는 PCIe host link보다 약 30배에서 100배 �
 
 ![메모리 대역폭 비교](./images/bandwidth.svg?v=2)
 
-그래서 CUDA 최적화에서는 복사 횟수와 양을 줄이는 일이 중요하다. 보통 `malloc`으로 만든 host memory는 pageable memory다. Pageable은 운영체제가 memory를 page라는 작은 단위로 관리하며, 사용하지 않는 page를 RAM 밖의 swap 또는 page file로 옮길 수 있다는 뜻이다.
+그래서 CUDA 최적화에서는 복사 횟수와 양을 줄이는 일이 중요하다. 보통 `malloc`으로 만든 host memory는 운영체제가 필요할 때 RAM 밖으로 옮길 수 있는 pageable memory다. 반면 pinned memory는 GPU 전송 중에 RAM의 같은 위치에 머물도록 고정한 host memory다.
 
-Swap은 Linux에서, page file은 Windows에서 RAM에서 밀려난 page를 저장장치에 보관하는 영역이다. CPU가 RAM에 없는 page를 읽으면 page fault가 발생하고, 운영체제가 그 page를 다시 RAM으로 가져온다.
-
-Pinned memory는 이 page를 물리 RAM에 고정한 host memory다. `cudaHostAlloc`이 pinned host memory를 만들고 `cudaFreeHost`가 해제한다. `cudaMalloc`이 device memory를 만드는 함수라는 점과 구분해야 한다.
-
-GPU의 copy engine은 CPU 대신 host와 device 사이의 data를 옮기는 hardware다. CPU가 다음 코드를 실행하는 동안에도 복사를 계속하려면 copy engine이 읽는 host page의 물리 주소가 복사 종료까지 유지되어야 한다. 그래서 비동기 host-device 복사에는 pinned memory를 사용한다.
-
-Pinned memory는 물리 RAM을 계속 차지한다. 여러 번 `cudaHostAlloc`을 호출하면 각 allocation의 크기가 모두 합산되며, 그 합은 물리 RAM과 운영체제가 사용할 공간의 제약을 받는다.
-
-너무 많이 요청하면 allocation이 실패하거나 system이 느려질 수 있으므로 전송에 필요한 buffer에만 사용한다.
-
-Pageable memory에서 GPU로 복사할 때 CUDA Runtime은 data를 임시 pinned buffer로 먼저 옮긴다. 임시 pinned buffer는 GPU 전송 동안 RAM에 고정해 두는 중간 공간이다. 처음부터 `cudaHostAlloc`으로 만든 buffer를 사용하면 이 중간 복사가 필요 없다.
-
-![Pageable과 pinned memory의 GPU 전송 경로](./images/pageable-pinned.svg?v=1)
-
-Pinned memory를 사용하면 `cudaMemcpyAsync`로 host와 device 사이의 복사를 비동기로 요청할 수 있다. 비동기는 CPU가 복사 완료를 기다리지 않고 다음 코드를 실행한다는 뜻이다.
-
-서로 의존하지 않는 복사와 kernel을 서로 다른 non-default stream에 넣고 GPU가 복사와 계산의 동시 실행을 지원하면 두 작업이 같은 시간대에 진행될 수 있다. Non-default stream은 프로그램이 별도로 만든 stream이다. Stream은 GPU에 작업을 제출한 순서를 관리하는 실행 단위이며, 이렇게 작업 시간이 겹치는 것을 overlap이라고 한다.
+`cudaHostAlloc`은 pinned host memory를 만들고 `cudaFreeHost`는 이를 해제한다. Device memory를 만드는 함수는 여전히 `cudaMalloc`이다. Pageable memory와 page fault, 물리 RAM 한도, 비동기 복사에 pinned memory가 필요한 이유는 [05 CUDA Concurrency의 Pinned Memory]({{< relref "/posts/cuda-5-concurrency" >}}#pinned-memory)에서 이어진다.
 
 Kernel fusion은 연속된 여러 kernel을 하나로 합치는 방법이다. Global memory는 `cudaMalloc`으로 만든 배열이 놓이는 device의 큰 DRAM 영역이다.
 
 Fusion은 kernel 사이의 중간값을 global memory에 저장하고 다시 읽는 횟수와 kernel을 시작하는 비용인 launch overhead를 줄인다. 중간 결과를 매번 host로 가져오던 프로그램이라면 host-device 왕복도 줄어든다.
 
-Pinned memory와 overlap은 여러 GPU 작업을 같은 시간대에 실행하는 concurrency 글에서, fusion은 이후 최적화 글에서 이어진다.
+전송과 연산을 같은 시간대에 배치하는 방법은 05 CUDA Concurrency에서, fusion은 이후 최적화 글에서 이어진다.
 
 ---
 
