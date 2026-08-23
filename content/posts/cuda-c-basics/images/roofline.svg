@@ -1,0 +1,71 @@
+<svg width="720" height="380" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Roofline model with bandwidth roof, compute roof, ridge point, and vector addition</title>
+  <desc>On logarithmic-style axes, attainable performance follows the rising memory-bandwidth roof until the ridge point, then follows the horizontal compute roof. Vector addition lies on the bandwidth-bound side.</desc>
+  <style>
+    text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+    .axis-label{fill:#7f8991;font-size:11px;letter-spacing:.03em}
+    .roof-label{font-size:12px;font-weight:650;letter-spacing:.04em}
+    .point-label{font-size:12px;font-weight:700;letter-spacing:.04em}
+  </style>
+  <defs>
+    <filter id="cyan-wide" x="-60" y="-60" width="840" height="500" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <filter id="cyan-near" x="-60" y="-60" width="840" height="500" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
+    <filter id="magenta-wide" x="-60" y="-60" width="840" height="500" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <filter id="magenta-near" x="-60" y="-60" width="840" height="500" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
+    <radialGradient id="vadd-fill" cx="35%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#b8f4ff"/>
+      <stop offset="0.42" stop-color="#35c5e8"/>
+      <stop offset="1" stop-color="#17637a"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="720" height="380" fill="#0d0e10"/>
+
+  <g stroke="#1e252b" stroke-width="1">
+    <line x1="90" y1="270" x2="660" y2="270"/>
+    <line x1="90" y1="220" x2="660" y2="220"/>
+    <line x1="90" y1="170" x2="660" y2="170"/>
+    <line x1="90" y1="120" x2="660" y2="120"/>
+    <line x1="170" y1="70" x2="170" y2="320"/>
+    <line x1="260" y1="70" x2="260" y2="320"/>
+    <line x1="350" y1="70" x2="350" y2="320"/>
+    <line x1="440" y1="70" x2="440" y2="320"/>
+    <line x1="530" y1="70" x2="530" y2="320"/>
+    <line x1="620" y1="70" x2="620" y2="320"/>
+  </g>
+
+  <g stroke="#69737b" stroke-width="1.3" fill="none">
+    <path d="M90 64V320H668"/>
+    <path d="M90 58L85 68H95Z" fill="#69737b" stroke="none"/>
+    <path d="M674 320L664 315V325Z" fill="#69737b" stroke="none"/>
+  </g>
+  <text x="652" y="350" class="axis-label" text-anchor="end">arithmetic intensity</text>
+  <text x="38" y="86" class="axis-label" transform="rotate(-90 38 86)" text-anchor="end">performance</text>
+
+  <path d="M96 316L405 95" stroke="#46d9ff" stroke-width="12" opacity="0.16" filter="url(#cyan-wide)"/>
+  <path d="M96 316L405 95" stroke="#46d9ff" stroke-width="4" opacity="0.8" filter="url(#cyan-near)"/>
+  <path d="M96 316L405 95" stroke="#46d9ff" stroke-width="2.4" fill="none"/>
+
+  <path d="M405 95H660" stroke="#ed72d9" stroke-width="12" opacity="0.15" filter="url(#magenta-wide)"/>
+  <path d="M405 95H660" stroke="#ed72d9" stroke-width="4" opacity="0.78" filter="url(#magenta-near)"/>
+  <path d="M405 95H660" stroke="#ed72d9" stroke-width="2.4" fill="none"/>
+
+  <text x="148" y="268" class="roof-label" fill="#73ddf5" transform="rotate(-35.5 148 268)">bandwidth</text>
+  <text x="535" y="79" class="roof-label" fill="#ee86dc" text-anchor="middle">compute</text>
+
+  <circle cx="405" cy="95" r="16" fill="#d8e1e5" opacity="0.14" filter="url(#cyan-wide)"/>
+  <circle cx="405" cy="95" r="6" fill="#0d0e10" stroke="#c8d0d4" stroke-width="2"/>
+  <text x="405" y="67" class="point-label" fill="#aeb6bc" text-anchor="middle">ridge</text>
+
+  <circle cx="225" cy="223" r="18" fill="#46d9ff" opacity="0.2" filter="url(#cyan-wide)"/>
+  <circle cx="225" cy="223" r="8" fill="url(#vadd-fill)" stroke="#77e5ff" stroke-width="1.6"/>
+  <text x="244" y="215" class="point-label" fill="#8ae9ff">VADD</text>
+</svg>

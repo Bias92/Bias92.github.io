@@ -6,28 +6,38 @@ tags: ["CUDA", "GPU Programming", "Parallel Programming", "Video Notes"]
 categories: ["CUDA"]
 series: ["CUDA C"]
 math: true
-summary: "CUDA C의 실행 모델을 바닥부터 정리한다. 컴파일 파이프라인, 3단계 메모리 전송이 왜 병목인지(대역폭 숫자), thread/block/grid가 SM/warp/lane에 어떻게 스케줄되는지, occupancy, 그리고 커널 런치 문법까지."
+summary: "CUDA C의 host-device memory 흐름부터 kernel launch, thread와 block, warp, occupancy, coalescing, roofline까지 연결해 설명한다."
 ---
 
 > Source: [01 CUDA C Basics](https://youtu.be/OsK8YFHTtNs)
 
 ## CUDA 스택
 
-CUDA(Compute Unified Device Architecture)는 NVIDIA의 병렬 컴퓨팅 플랫폼이고, 단일한 무언가가 아니다. 프로그래밍 모델, 드라이버·런타임 API, 컴파일러 툴체인(`nvcc`, PTX를 거쳐 SASS로 낮춤), 라이브러리 스택(cuBLAS, cuDNN 등)을 모두 아우른다. 이 중 C++를 device 코드로 확장하는 특정 레이어가 *CUDA C++*이고, 이건 플랫폼의 한 부분이지 전부가 아니다. 2007년 공개 이후 CUDA는 딥러닝 인프라의 사실상 표준이 됐고, GPU를 그래픽 전용이 아니라 범용 연산 장치(GPGPU)로 쓸 수 있게 열었다.
+CUDA(Compute Unified Device Architecture)는 NVIDIA GPU로 계산하기 위한 기술 전체를 가리킨다. GPU 작업을 thread에 나누고 실행하는 규칙인 programming model이 그 출발점이다.
 
-그런데 "CUDA를 쓴다"고 할 때 정확히 무엇을 쓴다는 걸까? PyTorch로 모델을 돌리는 것도 CUDA고, `__global__` 커널을 직접 짜는 것도 CUDA다. 이 혼란은 CUDA가 단일 레이어가 아니라 스택이기 때문에 생긴다.
+여기에 프로그램이 GPU에 작업을 요청할 때 호출하는 API, 소스 코드를 GPU 명령으로 바꾸는 compiler, 자주 쓰는 연산을 미리 구현한 library가 더해진다.
+
+API는 프로그램에서 호출하는 함수들의 규칙이다. Compiler는 사람이 쓴 코드를 hardware가 실행할 코드로 번역하는 프로그램이고, library는 자주 쓰는 기능을 미리 구현해 둔 코드다.
+
+GPU driver는 운영체제와 GPU 사이에서 명령 전달과 hardware 자원을 관리하는 software다. CUDA Driver API는 이 driver를 직접 다루는 낮은 수준의 함수 모음이다. CUDA Runtime API는 그 위에서 `cudaMalloc`과 `cudaMemcpy`처럼 CUDA C++에서 바로 쓰는 함수를 제공한다.
+
+cuBLAS는 matrix와 vector 연산 library이고, cuDNN은 deep neural network 연산 library다. CUDA는 2007년에 공개된 뒤 GPU를 그래픽 이외의 계산에 사용하는 기반이 되었고, 현재 딥러닝 software가 GPU를 사용하는 표준 경로로 자리 잡았다.
+
+CUDA C++는 이 가운데 C++로 GPU 코드를 작성하는 방법이다. PyTorch가 내부에서 CUDA library를 사용하는 경우와 개발자가 GPU에서 실행되는 함수인 `__global__` kernel을 직접 작성하는 경우는 서로 다른 layer를 사용한다. Layer는 기능을 단계별로 나눈 층을 뜻한다.
+
+두 경우 모두 CUDA 위에서 동작한다. CUDA를 하나의 기능이 아니라 여러 layer가 쌓인 stack으로 설명하는 이유다.
 
 ![CUDA Stack](./images/neon1.png)
 
-위 그림에서 흔히 CUDA라고 부르는 범위는 3\~5번 레이어(CUDA C/C++, PTX, SASS)를 묶은 것이다.
+위 그림에서 CUDA C++로 작성한 코드는 PTX를 거쳐 SASS로 바뀐다. PTX는 여러 NVIDIA GPU 세대가 공통으로 받아들이는 중간 명령어이고, SASS는 특정 GPU가 실제로 실행하는 명령어다.
 
 | 레이어 | 역할 |
 | --- | --- |
-| CUDA C/C++ | 개발자가 직접 쓰는 프로그래밍 모델. `__global__`, `threadIdx`, Grid/Block/Thread 추상화 |
-| CUDA Runtime API | `cudaMalloc`, `cudaMemcpy`, 커널 launch 등 |
-| nvcc | 위 코드를 `PTX`/`SASS`로 컴파일하는 NVIDIA 컴파일러 |
-| PTX | 가상 ISA. 세대 간 forward 호환 담당 |
-| SASS | 특정 GPU 세대로 컴파일된 실제 머신코드. 아키텍처마다 다름 |
+| CUDA C/C++ | 개발자가 GPU 작업을 작성하는 C++ 확장. 실행 단위인 thread, thread 묶음인 block, 모든 block을 묶은 grid가 여기에 속한다. |
+| CUDA Runtime API | `cudaMalloc`, `cudaMemcpy`, kernel launch처럼 host 코드가 CUDA에 요청할 때 쓰는 함수와 문법 |
+| `nvcc` | CUDA C++를 host 코드와 device 코드로 나누어 컴파일하는 프로그램 |
+| PTX | 실제 GPU가 아니라 가상의 NVIDIA GPU를 대상으로 한 중간 명령어 |
+| SASS | 특정 GPU 세대가 직접 실행하는 최종 명령어 |
 
 ---
 
@@ -35,32 +45,47 @@ CUDA(Compute Unified Device Architecture)는 NVIDIA의 병렬 컴퓨팅 플랫�
 
 GPGPU(General-Purpose computing on GPU)는 말 그대로 GPU를 그래픽 외의 범용 연산에 쓴다는 뜻이다. 딥러닝이 뜨기 전까지 GPU는 주로 폴리곤을 그리는 그래픽 장치였지만, 지금은 대규모 병렬 수치 연산이면 무엇이든 GPU로 넘긴다.
 
-영상 편집기(VEGAS Pro)나 NVIDIA 제어판에서 `CUDA - GPUs` 같은 옵션이 보이는 것도 이 때문이다. 특정 프로그램이 CUDA 연산을 어느 GPU에서 돌릴지 지정하는 설정으로, 게임이 아니라 영상 편집·머신러닝 같은 GPGPU 워크로드를 위한 것이다.
+Workload는 컴퓨터가 처리할 작업의 종류와 양을 뜻한다. 영상 편집기(VEGAS Pro)나 NVIDIA 제어판에서 `CUDA - GPUs` 같은 option은 영상 편집과 machine learning 같은 GPGPU workload를 어느 GPU에서 실행할지 정한다.
 
-GPGPU가 위력을 발휘하는 워크로드는 공통점이 하나 있다. 같은 연산을 수많은 데이터에 독립적으로 반복한다는 것이다. 이 구조가 GPU의 SIMT(Single Instruction, Multiple Threads) 실행 모델과 정확히 맞아떨어진다.
+GPGPU가 잘 처리하는 workload는 같은 연산을 많은 data에 독립적으로 반복한다.
+
+GPU는 하나의 명령을 여러 thread가 각자의 data에 적용하는 SIMT(Single Instruction, Multiple Threads) 방식으로 실행한다. Thread는 같은 코드를 서로 다른 data에 적용하는 실행 단위다.
 
 | 워크로드 | 본질 |
 | --- | --- |
 | 영상 인코딩/필터 | 픽셀 행렬에 대한 병렬 수치 연산 |
-| 딥러닝 학습/추론 | 텐서(다차원 행렬) MatMul |
-| 암호화폐 채굴 | 해시 함수의 대규모 병렬 실행 |
-| 과학 시뮬레이션 | 격자/입자 시스템의 병렬 업데이트 |
-| 3D 렌더링 (Blender Cycles 등) | Ray 단위 병렬 계산 |
+| 딥러닝 학습/추론 | 여러 차원의 숫자 배열인 tensor의 행렬곱(matrix multiplication, MatMul) |
+| 암호화폐 채굴 | 입력을 고정된 길이의 값으로 바꾸는 hash 계산의 반복 |
+| 과학 시뮬레이션 | 공간 격자 또는 particle의 상태를 반복해서 갱신 |
+| 3D 렌더링 (Blender Cycles 등) | 빛의 진행 경로를 나타내는 ray별 계산 |
 
-여담으로, GPU를 인공신경망 학습에 활용한 초기 사례 중 하나가 한국 연구진의 2004년 논문(Oh & Jung, *"GPU implementation of neural networks"*, Pattern Recognition)이다. CUDA도 없던 시절 셰이더로 신경망을 돌린 셈이다.
+이런 계산 방식은 CUDA가 나오기 전에도 사용됐다. 한국 연구진의 2004년 논문(Oh & Jung, *"GPU implementation of neural networks"*, Pattern Recognition)은 GPU로 인공신경망을 학습한 초기 사례다.
+
+당시에는 범용 GPU API가 없었다. 그래서 그래픽 효과를 계산하는 프로그램인 shader로 신경망 연산을 표현했다.
 
 ## 이기종 컴퓨팅
 
-이기종 컴퓨팅(Heterogeneous Computing)은 서로 다른 아키텍처(CPU와 GPU)가 한 시스템 안에서 협력하는 방식이다. CUDA 프로그래밍의 핵심은 "모든 코드를 GPU에서 돌리는 것"이 아니다. 제어 흐름과 가벼운 로직은 CPU(Host)가 맡고, 연산이 무거운 부분(행렬·텐서 연산)만 GPU(Device)로 오프로드하는 것이다.
+이기종 컴퓨팅(Heterogeneous Computing)은 구조가 다른 CPU와 GPU가 한 프로그램을 나누어 실행하는 방식이다. CUDA에서는 CPU와 CPU memory를 host, GPU와 GPU memory를 device라고 부른다.
 
-이 분업이 왜 필요한지는 두 칩의 설계 철학을 보면 나온다. CPU는 코어 몇 개에 큰 캐시와 강력한 분기 예측을 얹어 순차 실행 지연(latency)을 줄이도록 설계됐다. 반대로 GPU는 제어 로직과 캐시를 최소화한 작은 코어를 수천 개 박아 처리량(throughput)을 극대화한다. 그래서 분기 많고 순차적인 코드는 CPU가, 같은 연산을 수천 번 반복하는 코드는 GPU가 유리하다.
+조건 판단과 실행 순서 관리는 host가 맡고, 행렬곱처럼 같은 계산이 많이 반복되는 부분은 device에 넘긴다. CPU가 하던 계산을 GPU에 넘기는 일을 offload라고 한다.
+
+CPU는 적은 수의 강한 core, 자주 쓰는 data를 가까이 두는 cache, 조건문의 다음 경로를 미리 추측하는 branch prediction을 사용한다. 이런 구조는 작업 하나를 끝내는 데 걸리는 시간인 latency를 줄이는 데 유리하다.
+
+반면 GPU는 훨씬 많은 연산 장치를 두어 일정 시간에 처리하는 작업량인 throughput을 높인다. 그래서 분기가 많고 순차적인 코드는 CPU에, 같은 연산을 많은 data에 적용하는 코드는 GPU에 배치한다.
 
 ![CPU vs GPU 설계 철학](./images/neon5.png)
-*CPU는 큰 코어 몇 개로 지연(latency)을, GPU는 작은 코어 수천 개로 처리량(throughput)을 최적화한다*
+
+이 역할 분담이 실제 CUDA code에서는 memory 이동으로 이어진다. CPU가 준비한 입력을 GPU가 사용하려면 먼저 두 장치 사이에서 data를 옮겨야 한다.
 
 ### Host-Device 데이터 흐름
 
-이 글이 다루는 명시적 복사(explicit-copy) 모델에서, CPU(Host)와 GPU(Device)는 물리적으로 분리된 메모리를 갖는다. CPU에서 할당한 변수는 커널에서 보이지 않으므로 개발자가 직접 데이터를 옮겨야 한다. ([`cudaMallocManaged`와 Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory와-managed-allocation), integrated GPU처럼 CPU와 GPU가 physical memory를 공유하는 system은 배치 방식이 다르다. 여기서는 명시적 모델을 먼저 이해한다.) 이 모델에서 모든 CUDA 프로그램은 메모리 단절을 극복하려고 아래 3단계를 거친다.
+Memory allocation은 프로그램이 사용할 memory 영역을 확보하는 일이고, pointer는 그 영역의 주소를 저장하는 변수다. 명시적 복사(explicit-copy)는 개발자가 host memory와 device memory를 각각 allocation하고 두 공간 사이의 복사도 직접 요청하는 방식이다.
+
+CPU에서 allocation한 일반 pointer는 device memory를 가리키지 않으므로 kernel이 그대로 사용할 수 없다. 그래서 입력을 device memory로 옮긴 뒤 kernel을 실행하고, 결과를 다시 host memory로 가져온다.
+
+CUDA에는 하나의 pointer로 CPU와 GPU가 함께 사용할 영역을 만드는 [`cudaMallocManaged`와 Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory와-managed-allocation)도 있다. Integrated GPU는 CPU와 GPU가 같은 RAM을 사용하는 구조라서 memory 배치가 다르다.
+
+먼저 별도 GPU에서 가장 기본이 되는 명시적 복사 방식부터 보자.
 
 1. Host → Device (`cudaMemcpy`)
 
@@ -68,7 +93,11 @@ GPGPU가 위력을 발휘하는 워크로드는 공통점이 하나 있다. 같�
 cudaMemcpy(d_data, h_data, size, cudaMemcpyHostToDevice);
 ```
 
-CPU 메모리의 원본 데이터를 host-device interconnect로 GPU 메모리에 복사한다. 개별 GPU에선 보통 PCIe이고, NVLink는 GH200 같은 특정 topology 시스템에서만이다.
+`cudaMemcpy(destination, source, size, direction)`은 source에서 size bytes를 읽어 destination으로 복사한다. 위 코드의 `h_data`는 host pointer, `d_data`는 device pointer이며 `cudaMemcpyHostToDevice`가 H2D 방향을 지정한다.
+
+Data는 host와 device를 잇는 연결 통로인 interconnect를 통해 이동한다. 별도 그래픽 카드에서는 주변 장치를 CPU system에 연결하는 표준 bus인 PCIe(PCI Express)를 주로 사용한다.
+
+NVLink는 NVIDIA가 만든 고속 interconnect로, GPU 사이 또는 GH200처럼 CPU와 GPU를 직접 연결한 구성에서 사용된다. 어떤 장치가 어떤 통로로 연결되어 있는지를 나타내는 구성을 topology라고 한다.
 
 2. Execute Kernel (`<<<...>>>`)
 
@@ -76,7 +105,7 @@ CPU 메모리의 원본 데이터를 host-device interconnect로 GPU 메모리�
 kernel<<<gridDim, blockDim>>>(d_data);
 ```
 
-GPU에서 병렬 커널을 실행해 실제 연산을 수행한다.
+Kernel은 GPU에서 실행되는 함수다. `<<<gridDim, blockDim>>>`은 kernel을 실행할 block 수와 block마다 둘 thread 수를 지정한다. Block과 thread는 아래에서 배열 원소를 나누는 과정과 함께 정의한다.
 
 3. Device → Host (`cudaMemcpy`)
 
@@ -84,39 +113,91 @@ GPU에서 병렬 커널을 실행해 실제 연산을 수행한다.
 cudaMemcpy(h_result, d_result, size, cudaMemcpyDeviceToHost);
 ```
 
-계산이 끝난 GPU 메모리의 결과를 다시 CPU 메모리로 가져온다.
+이번에는 host pointer `h_result`가 destination이고 device pointer `d_result`가 source다. `cudaMemcpyDeviceToHost`가 D2H 방향을 지정하며, 계산이 끝난 결과를 CPU memory로 가져온다.
 
 ![explicit copy data flow](./images/explicit-copy.svg)
 
-이 3단계가 왜 CUDA 최적화의 가장 큰 병목이냐면, 경로만 헷갈리지 않으면 대역폭 숫자에서 바로 나온다. 개별 GPU의 기본 host-to-device 경로는 PCIe다. PCIe Gen4 x16은 방향당 약 32 GB/s(이론치), Gen5 x16은 약 64 GB/s다. NVLink는 훨씬 빠르지만 topology에 의존한다. H100의 NVLink는 약 900 GB/s(양방향 합산)이고, 이건 NVLink/NVSwitch로 묶인 GPU-GPU나 GH200의 on-package NVLink-C2C(Grace-Hopper) 경로에 해당하지, 시스템 RAM에서의 평범한 `cudaMemcpy`에는 해당하지 않는다. 그건 여전히 PCIe를 탄다. 반면 GPU 안 HBM은 A100 SXM이 약 2.0 TB/s(HBM2e), H100 SXM이 약 3.35 TB/s(HBM3)다. 정리하면 온디바이스 메모리가 PCIe host link보다 대략 30\~100배 빠르고, 그 배율은 PCIe 세대와 GPU에 따라 달라진다.
+Host와 device 사이의 복사가 비싼 이유는 bandwidth 차이에 있다. Bandwidth는 1초에 옮길 수 있는 데이터의 양이다. 별도 GPU가 host와 통신할 때 주로 사용하는 PCIe Gen4 x16의 이론 bandwidth는 방향당 약 32 GB/s이고, Gen5 x16은 약 64 GB/s다.
+
+NVLink는 PCIe보다 빠르지만 모든 host-device 복사에 사용되지는 않는다. H100의 NVLink 900 GB/s는 양방향을 합친 수치이며, NVLink 또는 여러 NVLink 장치를 이어 주는 switch인 NVSwitch로 연결된 GPU 사이에서 적용된다.
+
+GH200은 CPU와 GPU를 하나의 hardware 묶음인 package 안에서 NVLink-C2C로 연결한 별도 구성이다. 일반적인 별도 GPU와 system RAM 사이의 `cudaMemcpy`는 PCIe를 사용한다.
+
+GPU가 내부에서 사용하는 HBM(High Bandwidth Memory)은 A100 SXM에서 약 2.0 TB/s, H100 SXM에서 약 3.35 TB/s다. SXM은 GPU와 HBM을 board에 장착하는 data center용 module 형태다.
+
+GPU 내부 memory의 bandwidth는 PCIe host link보다 약 30배에서 100배 높다. 따라서 같은 data를 host와 device 사이에서 자주 왕복시키면 GPU 계산이 빨라도 전체 실행 시간은 복사에 묶일 수 있다.
 
 ![메모리 대역폭 비교](./images/bandwidth.svg?v=2)
 
-host-device 왕복 한 번의 비용이 그만큼 크다는 뜻이고, 그래서 실전 최적화의 상당 부분이 "전송을 얼마나 줄이느냐"로 결정된다. pinned(page-locked) 메모리로 PCIe 전송 대역폭을 끌어올리고, `cudaMemcpyAsync`로 전송과 연산을 겹치고(overlap), kernel fusion으로 커널 사이의 *중간* global memory 트래픽과 launch overhead를 줄인다. fusion이 host 왕복을 없애는 건 중간 결과를 host로 되넘기던 파이프라인에서만 해당한다. 이건 다음 글에서 따로 판다.
+그래서 CUDA 최적화에서는 복사 횟수와 양을 줄이는 일이 중요하다. 보통 `malloc`으로 만든 host memory는 pageable memory다. Pageable은 운영체제가 memory를 page라는 작은 단위로 관리하며, 사용하지 않는 page를 RAM 밖의 swap 또는 page file로 옮길 수 있다는 뜻이다.
+
+Swap은 Linux에서, page file은 Windows에서 RAM에서 밀려난 page를 저장장치에 보관하는 영역이다. CPU가 RAM에 없는 page를 읽으면 page fault가 발생하고, 운영체제가 그 page를 다시 RAM으로 가져온다.
+
+Pinned memory는 이 page를 물리 RAM에 고정한 host memory다. `cudaHostAlloc`이 pinned host memory를 만들고 `cudaFreeHost`가 해제한다. `cudaMalloc`이 device memory를 만드는 함수라는 점과 구분해야 한다.
+
+GPU의 copy engine은 CPU 대신 host와 device 사이의 data를 옮기는 hardware다. CPU가 다음 코드를 실행하는 동안에도 복사를 계속하려면 copy engine이 읽는 host page의 물리 주소가 복사 종료까지 유지되어야 한다. 그래서 비동기 host-device 복사에는 pinned memory를 사용한다.
+
+Pinned memory는 물리 RAM을 계속 차지한다. 여러 번 `cudaHostAlloc`을 호출하면 각 allocation의 크기가 모두 합산되며, 그 합은 물리 RAM과 운영체제가 사용할 공간의 제약을 받는다.
+
+너무 많이 요청하면 allocation이 실패하거나 system이 느려질 수 있으므로 전송에 필요한 buffer에만 사용한다.
+
+Pageable memory에서 GPU로 복사할 때 CUDA Runtime은 data를 임시 pinned buffer로 먼저 옮긴다. 임시 pinned buffer는 GPU 전송 동안 RAM에 고정해 두는 중간 공간이다. 처음부터 `cudaHostAlloc`으로 만든 buffer를 사용하면 이 중간 복사가 필요 없다.
+
+![Pageable과 pinned memory의 GPU 전송 경로](./images/pageable-pinned.svg?v=1)
+
+Pinned memory를 사용하면 `cudaMemcpyAsync`로 host와 device 사이의 복사를 비동기로 요청할 수 있다. 비동기는 CPU가 복사 완료를 기다리지 않고 다음 코드를 실행한다는 뜻이다.
+
+서로 의존하지 않는 복사와 kernel을 서로 다른 non-default stream에 넣고 GPU가 복사와 계산의 동시 실행을 지원하면 두 작업이 같은 시간대에 진행될 수 있다. Non-default stream은 프로그램이 별도로 만든 stream이다. Stream은 GPU에 작업을 제출한 순서를 관리하는 실행 단위이며, 이렇게 작업 시간이 겹치는 것을 overlap이라고 한다.
+
+Kernel fusion은 연속된 여러 kernel을 하나로 합치는 방법이다. Global memory는 `cudaMalloc`으로 만든 배열이 놓이는 device의 큰 DRAM 영역이다.
+
+Fusion은 kernel 사이의 중간값을 global memory에 저장하고 다시 읽는 횟수와 kernel을 시작하는 비용인 launch overhead를 줄인다. 중간 결과를 매번 host로 가져오던 프로그램이라면 host-device 왕복도 줄어든다.
+
+Pinned memory와 overlap은 여러 GPU 작업을 같은 시간대에 실행하는 concurrency 글에서, fusion은 이후 최적화 글에서 이어진다.
 
 ---
 
 ## CUDA C 기본 문법과 커널(Kernel)
 
-앞의 통신 병목을 감수하고서라도 GPU로 넘길 만큼 '무거운 연산'이란 뭘까? CUDA 입문에서 그 이점을 가장 직관적으로 보여주는 예제가 벡터 덧셈(Vector Addition)이다. `c[i] = a[i] + b[i]`는 각 인덱스가 서로 영향을 주지 않으니, thread 하나가 원소 하나씩만 맡으면 끝난다. 전형적인 embarrassingly parallel 문제다.
+CUDA C 문법은 vector addition으로 연결할 수 있다. Vector addition은 두 배열의 같은 위치에 있는 값을 더해 세 번째 배열을 만드는 계산이다. `c[i] = a[i] + b[i]`에서 각 index의 계산은 다른 index의 결과를 사용하지 않는다.
 
-이 병렬 연산을 GPU에서 실행하려면, 먼저 코드가 어디서 실행되고 어디서 호출되는지를 명시해야 한다. CUDA C는 이를 위해 C/C++에 함수 한정자(Qualifier)를 추가한다.
+이렇게 작업 사이에 의존 관계가 없어 바로 나누어 실행할 수 있는 문제를 embarrassingly parallel이라고 한다. Thread 하나가 원소 하나를 맡으면 각 원소를 다른 원소와 독립적으로 계산할 수 있다.
+
+이 계산을 GPU에서 실행하려면 함수가 실행되는 위치와 그 함수를 호출하는 위치를 표시해야 한다. CUDA C는 함수 앞에 붙이는 qualifier로 이를 구분한다. Qualifier는 함수의 성질을 컴파일러에 알려 주는 표시다.
 
 | 한정자 | 실행 위치 | 호출 위치 | 특징 |
 | --- | --- | --- | --- |
-| `__global__` | Device (GPU) | Host (CPU) | GPU에서 실행되는 커널. 비동기 실행이라 반드시 `void` 반환 |
-| `__device__` | Device (GPU) | Device (GPU) | GPU 내부에서만 호출되는 헬퍼 함수 |
+| `__global__` | Device (GPU) | Host (CPU) | GPU에서 실행되는 kernel. 반환형은 `void`이며 결과는 device memory에 기록 |
+| `__device__` | Device (GPU) | Device (GPU) | kernel이나 다른 device 함수가 GPU 내부에서 호출하는 보조 함수 |
 | `__host__` | Host (CPU) | Host (CPU) | 일반 C/C++ 함수 (기본값, 생략 가능). 한정자 없는 함수는 전부 `__host__` |
 
-`__global__` 커널이 `void`만 반환하는 건 실행 모델 때문이다. 커널 런치는 비동기라서, `kernel<<<...>>>()`를 호출한 CPU는 커널이 끝나기를 기다리지 않고 바로 다음 줄로 넘어간다. 반환값을 돌려받을 동기적 경로 자체가 없다. 결과가 필요하면 `cudaMemcpy`(암묵적 동기)나 `cudaDeviceSynchronize`로 완료를 기다린 뒤 device 메모리에서 꺼내와야 한다.
+`__global__` kernel의 반환형은 CUDA C++ 문법상 `void`다. 계산 결과는 반환값이 아니라 device memory에 기록한다.
+
+Host가 요청하는 kernel launch는 비동기 호출이다. CPU는 `kernel<<<...>>>()`를 요청한 뒤 kernel 완료를 기다리지 않고 다음 줄로 진행한다. 비동기는 호출한 쪽이 작업 완료를 기다리지 않는다는 뜻이다.
+
+CPU가 결과를 사용하려면 D2H `cudaMemcpy`를 호출하거나, 모든 앞선 device 작업이 끝날 때까지 CPU를 기다리게 하는 `cudaDeviceSynchronize`를 호출한다.
+
+한 source file에 섞여 있는 host 코드와 device 코드는 compile 과정에서 다시 나뉜다.
 
 ## nvcc 컴파일 파이프라인
 
-`.cu` 파일 하나 안에 CPU 코드(`main`)와 GPU 코드(`__global__`)가 섞여 있어도 문제없다. NVIDIA 컴파일러 `nvcc`가 소스를 스캔해서 둘을 갈라 처리하기 때문이다.
+`.cu` 파일 하나에는 CPU에서 실행할 host 코드와 GPU에서 실행할 device 코드가 함께 들어갈 수 있다. NVIDIA의 CUDA compiler인 `nvcc`가 두 종류의 코드를 구분해 처리한다.
 
-파이프라인을 조금 파보면 이렇다. host 코드는 시스템 C++ 컴파일러(GCC, MSVC 등)로 그대로 넘긴다. device 코드는 두 단계로 낮춘다. 먼저 `cicc`(NVVM/LLVM 기반)가 C++를 `PTX`로 바꾸고, 그 다음 `ptxas`가 `PTX`를 특정 아키텍처의 `SASS`로 컴파일한다. 최종 바이너리(fatbin)에는 보통 몇 개 아키텍처의 SASS와 함께 forward-compatible한 PTX 하나가 embed된다. SASS는 같은 major compute capability 안에서는 forward 바이너리 호환이 된다. sm_80 코드는 sm_86, sm_89(전부 major 8)에서도 돌지만, major가 바뀌면(sm_80을 sm_90에서 돌리는 것) 안 된다. 그래서 major가 한 세대 위인 GPU에서 돌아가려면 forward-compatible한 PTX를 실어야 하고, 드라이버가 load 시점에 그걸 SASS로 JIT한다. PTX 없이 SASS만 구우면(`-arch=native`가 SASS만 뽑는 게 그 예), 다음 major 세대 GPU를 만나는 순간 로드가 실패한다. 이게 PTX를 "가상 ISA"라 부르는 이유이고, `-gencode arch=...,code=...` 플래그가 어느 아키텍처의 SASS를 미리 구울지와 PTX를 함께 실을지를 정하는 이유다.
+Host 코드는 `nvcc`가 GCC나 MSVC 같은 system C++ compiler로 넘긴다. Device 코드는 NVIDIA의 device code compiler인 `cicc`가 PTX로 바꾼다. PTX는 특정 GPU 하나에 묶이지 않은 중간 명령어다.
 
-말로만 설명하면 안 와닿으니 실제로 열어보자. 앞의 `add` 커널을 `nvcc -arch=sm_80 -ptx vector_add.cu`로 뽑으면 PTX의 핵심은 이렇다.
+그다음 `ptxas`라는 assembler가 PTX를 특정 GPU architecture의 SASS로 바꾼다. Assembler는 중간 명령어를 machine code로 바꾸는 프로그램이고, SASS는 GPU가 직접 실행하는 최종 machine code다.
+
+완성된 실행 파일에는 GPU 코드 묶음인 fatbin이 들어간다. Fatbin에는 보통 몇 GPU architecture용 SASS와 PTX가 함께 저장된다.
+
+Compute capability는 CUDA가 GPU 기능 세대를 구분하는 version이며 `sm_80`, `sm_86`, `sm_90` 같은 번호로 나타낸다. 앞 숫자를 major version이라고 한다.
+
+`sm_80`, `sm_86`, `sm_89`는 major version 8의 SASS 호환 범위를 공유한다. `sm_90`처럼 major version이 달라지면 기존 SASS를 그대로 실행할 수 없다.
+
+이때 실행 파일에 PTX가 있으면 driver가 프로그램을 불러오는 시점에 새 GPU용 SASS를 만든다. 실행 직전에 필요한 코드를 만드는 과정을 JIT(Just-In-Time) compilation이라고 한다.
+
+`-arch=native`처럼 현재 GPU용 SASS만 넣고 PTX를 제외하면 다음 major 세대에서는 실행 파일을 다시 컴파일해야 한다. `-gencode arch=...,code=...` option은 실행 파일에 넣을 SASS 대상과 PTX 포함 여부를 정한다.
+
+앞의 `add` kernel을 `nvcc -arch=sm_80 -ptx vector_add.cu`로 변환하면 다음과 같은 PTX가 나온다. `%r`, `%f`, `%rd`로 시작하는 이름은 PTX가 계산 중인 값을 잠시 보관하는 register다.
 
 ```ptx
 mad.lo.s32    %r1, %r3, %r4, %r5;  // thread index i
@@ -129,36 +210,103 @@ add.f32       %f3, %f2, %f1;       // a[i] + b[i]
 st.global.f32 [%rd10], %f3;        // c[i] = ...
 ```
 
-C 한 줄(`c[i] = a[i] + b[i]`)이 어떻게 낮아지는지가 그대로 보인다. 인덱스 계산은 `mad.lo.s32` 하나로 접히는데, 이건 주소 계산용 32-bit *정수* 곱셈-덧셈이지 FP32 fused-multiply-add가 아니다. `if (i < N)`은 `setp` + 조건부 분기(`@%p1 bra`)가 되고, 실제 작업은 global load 2번 + FP32 `add` 1번 + global store 1번이다. 뒤에서 볼 roofline 분석의 "원소당 12바이트, 1 FLOP"이 바로 이 네 줄이다. 여기서 다시 `ptxas`가 이 PTX를 특정 아키텍처의 SASS로 낮추고, 그 실물은 `cuobjdump -sass`로 열어볼 수 있다.
+C의 `c[i] = a[i] + b[i]` 한 줄은 여러 GPU 명령으로 나뉜다. `mad.lo.s32`는 index 주소를 계산하는 32-bit 정수 곱셈과 덧셈이다. FMA(Fused Multiply-Add)는 실수 곱셈과 덧셈을 한 명령으로 처리하는 연산인데, 여기의 `mad.lo.s32`는 FP32 FMA가 아니다.
+
+이어서 `setp`와 `bra`는 `i < N`인지 검사하고 범위를 벗어난 thread를 건너뛴다. `ld.global.f32` 두 줄은 device의 global memory에서 `a[i]`와 `b[i]`를 읽는다. `add.f32`가 두 값을 더하고 `st.global.f32`가 결과를 `c[i]`에 쓴다.
+
+따라서 원소 하나에는 4-byte 값 두 개를 읽고 하나를 쓰는 12 bytes의 memory 이동과 실수 덧셈 한 번이 필요하다. FLOP은 실수 연산 횟수를 세는 단위이므로 여기서는 1 FLOP이다. 뒤의 roofline 절은 이 비율로 vector addition의 병목을 설명한다.
+
+CUDA binary의 내용을 읽는 도구인 `cuobjdump`에 `-sass` option을 주면 최종 SASS를 볼 수 있다.
+
+명령어로 바뀐 kernel을 실제로 몇 개의 thread가 실행할지는 launch 구성이 정한다.
 
 ## Thread와 Block 한계
 
-- Block당 thread는 최대 1024개다. 차원 분배(`dim3`)는 자유지만 곱이 1024를 넘으면 커널 런치가 `cudaErrorInvalidConfiguration`으로 실패한다. `dim3(32, 32, 1)`(=1024)은 통과하지만 `dim3(32, 32, 2)`(=2048)는 죽는다. 여기에 z축은 따로 최대 64라는 제약도 있어 놓치기 쉽다.
-- Grid는 훨씬 넉넉하다. x축 2³¹-1개, y·z 각 65535개까지 된다. 어지간한 데이터셋으로 이 한도에 부딪힐 일은 없다.
-- Shared memory는 사람들이 뭉뚱그리는 숫자가 셋이다. *정적(static)* 할당의 Block당 상한은 48KB(호환용 기본값, 모든 아키텍처 동일)다. *opt-in 동적(dynamic)* 할당의 Block당 최대치는 더 높고 `cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, bytes)`로 요청한다. A100(cc 8.0) 약 163KB, H100(cc 9.0) 약 227KB다. 이 둘 다 SM의 *통합* L1/shared memory 용량(A100 192KB, H100 256KB)에서 잘라 쓰는 것으로, 하드웨어가 L1 캐시와 shared memory로 나눈다.
+Kernel을 실행하면 같은 함수를 수행하는 thread가 여러 개 만들어진다. CUDA는 이 thread들을 block으로 묶고, 한 번의 kernel launch에 포함된 모든 block을 grid로 묶는다. `dim3(x, y, z)`는 block이나 grid의 크기를 1차원, 2차원, 3차원으로 나타내는 CUDA 자료형이다.
 
-이 숫자들은 임의로 정한 게 아니라 [하드웨어](../cuda-0-gpu-architecture/)에서 나온다. Block 하나는 반드시 SM(Streaming Multiprocessor) 하나 위에서 끝까지 실행되며, 도중에 다른 SM으로 쪼개 옮기지 않는다. SM은 그 block을 warp 단위로 스케줄한다. 그래서 block당 thread 상한 1024는 warp로 치면 32개다. 게다가 SM의 레지스터 파일은 유한하다. 최근 아키텍처는 SM당 32-bit 레지스터가 65,536개인데, 이걸 그 SM에 올라간 모든 thread가 나눠 쓴다. thread 하나가 레지스터를 많이 잡아먹으면 SM에 동시에 올릴 수 있는 thread 수가 줄어든다. 이게 바로 다음 절의 occupancy 얘기다.
+- Block 하나에는 thread를 최대 1024개까지 둘 수 있다. `dim3`의 x, y, z 크기를 곱한 값이 1024를 넘으면 kernel launch가 `cudaErrorInvalidConfiguration` 오류로 실패한다. `dim3(32, 32, 1)`은 1024개라서 가능하지만 `dim3(32, 32, 2)`는 2048개라서 불가능하다. z축 크기에는 별도로 64라는 상한도 있다.
+- Grid의 크기 상한은 block보다 훨씬 크다. x축에는 최대 2³¹-1개 block, y축과 z축에는 각각 65535개 block을 둘 수 있다.
+- Shared memory는 같은 block의 thread가 함께 사용하는 GPU 내부 memory다. 크기를 compile할 때 정하는 static allocation은 block당 기본 상한이 48KB다.
+
+Dynamic allocation의 크기는 `kernel<<<grid, block, sharedMemoryBytes>>>`의 세 번째 값으로 정한다. 기본 상한보다 큰 용량이 필요하면 `cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, bytes)`로 opt-in을 요청한다.
+
+Opt-in은 프로그램이 더 큰 dynamic shared memory 한도를 명시적으로 선택하는 방식이다. 그 최대치는 A100에서 약 163KB, H100에서 약 227KB다. 이 공간은 block을 실행하는 GPU processor인 SM 내부에서 L1 cache와 shared memory가 함께 사용하는 전체 용량에서 나뉜다.
+
+이 상한은 [GPU 하드웨어]({{< relref "/posts/cuda-0-gpu-architecture" >}})의 구조에서 나온다. SM의 정식 이름은 Streaming Multiprocessor다.
+
+Block 하나는 SM 하나에 배치된 뒤 완료될 때까지 다른 SM으로 이동하지 않는다. SM은 block의 thread를 32개씩 warp로 묶어 실행하므로 thread 1024개는 warp 32개가 된다.
+
+각 thread가 계산 중인 값을 보관하는 가장 가까운 memory를 register라고 하고, SM이 가진 register 전체를 register file이라고 한다. 최근 GPU의 SM 하나에는 보통 32-bit register 65,536개가 있다.
+
+한 thread가 많은 register를 사용하면 같은 SM에 동시에 배치할 수 있는 thread 수가 줄어든다. 이처럼 SM의 한정된 자원이 동시에 머무를 수 있는 thread와 warp의 수를 정하며, 그 비율을 occupancy라고 한다.
 
 ## Warp와 SIMT 실행
 
-GPU는 thread를 warp 단위로 묶어 실행한다. warp는 32개 thread이며, 이 숫자는 NVIDIA GPU 전 세대에서 고정이고 개발자가 바꿀 수 없다.
+GPU는 thread를 warp 단위로 묶어 실행한다. Warp 하나는 32개 thread로 이루어지며 개발자가 이 크기를 바꿀 수 없다. Warp 안에서 thread 하나가 차지하는 자리를 lane이라고 한다. 따라서 warp 하나에는 lane 0부터 lane 31까지가 있다.
 
-warp가 왜 성능에 직결되냐면, warp가 스케줄러의 issue 단위이기 때문이다. 한 사이클에 warp scheduler는 32 lane의 *active mask*에 대해 명령 하나를 issue한다(SIMT). warp 안에서 lane들이 `if/else`로 갈리면(warp divergence) 그 경로들이 직렬화된다. 하드웨어가 한 경로를 나머지 lane을 마스킹한 채 실행하고, 그다음 다른 경로를 실행한다. Volta(cc 7.0)부터는 independent thread scheduling으로 thread마다 자기 program counter를 갖게 돼서, 갈린 lane들이 서로 끼어들 수 있고 분기의 post-dominator에서 *즉시* reconverge된다는 보장이 없다. 다시 발맞춰야 하면 `__syncwarp()`를 쓴다. 어느 쪽이든 덜 찬 마지막 warp도 32-lane issue 슬롯을 통째로 차지하므로, thread 수를 32의 배수로 안 맞추면 lane이 낭비된다.
+Warp scheduler는 실행할 warp를 고르는 hardware다. Scheduler가 warp에 명령 하나를 보내는 일을 issue라고 한다. 이때 active mask는 32개 lane 가운데 이번 명령을 실행할 lane을 표시한다. 같은 명령을 active lane들이 각자의 데이터에 적용하는 실행 방식이 SIMT다.
 
-예를 들어 Block당 thread를 100개로 잡으면 GPU는 warp 4개(128 thread) 분량의 스케줄링 슬롯을 잡아놓고 실제로는 100개만 일한다. 나머지 28 슬롯이 놀게 되어 활용률이 100/128 ≈ 78%로 떨어진다. 시작부터 약 22%를 버리는 셈이다.
+Warp 안의 thread가 `if/else`에서 서로 다른 경로를 선택하면 warp divergence가 생긴다. 하나의 warp는 두 경로의 명령을 동시에 issue할 수 없으므로, 먼저 한쪽 lane만 활성화해 실행하고 다음에 다른 쪽 lane을 실행한다. 분기 때문에 두 경로가 차례로 실행되는 것이다.
 
-그래서 Block 크기는 보통 128·256·512 중에서 고르는데, 실제 판단 기준은 occupancy다. occupancy는 SM에 올라간 활성 warp 수를 SM당 최대 warp 수로 나눈 값인데, 이 최대치부터 아키텍처 의존이다. A100(cc 8.0)과 H100(cc 9.0)은 64, 소비자용 Ampere(cc 8.6)와 Ada(cc 8.9)는 48이다. 나머지 SM당 자원도 마찬가지로 정해져 있다. cc 8.0 기준 상주 thread 최대 2048개, 상주 block 최대 32개, 레지스터 65,536개, shared memory 최대 164KB(H100은 228KB). 이 중 가장 먼저 바닥나는 자원이 occupancy를 결정한다.
+Volta부터는 independent thread scheduling이 도입됐다. Program counter는 thread가 다음에 실행할 명령의 위치이며, Volta 이후에는 thread마다 이 값을 따로 가진다.
 
-여기서 occupancy가 왜 중요한지를 짚어야 한다. GPU의 성능 모델은 근본적으로 latency hiding이다. global memory 접근은 수백 사이클(대략 400\~800)이 걸리는 반면, FP 연산은 4\~6 사이클이면 끝난다. 한 warp가 global load에서 멈추면 SM의 warp scheduler는 같은 사이클에 실행 준비된 다른 warp로 즉시 갈아탄다. 이 전환에 비용이 없는 이유는, 그 SM에 상주하는 모든 warp의 레지스터가 레지스터 파일에 동시에 올라가 있어서 CPU처럼 컨텍스트를 저장하고 복원할 필요가 없기 때문이다. 그래서 상주 warp가 많을수록 누군가 메모리를 기다리는 동안 굴릴 warp가 남아 있을 확률이 높다. occupancy를 올린다는 건 코어를 바쁘게 만드는 게 아니라 메모리 지연을 숨기는 것이다.
+갈라진 thread가 다시 합쳐지는 지점을 post-dominator라고 한다. 이 지점에 도착했다고 해서 모든 lane이 즉시 같은 명령으로 돌아왔다고 가정할 수 없다. `__syncwarp()`는 참여하는 warp thread가 모두 해당 위치에 도착할 때까지 기다려 실행 시점을 다시 맞춘다.
 
-한 SM에 *상주(resident)*할 수 있는 block 수는 네 가지 독립 제약(thread, 하드웨어 block 슬롯, 레지스터, shared memory) 중 최소값이고, occupancy는 거기서 따라 나온다.
+Block의 thread 수가 32의 배수가 아니어도 마지막 warp는 만들어진다. 예를 들어 block당 thread가 100개면 warp 4개, 즉 lane 128개가 필요하다. 실제로 일하는 lane은 100개이고 나머지 28개는 비활성 상태이므로 lane 활용률은 $100/128 \approx 78\%$다.
+
+Block 크기는 보통 128, 256, 512 가운데 고르며, 이 선택은 occupancy에도 영향을 준다. Occupancy는 SM에서 현재 실행 가능한 active warp 수를 그 SM이 허용하는 최대 warp 수로 나눈 비율이다.
+
+최대 warp 수는 A100과 H100에서 64개, 소비자용 Ampere와 Ada에서 48개다. SM의 thread 자리, block 자리, register, shared memory 가운데 먼저 부족해지는 자원이 active warp 수를 제한한다.
+
+Cycle은 GPU clock이 한 번 진행되는 시간 단위다. Global memory에서 값을 읽는 global load는 대략 400회에서 800회 cycle을 기다릴 수 있지만 floating-point, 즉 실수 연산인 FP 연산은 대략 4회에서 6회 cycle이면 끝난다.
+
+Occupancy가 필요한 이유는 이 memory latency를 숨기기 위해서다. 한 warp가 global load를 기다리는 동안 warp scheduler는 실행할 준비가 된 다른 warp를 선택한다.
+
+이 전환에는 CPU의 thread 전환처럼 register를 저장하고 복원하는 과정이 없다. SM에 배치된 warp의 register가 register file에 계속 남아 있기 때문이다.
+
+따라서 SM에 준비된 warp가 많으면 한 warp가 memory를 기다릴 때 다른 warp를 실행할 가능성이 커진다. Occupancy는 memory 대기 시간을 다른 작업으로 채울 여유를 나타낸다.
+
+SM에 배치되어 아직 실행을 마치지 않은 block을 resident block이라고 한다. Resident block 수는 thread 자리, hardware block 자리, register, shared memory가 각각 허용하는 block 수 가운데 가장 작은 값으로 결정된다.
+
+아래 식에서 각 기호는 다음 값을 뜻한다. `floor` 기호 $\lfloor x\rfloor$는 내림, `ceil` 기호 $\lceil x\rceil$는 올림이다.
+
+| 기호 | 의미 |
+| --- | --- |
+| $B_{\text{res}}$ | SM 하나에 resident 상태로 들어가는 block 수 |
+| $T_{\text{SM}}$ | SM 하나가 수용하는 최대 thread 수 |
+| $T_{\text{block}}$ | block 하나의 thread 수 |
+| $B_{\text{SM}}^{\max}$ | SM 하나가 수용하는 최대 block 수 |
+| $R_{\text{SM}}$ | SM 하나의 전체 register 수 |
+| $R_{\text{thread}}$ | thread 하나가 사용하는 register 수 |
+| $S_{\text{SM}}$ | SM 하나가 제공하는 shared memory 크기 |
+| $S_{\text{block}}$ | block 하나가 사용하는 shared memory 크기 |
+| $W_{\text{SM}}^{\max}$ | SM 하나가 수용하는 최대 warp 수 |
+| $B_{\text{shared}}$ | shared memory 용량이 허용하는 block 수 |
+| $B_{\text{warp}}$ | warp 자리 수가 허용하는 block 수 |
+
+$$
+B_{\text{shared}} =
+\begin{cases}
+\infty, & S_{\text{block}}=0 \\
+\left\lfloor \dfrac{S_{\text{SM}}}{S_{\text{block}}} \right\rfloor, & S_{\text{block}}>0
+\end{cases}
+$$
+
+$$
+B_{\text{warp}} =
+\left\lfloor
+\dfrac{W_{\text{SM}}^{\max}}
+{\left\lceil T_{\text{block}}/32 \right\rceil}
+\right\rfloor
+$$
 
 $$
 B_{\text{res}} = \min\!\left(
 \left\lfloor \tfrac{T_{\text{SM}}}{T_{\text{block}}} \right\rfloor,\;
 B_{\text{SM}}^{\max},\;
 \left\lfloor \tfrac{R_{\text{SM}}}{R_{\text{thread}}\, T_{\text{block}}} \right\rfloor,\;
-\left\lfloor \tfrac{S_{\text{SM}}}{S_{\text{block}}} \right\rfloor
+B_{\text{shared}},\;
+B_{\text{warp}}
 \right)
 $$
 
@@ -168,15 +316,29 @@ $$
 \text{occupancy} = \frac{\text{active warps}}{W_{\text{SM}}^{\max}}
 $$
 
-이 per-SM 한도들은 compute capability로 정해진다. cc 8.0(A100) 기준: $T_{\text{SM}}=2048$, $B_{\text{SM}}^{\max}=32$, $R_{\text{SM}}=65536$, $W_{\text{SM}}^{\max}=64$. $T_{\text{block}}=256$이면 thread 한도만으로 $\lfloor 2048/256 \rfloor = 8$개 block이고, 레지스터도 이걸 묶는다. 8개 block이 상주하려면 $8 \cdot 256 \cdot R_{\text{thread}} \le 65536$, 즉 $R_{\text{thread}} \le 32$이어야 한다. thread당 32개를 넘으면 block이 덜 올라가고 occupancy가 떨어진다. (실제 하드웨어는 레지스터를 warp 단위 고정 granularity로 할당하므로 진짜 컷오프는 이 bound보다 조금 거칠다.) 공식이 챙겨야 할 edge case 하나: shared memory를 안 쓰는 커널은 $S_{\text{block}} = 0$이라 그 항을 빼야 한다($+\infty$로 읽으면 된다). 절대 병목이 안 된다. 벡터 덧셈이 딱 이 경우다.
+이 한도들은 compute capability마다 다르다. A100의 cc 8.0에서는 $T_{\text{SM}}=2048$, $B_{\text{SM}}^{\max}=32$, $R_{\text{SM}}=65536$, $W_{\text{SM}}^{\max}=64$다.
 
-occupancy가 높은 것 자체가 목표는 아니다. 메모리 지연을 숨기는 여러 레버 중 하나일 뿐이다. 지연이 이미 숨겨진 뒤로는 occupancy를 더 올려도 소용없고, thread당 레지스터 예산을 깎아서 오히려 해가 되기도 한다. instruction-level parallelism, 실측 DRAM 대역폭, 캐시 거동이 다 같이 걸린다. 가정하지 말고 재라. Nsight Compute의 `sm__warps_active.avg.pct_of_peak_sustained_active`가 *achieved* occupancy를 보여주고, 실제로 중요한 건 그 값이다.
+$T_{\text{block}}=256$이면 thread 자리에는 $\lfloor 2048/256 \rfloor=8$개 block이 들어간다. Register도 8개 block을 수용하려면 $8\cdot256\cdot R_{\text{thread}}\le65536$을 만족해야 하므로 thread당 register 수는 32개 이하여야 한다.
+
+이 식은 각 자원 한도를 연결한 1차 계산이다. 실제 GPU는 register를 warp마다 정해진 묶음 크기로 할당한다. 이 묶음 크기를 allocation granularity라고 하므로 resident block 수가 바뀌는 경계는 위 계산보다 계단처럼 나타난다.
+
+Shared memory를 사용하지 않는 vector addition에서는 $S_{\text{block}}=0$이다. 이때 $B_{\text{shared}}=\infty$로 두므로 shared memory 항은 block 수를 제한하지 않는다.
+
+높은 occupancy 자체가 성능의 목표는 아니다. Memory 대기 시간이 이미 충분히 가려졌다면 occupancy를 더 높여도 이득이 없고, 이를 위해 thread당 register 수를 억지로 줄이면 오히려 계산이 느려질 수 있다.
+
+한 thread가 서로 독립적인 여러 명령을 함께 준비하는 성질인 instruction-level parallelism, DRAM bandwidth, cache 동작도 성능에 영향을 준다.
+
+Nsight Compute는 NVIDIA의 CUDA kernel 분석 도구다. Counter는 실행 중 hardware 상태를 세는 측정 항목이다. `sm__warps_active.avg.pct_of_peak_sustained_active` counter는 실제로 resident 상태였던 warp 비율인 achieved occupancy를 보여 준다.
+
+Occupancy가 충분해도 각 warp가 불필요한 memory 구간을 읽으면 bandwidth는 낭비된다. 이제 active warp 수가 아니라 warp가 실제로 옮기는 data 양을 보자.
 
 ## 메모리 병합 (Coalescing)
 
-global memory(HBM)를 커널 안에서 어떻게 읽느냐도 host-device 전송만큼 성능을 가른다. GPU는 warp의 32개 thread가 낸 global memory 요청을 하드웨어가 합쳐서(coalesce) 처리하기 때문이다.
+Global memory는 GPU에 달린 DRAM이며 `cudaMalloc`으로 allocation한 배열이 놓이는 공간이다. Warp의 32개 thread가 global memory를 읽으면 GPU는 가까운 주소 요청을 묶어 처리한다. 여러 lane의 인접한 memory 요청을 가능한 적은 전송으로 합치는 동작을 coalescing이라고 한다.
 
-compute capability 6.0 이상(Pascal 이후, A100·H100 포함)에서 global memory 트랜잭션 단위는 32바이트 *sector*다. warp가 연속된 4바이트 워드 32개를 읽으면 128바이트 구간을 건드리는데, 그게 정확히 sector 4개다. warp가 global load를 실행하면 하드웨어가 32개 lane 주소를 그걸 덮는 sector들로 매핑하고, 그 sector들을 통째로 가져온다. warp가 한 번의 load에서 건드리는 서로 다른 32바이트 sector의 개수를 $S$라 하자. 버스 효율은 요청한 바이트를 실제 옮긴 바이트로 나눈 값이다.
+Compute capability 6.0 이상에서 global memory 전송은 32-byte sector 단위로 이루어진다. Sector는 memory system이 한꺼번에 가져오는 32-byte 주소 구간이다. Warp가 연속된 4-byte 값 32개를 읽으면 총 128 bytes가 필요하므로 sector 4개를 가져온다. 반대로 lane마다 멀리 떨어진 주소를 읽으면 더 많은 sector가 필요하다.
+
+Warp가 한 번의 load에서 건드린 서로 다른 sector 수를 $S$라고 하자. Bus efficiency $\eta$는 kernel이 요청한 byte 수를 global memory system이 sector 단위로 실제 전송한 byte 수로 나눈 값이다.
 
 $$
 S = \bigl|\{\, \lfloor \text{addr}_{\text{lane}}/32 \rfloor \,\}\bigr|,
@@ -184,52 +346,87 @@ S = \bigl|\{\, \lfloor \text{addr}_{\text{lane}}/32 \rfloor \,\}\bigr|,
 \eta = \frac{\text{requested bytes}}{32\,S}
 $$
 
-warp가 float 32개를 읽는 두 극단을 계산해 보자(요청 $= 32 \times 4 = 128$ B):
+`addr`는 각 lane이 요청한 byte 주소다. $\lfloor\text{addr}_{\text{lane}}/32\rfloor$는 그 주소가 속한 sector 번호이고, 바깥의 집합 크기가 서로 다른 sector의 개수 $S$를 센다.
 
-- 연속·정렬: 128 B가 정확히 sector 4개에 걸쳐 $S = 4$, 그래서 $\eta = 128 / (32 \cdot 4) = 1$. 정확한 표현은 "*32바이트 sector 4개(= 128바이트 연속 구간)를 꽉 채워 씀*"이지 "트랜잭션 1번"이 아니다.
-- 완전 산개: lane마다 각자의 sector에 떨어져 $S = 32$, 그래서 128 B 요청에 $32 \cdot 32 = 1024$ B가 오가고 $\eta = 128/1024 = 1/8$. 4바이트 원소 기준 바닥은 $1/32$가 아니라 $1/8$이다. 옛날 "$1/32$"는 128바이트 트랜잭션을 가정한 건데, sector 접근은 그렇게 동작하지 않는다.
+Warp가 float 32개를 읽을 때 요청한 양은 $32\times4=128$ bytes다. 주소 배치에 따라 실제 전송량은 다음처럼 달라진다.
 
-벡터 덧셈이 빠른 진짜 이유가 이거다. `i = blockIdx.x * blockDim.x + threadIdx.x`로 인덱싱하면 이웃 lane이 이웃 주소(a[0], a[1], a[2] …)를 읽어서 warp가 연속된 sector 4개를 건드리고 $\eta = 1$이 된다. `a[i * stride]`처럼 성기게 읽으면 $\eta$가 $1/8$ 쪽으로 떨어지고 커널도 그만큼 느려진다. Nsight Compute가 바로 재준다. `l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum`이 옮긴 sector 수, `l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum`이 load request 수이고, 둘의 비(sector ÷ request)가 request당 평균 sector(full-warp 32-bit load면 이상 4, 최악 32) = coalescing 품질이다. "thread를 가장 빠르게 변하는 차원(x)에 매핑하라"는 규칙은 이 비율을 바닥에 붙여두는 것일 뿐이다.
+- 연속되고 32-byte 경계에 맞춰진 주소라면 sector 4개로 충분하다. $S=4$이므로 $\eta=128/(32\cdot4)=1$이다. 이는 128-byte 전송 한 번이 아니라 32-byte sector 네 개를 모두 사용한 경우다.
+- Lane마다 서로 다른 sector에 접근하면 sector 32개가 필요하다. 128 bytes를 요청했지만 $32\cdot32=1024$ bytes가 이동하므로 $\eta=128/1024=1/8$이다. Compute capability 6.0 이후의 sector 방식을 기준으로 하면 4-byte 원소의 최저 효율은 $1/8$이다.
+
+![Warp의 32개 lane이 네 개의 32-byte sector를 읽는 구조](./images/coalescing.svg?v=1)
+
+Vector addition에서 `i = blockIdx.x * blockDim.x + threadIdx.x`를 사용하면 이웃 lane이 `a[0]`, `a[1]`, `a[2]`처럼 이웃 주소를 읽는다. 이 경우 warp는 연속된 sector 4개를 사용하므로 $\eta=1$이 된다.
+
+반대로 `a[i * stride]`처럼 index 사이를 일정 간격으로 건너뛰면 `stride`가 커질수록 더 많은 sector가 필요하고 효율은 $1/8$에 가까워진다.
+
+Nsight Compute의 `l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum`은 global load가 가져온 sector 수를 나타내고, `l1tex__t_requests_pipe_lsu_mem_global_op_ld.sum`은 load 명령 요청 수를 나타낸다. 두 값을 나누면 요청 하나당 평균 sector 수가 나온다.
+
+Warp 전체가 32-bit 값을 읽는 경우 이상적인 값은 4이고 가장 흩어진 경우는 32다. Thread를 x축의 연속된 주소에 배치하는 이유는 이 값을 4에 가깝게 유지하기 위해서다.
+
+Warp 내부의 memory 접근을 이해한 다음에는 여러 thread가 협력할 수 있는 범위를 구분해야 한다. CUDA에서 그 기본 범위는 block이다.
 
 ## Block 독립성
 
-같은 Block 안의 thread끼리는 shared memory를 공유하고 `__syncthreads()`로 동기화할 수 있다. 물리적으로 같은 SM 안에 있기 때문이다.
+같은 block의 thread는 shared memory를 함께 사용하고 `__syncthreads()`로 실행 시점을 맞출 수 있다. `__syncthreads()`는 block의 모든 thread가 해당 위치에 도착할 때까지 기다리는 barrier다. Barrier는 참여자가 모두 도착해야 다음 명령으로 진행하는 동기화 지점이다.
 
-다른 Block끼리는 다르다. CUDA가 보장하는 건, 일반 커널의 thread block들이 서로 독립적으로 아무 순서로나 실행될 수 있어야 한다는 것이고, *임의의 block 사이엔 커널 안에서의 일반적 barrier나 순서 보장이 없다*. Block 0보다 Block 7이 먼저 끝날 수 있다. 그래도 block들은 global memory와 atomic으로 *간접* 통신은 가능하다. 다만 니가 강제하지 않는 한 순서·가시성 보장은 없다. device 전체 barrier가 정말 필요하면 정식 방법은 커널을 두 번 launch하거나, Cooperative Groups `grid.sync()`로 cooperative launch를 쓰거나, (Hopper에선) distributed shared memory를 쓰는 thread block cluster다.
+이 barrier는 서로 다른 block에는 적용되지 않는다. 일반 kernel의 block은 서로 독립적이어야 하며 실행 순서도 정해져 있지 않다. Block 7이 block 0보다 먼저 끝날 수 있고, kernel 안에는 임의의 두 block을 모두 기다리게 하는 일반적인 barrier가 없다.
 
-이유는 Block↔SM 매핑이 하드웨어 제약이라서다. 같은 Block의 thread가 shared memory를 공유하는 건 물리적으로 같은 SM의 SRAM에 얹혀 있기 때문이고, 다른 Block과 통신 못 하는 건 다른 SM이라 SRAM이 분리돼 있기 때문이다.
+서로 다른 block도 global memory를 통해 값을 전달할 수는 있다. Atomic operation은 다른 thread의 연산이 중간에 끼어들지 못하도록 memory 연산을 한 단위로 처리한다.
 
-그런데 이 제약이 사실 CUDA의 가장 중요한 설계다. Block이 서로 독립적이기 때문에, 런타임은 block을 노는 SM에 아무 순서로나 뿌릴 수 있다. SM이 20개짜리 노트북 GPU든 132개짜리 H100이든, 같은 커널 바이너리가 SM 수만큼 자동으로 병렬화된다. 코드를 한 줄도 안 고쳤는데 GPU가 커지면 그만큼 빨라진다는 뜻이다. NVIDIA는 이걸 transparent scalability라고 부른다. block 간 통신을 포기한 대가로 얻은 게 이 확장성이고, 그래서 Grid/Block/Thread 소프트웨어 계층이 SM/warp/lane 하드웨어와 맞아떨어진다. 다만 아래 그림이 단순화하듯, 그 대응은 *스케줄링*의 대응이지 고정된 1:1 결속이 아니다. block은 한 SM에 배치돼 거기 머물고, SM은 그 block의 thread를 32개씩 warp로 issue하며, "CUDA core"는 자기 warp가 issue되는 사이클에 한 lane의 연산을 실행하는 scalar 실행 유닛(ALU/FP lane)이다. thread는 소프트웨어 실행 컨텍스트이지 자기가 소유한 물리 코어가 아니다.
+Memory order는 여러 thread의 읽기와 쓰기가 다른 thread에 관찰되는 순서다. 프로그램이 동기화와 memory order를 지정하지 않으면 한 block이 쓴 값이 다른 block에 언제 보이는지를 뜻하는 memory visibility와 실행 순서는 보장되지 않는다.
+
+Grid 전체가 기다리는 지점이 필요하면 kernel을 두 번 launch해 첫 kernel의 완료 뒤에 다음 kernel을 실행할 수 있다. Cooperative Groups는 여러 thread의 협력 범위를 표현하는 CUDA API다. Grid 전체 동기화를 허용하는 cooperative launch를 사용하면 `grid.sync()`로 모든 block의 실행 시점을 맞출 수 있다.
+
+Hopper의 thread block cluster는 여러 block을 한 묶음으로 배치하는 실행 단위다. Cluster 안의 block은 서로 연결된 shared memory 영역인 distributed shared memory를 사용할 수 있다.
+
+Block 사이의 제약은 physical memory 구조에서 나온다. 같은 block의 thread는 한 SM에 배치되므로 그 SM 안의 빠른 정적 memory인 SRAM으로 구현된 shared memory를 함께 쓸 수 있다. 서로 다른 SM의 SRAM은 분리되어 있으므로 일반 block끼리는 shared memory를 공유하지 못한다.
+
+Block이 독립적이면 CUDA Runtime은 준비된 block을 사용 가능한 SM에 순서와 관계없이 배치할 수 있다.
+
+SM이 적은 GPU에서는 여러 차례 나누어 실행하고, SM이 많은 GPU에서는 더 많은 block을 동시에 실행한다. 같은 kernel이 GPU의 SM 수에 맞춰 확장되는 성질을 NVIDIA는 transparent scalability라고 부른다.
+
+Grid, block, thread는 software가 만드는 실행 구조이고 SM, warp, lane은 이를 실행하는 hardware 구조다. 둘의 관계는 고정된 1대1 연결이 아니라 scheduling 관계다.
+
+Block은 SM 하나에 배치되고, SM은 그 block의 thread를 warp 단위로 issue한다. CUDA core는 lane 하나의 수치 연산을 처리하는 연산 장치다. Thread는 program counter와 register 상태를 가진 논리적 실행 단위이며 특정 CUDA core 하나를 소유하지 않는다.
 
 ![Software와 Hardware 매핑](./images/neon2.png)
-*Grid/Block/Thread(소프트웨어)가 GPU/SM/warp scheduler/실행 유닛(하드웨어)에 스케줄된다. block은 SM에 배치되고 thread는 32개씩 warp로 issue되며 CUDA core는 한 lane의 연산을 실행한다. 고정된 thread↔core 결속이 아니라 스케줄링 대응이다.*
 
-아래는 이 계층 구조를 차원별로 도식화한 것이다.
+이제 software 쪽의 grid와 block이 배열 좌표를 어떻게 표현하는지 보자.
+
+배열, image, volume data의 좌표를 자연스럽게 표현할 수 있도록 grid와 block은 1차원, 2차원, 3차원 구성을 지원한다. 1차원 `kernel<<<4, 8>>>`은 block 4개에 thread를 8개씩 두어 총 32개 thread를 만든다. 2차원과 3차원에서는 앞에서 정의한 `dim3`로 각 축의 크기를 지정한다.
 
 ![Grid/Block/Thread 1D·2D·3D](./images/neon4.png)
-*차원별 구성. 1D `kernel<<<4, 8>>>` (32 thread), 2D `kernel<<<dim3(2,2), dim3(4,4)>>>`, 3D `kernel<<<dim3(2,2,2), dim3(2,2,2)>>>` (64 thread). 전역 인덱스는 `blockIdx.x * blockDim.x + threadIdx.x`*
+
+이 차원과 크기를 kernel launch에 전달하는 문법이 `<<<...>>>`다.
 
 ## 실행 구성: `<<<>>>`
 
-`__global__` 함수는 일반 함수처럼 호출하면 컴파일 에러가 난다. 반드시 triple chevron 문법을 써야 한다.
+`__global__` 함수는 일반 함수 호출 문법으로 시작할 수 없다. CUDA kernel의 실행 구성을 지정하는 세 겹 꺾쇠 문법인 triple chevron을 사용한다.
 
 ```cpp
-mykernel<<<gridDim, blockDim>>>(args);
-//        ^^^^^^^  ^^^^^^^^
+mykernel<<<gridSize, blockSize>>>(args);
+//        ^^^^^^^^  ^^^^^^^^^
 //        Block 개수, Block당 thread 개수
 ```
 
-- `gridDim`: Grid 안의 Block 개수
-- `blockDim`: Block 안의 thread 개수
-- 총 thread 수 = `gridDim × blockDim`
+- `gridSize`: grid 안의 block 개수
+- `blockSize`: block 안의 thread 개수
+- `args`: kernel에 전달할 값이나 pointer
+- 총 thread 수 = `gridSize × blockSize`
+
+`<<<...>>>`에 전달한 첫째 값과 둘째 값이 grid와 block의 크기를 정한다. Built-in 변수는 CUDA가 kernel마다 자동으로 제공하는 변수다. Kernel 안에서는 `gridDim`과 `blockDim`으로 그 크기를 읽고, `blockIdx`와 `threadIdx`로 현재 block과 thread의 번호를 읽는다.
+
+`<<<gridSize, blockSize>>>`는 software 실행 구조를 정할 뿐 SM이나 warp를 직접 지정하지 않는다. CUDA Runtime이 block을 SM에 배치하면 SM이 그 안의 thread를 32개씩 warp로 묶어 실행한다.
 
 가장 단순한 예:
 
 ```cpp
-mykernel<<<1, 1>>>();   // Block 1개, thread 1개 → 사실상 순차 실행
+mykernel<<<1, 1>>>();   // Block 1개, thread 1개
 ```
 
-벡터 덧셈처럼 N개 원소를 처리하려면 N개의 thread가 필요하다. 원본 영상은 단순화를 위해 `<<<N, 1>>>`로 호출하지만, 앞서 본 warp 효율 때문에 실제로는 Block당 thread를 128\~512개로 잡는 것이 효율적이다. N을 blockSize로 올림 나눗셈해서 grid를 잡으면 된다.
+Vector addition에서 원소 하나마다 thread 하나를 배치하면 N개 원소에 N개 thread가 필요하다. `<<<N, 1>>>`도 총 N개 thread를 만들지만 block마다 thread가 하나라서 각 warp의 lane 하나만 사용한다.
+
+그래서 block마다 thread를 128개에서 512개 정도로 묶고, N을 block 크기로 올림 나눗셈해 grid 크기를 정한다.
 
 ```cpp
 int N = 10000;
@@ -238,7 +435,9 @@ int gridSize = (N + blockSize - 1) / blockSize;  // 올림 나눗셈
 add<<<gridSize, blockSize>>>(a, b, c, N);
 ```
 
-한 가지 관용구를 더 짚자면, grid를 데이터 크기에 딱 맞추는 대신 grid를 고정하고 각 thread가 여러 원소를 처리하는 grid-stride loop가 있다. thread가 `blockDim.x * gridDim.x`만큼 건너뛰며 도는 방식이라, launch 설정을 데이터 크기와 분리할 수 있고 N이 grid 용량을 넘어도 안전하다.
+앞의 방식은 thread 하나가 원소 하나를 처리한다. Grid 크기를 data 크기와 분리하려면 각 thread가 여러 원소를 처리하는 grid-stride loop를 사용할 수 있다.
+
+여기서 stride는 한 번의 launch가 만든 전체 thread 수인 `blockDim.x * gridDim.x`다. 각 thread가 이 간격만큼 index를 늘리면 N이 전체 thread 수보다 커도 모든 원소를 처리할 수 있다.
 
 ```cpp
 __global__ void add(float* a, float* b, float* c, int N) {
@@ -251,12 +450,10 @@ __global__ void add(float* a, float* b, float* c, int N) {
 
 ## 전체 예제: 벡터 덧셈
 
-지금까지 조각으로 본 것들(3단계 전송, 한정자, 런치 설정)을 하나로 합치면 이렇게 된다. 아래를 그대로 `vector_add.cu`로 저장하면 컴파일되고 실행된다.
+지금까지 나온 host-device 복사, qualifier, kernel launch를 한 파일로 연결하면 다음과 같다.
 
 ```cpp
-#include <cstdio>
 #include <cstdlib>
-#include <cmath>
 #include <cuda_runtime.h>
 
 __global__ void add(const float* a, const float* b,
@@ -290,35 +487,37 @@ int main() {
     int gridSize = (N + blockSize - 1) / blockSize;
     add<<<gridSize, blockSize>>>(d_a, d_b, d_c, N);
 
-    // 5) Device -> Host 전송 (cudaMemcpy가 커널 완료까지 암묵 동기화)
+    // 5) Device -> Host 전송 (kernel 결과가 준비된 뒤 복사)
     cudaMemcpy(h_c, d_c, bytes, cudaMemcpyDeviceToHost);
 
-    // 6) 검증: 1.0 + 2.0 = 3.0 이어야 함
-    float maxErr = 0.0f;
-    for (int i = 0; i < N; i++)
-        maxErr = fmaxf(maxErr, fabsf(h_c[i] - 3.0f));
-    printf("max error: %f\n", maxErr);
-
-    // 7) 정리
+    // 6) 정리
     cudaFree(d_a); cudaFree(d_b); cudaFree(d_c);
     free(h_a); free(h_b); free(h_c);
     return 0;
 }
 ```
 
-컴파일하고 실행하면:
+`__global__`은 `add`가 device에서 실행되는 kernel임을 표시한다. 변수 이름의 `h_`와 `d_`는 각각 host memory와 device memory를 가리키는 pointer라는 관례다. `N = 1 << 20`은 1을 왼쪽으로 20 bit 이동한 값인 $2^{20}=1,048,576$이고, `bytes`는 float 원소 N개가 차지하는 전체 byte 수다.
+
+`malloc`은 host 배열을 만들고, `cudaMalloc(&d_a, bytes)`는 device memory를 만든 뒤 시작 주소를 `d_a`에 기록한다. 그래서 `cudaMalloc`에는 `d_a` 자체가 아니라 `d_a`의 주소인 `&d_a`를 전달한다. Host에서 `h_a`와 `h_b`를 초기화한 뒤 H2D `cudaMemcpy` 두 번으로 입력 배열을 device에 옮긴다.
+
+`gridSize`는 N을 `blockSize`로 올림 나눗셈한 값이다. 마지막 block에는 N의 범위를 벗어나는 thread가 생길 수 있으므로 kernel의 `if (i < N)`이 그 thread의 memory 접근을 막는다.
+
+Kernel이 `d_c`에 결과를 쓰고 나면 D2H `cudaMemcpy`가 `h_c`로 결과를 가져온다. 마지막의 `cudaFree`와 `free`는 각각 device memory와 host memory를 해제한다.
+
+컴파일 명령은 다음과 같다.
 
 ```bash
-$ nvcc vector_add.cu -o vector_add
-$ ./vector_add
-max error: 0.000000
+nvcc vector_add.cu -o vector_add
 ```
 
-이 한 파일에 앞 절들이 전부 들어 있다. 한정자(`__global__`), 3단계 전송(`cudaMemcpy` 세 번), 런치 설정(`<<<gridSize, blockSize>>>`), 경계 검사(`if (i < N)`)까지. 참고로 이 코드는 간결함을 위해 에러 체크를 생략했는데, 실전에선 모든 CUDA 호출의 반환값과 커널 런치 직후의 `cudaGetLastError()`를 확인해야 한다. 커널 런치 실패는 조용히 넘어가기 때문이다.
+코드의 실행 흐름을 드러내기 위해 오류 검사는 생략했다. CUDA Runtime 함수는 성공 여부를 상태값으로 반환하므로 실제 프로그램에서는 반환값을 확인하고, kernel launch 직후에는 `cudaGetLastError()`로 launch 오류를 확인한다.
 
-## Roofline: 대역폭 바운드
+## Roofline으로 보는 Memory 병목
 
-벡터 덧셈을 "GPU로 빨라지는 연산"의 예로 들었지만, 전문가 시각에선 정반대로 읽어야 한다. 이 커널은 FLOP를 거의 쓰지 않는다. 원소 하나당 load 2번(a, b)과 store 1번(c), 곧 12바이트를 옮기고 실제 연산은 덧셈 1번뿐이다. 이 비율을 arithmetic intensity라 부른다.
+Vector addition은 GPU의 산술 처리량보다 memory bandwidth의 영향을 크게 받는다. Float 원소 하나를 계산할 때 `a`와 `b`에서 각각 4 bytes를 읽고 `c`에 4 bytes를 쓰므로 총 12 bytes를 옮긴다. 실제 계산은 실수 덧셈 한 번, 즉 1 FLOP이다.
+
+연산량을 $W$, memory에서 옮긴 data 양을 $Q$라고 하자. Arithmetic intensity $I=W/Q$는 1 byte를 옮기는 동안 몇 번의 실수 연산을 수행하는지를 나타낸다.
 
 $$
 \begin{aligned}
@@ -327,15 +526,23 @@ I &= \frac{W}{Q} = \frac{1\ \text{FLOP}}{12\ \text{B}} \approx 0.083\ \text{FLOP
 \end{aligned}
 $$
 
-이 값이 커널이 연산 병목인지 메모리 병목인지를 가른다. 판단 틀은 roofline 모델이다. 어떤 커널이 낼 수 있는 성능은 연산 상한과 대역폭 상한 중 낮은 쪽에 걸린다.
+Roofline model은 kernel이 낼 수 있는 처리량의 상한을 연산 능력과 memory 공급 능력으로 나누어 설명한다. 달성 가능한 처리량을 $P$, GPU의 최대 연산 처리량을 $P_{\text{peak}}$, memory bandwidth를 $\beta$라고 하자.
+
+Memory가 초당 $\beta$ bytes를 공급하고 byte마다 $I$번 계산한다면 memory가 허용하는 상한은 $I\beta$ FLOP/s다. 실제 상한은 $P_{\text{peak}}$와 $I\beta$ 가운데 작은 값이다.
 
 $$P = \min\!\bigl(P_{\text{peak}},\ I \cdot \beta\bigr)$$
 
-두 상한이 만나는 지점(ridge point) $I^{*} = P_{\text{peak}} / \beta$를 기준으로, $I$가 그보다 왼쪽이면 메모리 병목, 오른쪽이면 연산 병목이다. A100(FP32 피크 $P_{\text{peak}} \approx 19.5$ TFLOP/s, HBM $\beta \approx 2.0$ TB/s)이면 ridge point는
+Roofline graph는 가로축에 arithmetic intensity $I$, 세로축에 처리량 $P$를 둔다. $I\beta$는 오른쪽으로 갈수록 올라가는 선이고 $P_{\text{peak}}$는 수평선이다.
+
+두 선이 만나는 지점을 ridge point라고 하며 $I^{*}=P_{\text{peak}}/\beta$로 계산한다. Ridge point보다 왼쪽은 memory 공급이 상한을 정하고, 오른쪽은 GPU의 연산 능력이 상한을 정한다.
+
+![Roofline에서 vector addition이 memory bandwidth 영역에 놓이는 위치](./images/roofline.svg?v=1)
+
+A100의 32-bit 실수 연산인 FP32 peak는 약 19.5 TFLOP/s이고 HBM bandwidth는 약 2.0 TB/s다. TFLOP/s는 1초에 $10^{12}$번의 실수 연산, TB/s는 1초에 $10^{12}$ bytes 전송을 뜻한다. 이 값을 사용한 ridge point는 다음과 같다.
 
 $$I^{*} = \frac{19.5 \times 10^{12}}{2.0 \times 10^{12}} \approx 9.75 \ \text{FLOP/byte}$$
 
-벡터 덧셈의 $I = 0.083$은 이보다 100배 넘게 왼쪽에 있다. 완전한 메모리 병목이라는 뜻이고, 이 커널의 성능 상한은
+Vector addition의 $I=0.083$ FLOP/byte는 ridge point인 9.75 FLOP/byte보다 100배 이상 작다. 따라서 이 kernel은 연산 장치보다 memory bandwidth가 먼저 한계에 도달한다. Memory bandwidth로 계산한 처리량 상한은 다음과 같다.
 
 $$
 \begin{aligned}
@@ -346,11 +553,10 @@ P_{\text{vadd}} = I \cdot \beta
 \end{aligned}
 $$
 
-A100 FP32 피크의 1%에도 못 미친다. 즉 벡터 덧셈은 GPU의 연산력이 아니라 대역폭과 병렬 인덱싱을 보여주는 예제다. GPU로 진짜 이득을 보는 연산은 arithmetic intensity가 높은 쪽, 예컨대 행렬 곱처럼 한 번 읽은 데이터를 여러 번 재사용하는 연산이다. 딥러닝 커널 최적화의 상당 부분이 데이터 재사용을 늘려 $I$를 ridge point 오른쪽으로 밀어붙이는 작업인 것도 같은 이유다.
+166 GFLOP/s는 A100 FP32 peak의 약 0.85%다. GFLOP/s는 1초에 $10^9$번의 실수 연산을 뜻한다.
 
-이 memory-bound 판정은 대수 말고 실측으로 확인할 수 있다. `cudaEvent`로 커널 시간을 재서 옮긴 바이트를 나누면 실효 대역폭이 나오고, Nsight Compute의 `dram__bytes.sum.per_second`(또는 DRAM Throughput %)가 $\beta$에 얼마나 근접했는지 보여준다. 잘 튜닝한 벡터 덧셈은 HBM 피크 대역폭의 상당 비율에 근접할 수 있고(정확한 수치는 니 GPU에서 직접 재라) FLOP/s 피크 근처엔 얼씬도 못 한다. roofline이 예측한 그대로다.
+Vector addition은 GPU의 전체 산술 능력을 사용하는 예제가 아니라 memory bandwidth와 병렬 index 배치를 설명하는 예제다. Matrix multiplication처럼 한 번 읽은 값을 여러 계산에서 재사용하면 arithmetic intensity가 높아지고, roofline graph에서 ridge point의 오른쪽으로 이동할 수 있다.
 
-이 `<<< >>>` 안의 숫자가 곧 GPU의 물리적 구조(SM, warp, block)를 그대로 드러낸다. 다른 언어가 하드웨어를 숨기는 것과 반대로, CUDA는 하드웨어를 드러내서 성능을 개발자 손에 쥐여준다. 이게 CUDA를 배우는 이유이자, 어렵게 만드는 이유다.
 
 ## 참고
 

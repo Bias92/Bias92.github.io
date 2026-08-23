@@ -1,0 +1,122 @@
+<svg width="720" height="340" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>Coalesced access from 32 warp lanes to four memory sectors</title>
+  <desc>Thirty-two neighboring warp lanes access consecutive addresses. Each group of eight four-byte accesses is combined into one 32-byte memory sector.</desc>
+  <style>
+    text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif}
+    .lane-label{fill:#eef3f5;font-size:6.5px;font-weight:650;text-anchor:middle}
+    .sector-label{fill:#eef3f5;font-size:13px;font-weight:650;text-anchor:middle;letter-spacing:.04em}
+  </style>
+  <defs>
+    <linearGradient id="lane-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#35142f"/>
+      <stop offset="1" stop-color="#a84498"/>
+    </linearGradient>
+    <linearGradient id="sector-fill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#173a45"/>
+      <stop offset="1" stop-color="#31badb"/>
+    </linearGradient>
+    <filter id="magenta-wide" x="-60" y="-60" width="840" height="460" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <filter id="magenta-near" x="-60" y="-60" width="840" height="460" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
+    <filter id="cyan-wide" x="-60" y="-60" width="840" height="460" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <filter id="cyan-near" x="-60" y="-60" width="840" height="460" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
+  </defs>
+
+  <rect width="720" height="340" fill="#0d0e10"/>
+
+  <g stroke="#1e252b" stroke-width="1">
+    <line x1="68" y1="42" x2="68" y2="292"/>
+    <line x1="202" y1="42" x2="202" y2="292"/>
+    <line x1="213" y1="42" x2="213" y2="292"/>
+    <line x1="347" y1="42" x2="347" y2="292"/>
+    <line x1="358" y1="42" x2="358" y2="292"/>
+    <line x1="492" y1="42" x2="492" y2="292"/>
+    <line x1="503" y1="42" x2="503" y2="292"/>
+    <line x1="637" y1="42" x2="637" y2="292"/>
+  </g>
+
+  <g fill="#d95cc5" opacity="0.12" filter="url(#magenta-wide)">
+    <rect x="68" y="64" width="134" height="38" rx="8"/>
+    <rect x="213" y="64" width="134" height="38" rx="8"/>
+    <rect x="358" y="64" width="134" height="38" rx="8"/>
+    <rect x="503" y="64" width="134" height="38" rx="8"/>
+  </g>
+  <g fill="none" stroke="#ed72d9" stroke-width="2.2" opacity="0.62" filter="url(#magenta-near)">
+    <rect x="68" y="64" width="134" height="38" rx="8"/>
+    <rect x="213" y="64" width="134" height="38" rx="8"/>
+    <rect x="358" y="64" width="134" height="38" rx="8"/>
+    <rect x="503" y="64" width="134" height="38" rx="8"/>
+  </g>
+
+  <g fill="url(#lane-fill)" stroke="#ed72d9" stroke-width="1">
+    <rect x="72" y="68" width="14" height="30" rx="4"/><rect x="88" y="68" width="14" height="30" rx="4"/>
+    <rect x="104" y="68" width="14" height="30" rx="4"/><rect x="120" y="68" width="14" height="30" rx="4"/>
+    <rect x="136" y="68" width="14" height="30" rx="4"/><rect x="152" y="68" width="14" height="30" rx="4"/>
+    <rect x="168" y="68" width="14" height="30" rx="4"/><rect x="184" y="68" width="14" height="30" rx="4"/>
+
+    <rect x="217" y="68" width="14" height="30" rx="4"/><rect x="233" y="68" width="14" height="30" rx="4"/>
+    <rect x="249" y="68" width="14" height="30" rx="4"/><rect x="265" y="68" width="14" height="30" rx="4"/>
+    <rect x="281" y="68" width="14" height="30" rx="4"/><rect x="297" y="68" width="14" height="30" rx="4"/>
+    <rect x="313" y="68" width="14" height="30" rx="4"/><rect x="329" y="68" width="14" height="30" rx="4"/>
+
+    <rect x="362" y="68" width="14" height="30" rx="4"/><rect x="378" y="68" width="14" height="30" rx="4"/>
+    <rect x="394" y="68" width="14" height="30" rx="4"/><rect x="410" y="68" width="14" height="30" rx="4"/>
+    <rect x="426" y="68" width="14" height="30" rx="4"/><rect x="442" y="68" width="14" height="30" rx="4"/>
+    <rect x="458" y="68" width="14" height="30" rx="4"/><rect x="474" y="68" width="14" height="30" rx="4"/>
+
+    <rect x="507" y="68" width="14" height="30" rx="4"/><rect x="523" y="68" width="14" height="30" rx="4"/>
+    <rect x="539" y="68" width="14" height="30" rx="4"/><rect x="555" y="68" width="14" height="30" rx="4"/>
+    <rect x="571" y="68" width="14" height="30" rx="4"/><rect x="587" y="68" width="14" height="30" rx="4"/>
+    <rect x="603" y="68" width="14" height="30" rx="4"/><rect x="619" y="68" width="14" height="30" rx="4"/>
+  </g>
+
+  <g class="lane-label">
+    <text x="79" y="85">L0</text><text x="95" y="85">L1</text><text x="111" y="85">L2</text><text x="127" y="85">L3</text>
+    <text x="143" y="85">L4</text><text x="159" y="85">L5</text><text x="175" y="85">L6</text><text x="191" y="85">L7</text>
+    <text x="224" y="85">L8</text><text x="240" y="85">L9</text><text x="256" y="85">L10</text><text x="272" y="85">L11</text>
+    <text x="288" y="85">L12</text><text x="304" y="85">L13</text><text x="320" y="85">L14</text><text x="336" y="85">L15</text>
+    <text x="369" y="85">L16</text><text x="385" y="85">L17</text><text x="401" y="85">L18</text><text x="417" y="85">L19</text>
+    <text x="433" y="85">L20</text><text x="449" y="85">L21</text><text x="465" y="85">L22</text><text x="481" y="85">L23</text>
+    <text x="514" y="85">L24</text><text x="530" y="85">L25</text><text x="546" y="85">L26</text><text x="562" y="85">L27</text>
+    <text x="578" y="85">L28</text><text x="594" y="85">L29</text><text x="610" y="85">L30</text><text x="626" y="85">L31</text>
+  </g>
+
+  <g stroke="#66727a" stroke-width="1" opacity="0.58">
+    <path d="M79 108L135 202M95 108L135 202M111 108L135 202M127 108L135 202M143 108L135 202M159 108L135 202M175 108L135 202M191 108L135 202"/>
+    <path d="M224 108L280 202M240 108L280 202M256 108L280 202M272 108L280 202M288 108L280 202M304 108L280 202M320 108L280 202M336 108L280 202"/>
+    <path d="M369 108L425 202M385 108L425 202M401 108L425 202M417 108L425 202M433 108L425 202M449 108L425 202M465 108L425 202M481 108L425 202"/>
+    <path d="M514 108L570 202M530 108L570 202M546 108L570 202M562 108L570 202M578 108L570 202M594 108L570 202M610 108L570 202M626 108L570 202"/>
+  </g>
+
+  <g fill="#46d9ff" opacity="0.16" filter="url(#cyan-wide)">
+    <rect x="68" y="210" width="134" height="54" rx="27"/>
+    <rect x="213" y="210" width="134" height="54" rx="27"/>
+    <rect x="358" y="210" width="134" height="54" rx="27"/>
+    <rect x="503" y="210" width="134" height="54" rx="27"/>
+  </g>
+  <g fill="none" stroke="#46d9ff" stroke-width="3" opacity="0.8" filter="url(#cyan-near)">
+    <rect x="68" y="210" width="134" height="54" rx="27"/>
+    <rect x="213" y="210" width="134" height="54" rx="27"/>
+    <rect x="358" y="210" width="134" height="54" rx="27"/>
+    <rect x="503" y="210" width="134" height="54" rx="27"/>
+  </g>
+  <g fill="url(#sector-fill)" stroke="#46d9ff" stroke-width="1.5">
+    <rect x="68" y="210" width="134" height="54" rx="27"/>
+    <rect x="213" y="210" width="134" height="54" rx="27"/>
+    <rect x="358" y="210" width="134" height="54" rx="27"/>
+    <rect x="503" y="210" width="134" height="54" rx="27"/>
+  </g>
+  <g class="sector-label">
+    <text x="135" y="242">S0 · 32B</text>
+    <text x="280" y="242">S1 · 32B</text>
+    <text x="425" y="242">S2 · 32B</text>
+    <text x="570" y="242">S3 · 32B</text>
+  </g>
+</svg>
