@@ -217,7 +217,7 @@ When the CPU switches devices and submits a kernel to each GPU's stream, the ker
 
 ## Unified Memory and Prefetch
 
-The stream rules are the same with [Unified Memory](/posts/cuda-4-unified-memory/). In that case `cudaMemPrefetchAsync` instead of `cudaMemcpyAsync` puts the migration of a managed allocation into the stream, and a kernel in the same stream runs after the migration has finished. The migration happens page by page and has to update the page records on both the CPU and the GPU, so it has more to do than `cudaMemcpyAsync`, and this can leave empty gaps on the execution timeline.
+The stream rules are the same with [Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory-and-managed-allocation). In that case `cudaMemPrefetchAsync` instead of `cudaMemcpyAsync` puts the migration of a managed allocation into the stream, and a kernel in the same stream runs after the migration has finished. The migration happens page by page and has to update the page records on both the CPU and the GPU, so it has more to do than `cudaMemcpyAsync`, and this can leave empty gaps on the execution timeline.
 
 ## Checking in Nsight Systems
 

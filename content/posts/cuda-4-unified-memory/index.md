@@ -129,7 +129,7 @@ CUDA는 managed allocation의 접근 방식을 `Full model`과 `Limited model`�
 
 ### Full model
 
-`concurrentManagedAccess`는 CPU와 GPU가 managed allocation을 동시에 사용할 수 있는지를 나타내는 device attribute다. 이 값이 `1`이면 `Full model`이다. GPU가 실제로 접근한 page를 그때 준비할 수 있고, CPU와 GPU는 같은 managed allocation의 서로 다른 주소를 동시에 사용할 수 있다.
+`concurrentManagedAccess`는 CPU와 GPU가 managed allocation을 동시에 사용할 수 있는지를 나타내는 device attribute다. 이 값이 `1`이면 `Full model`이다. GPU가 virtual page에 접근하면 CUDA가 GPU mapping을 설정하고, 필요하면 그 data를 GPU memory의 physical frame으로 옮긴다. CPU와 GPU는 같은 managed allocation의 서로 다른 주소를 동시에 사용할 수 있다.
 
 ### Limited model
 
@@ -138,13 +138,13 @@ CUDA는 managed allocation의 접근 방식을 `Full model`과 `Limited model`�
 | 비교 항목 | Full model | Limited model |
 |---|---|---|
 | `cudaMallocManaged` | 사용할 수 있음 | 사용할 수 있음 |
-| GPU가 data를 준비하는 시점 | GPU가 실제로 접근할 때 필요한 page를 처리할 수 있음 | Kernel launch 경계에서 CUDA가 준비함 |
+| GPU가 data에 접근할 수 있게 되는 시점 | GPU가 virtual page에 접근하면 CUDA가 mapping 또는 migration을 처리함 | Kernel launch 경계에서 CUDA가 managed allocation을 GPU가 접근 가능한 상태로 만듦 |
 | GPU 실행 중 CPU의 managed-memory 접근 | 서로 다른 주소에 접근할 수 있음 | GPU 작업을 synchronization한 뒤 CPU가 접근함 |
 | GPU가 사용할 수 있는 physical memory보다 큰 managed allocation | GPU memory보다 큰 allocation도 사용함 | GPU가 사용할 수 있는 physical memory 용량 안에서 사용함 |
 
 Jetson AGX Orin은 shared DRAM과 `Limited model`을 함께 사용한다. CPU DRAM과 GPU VRAM이 분리된 discrete GPU가 `Full model`로 동작하는 시스템도 있다.
 
-`Full model`에서 `cudaMallocManaged`로 만든 page는 보통 그 page를 처음 읽거나 쓴 처리 장치 쪽에 배치된다. CUDA 문서는 이를 `First touch`라고 부른다. 프로그램은 `cudaMemAdvise`로 선호 위치를 driver에 알려 줄 수 있다. 이 정보를 `hint`라고 하며, driver는 이를 이후 배치 결정에 사용한다.
+`Full model`에서는 managed allocation의 각 virtual page에 속한 data를 보통 그 virtual page를 처음 읽거나 쓴 처리 장치 쪽 memory에 배치한다. CUDA 문서는 이를 `First touch`라고 부른다. 프로그램은 `cudaMemAdvise`로 선호 위치를 driver에 알려 줄 수 있다. 이 정보를 `hint`라고 하며, driver는 이를 이후 배치 결정에 사용한다.
 
 현재 지원 모델은 operating system과 그 핵심부인 OS kernel(앞의 GPU kernel과는 다른 말이다), CUDA driver, GPU, CPU–GPU 연결 구조의 조합에서 결정된다. 따라서 현재 환경의 지원 값은 `cudaDeviceGetAttribute`로 확인한다.
 
@@ -158,13 +158,13 @@ Jetson AGX Orin은 shared DRAM과 `Limited model`을 함께 사용한다. CPU DR
 
 다음은 CPU DRAM과 GPU memory가 분리된 software-coherent [`Full model`](#full-model)에서 GPU page fault를 migration으로 처리하는 경우다. Software coherence는 CPU와 GPU의 주소 연결과 데이터 이동을 driver가 관리하는 방식이다.
 
-초기 상태에는 CPU memory의 managed page와 CPU 쪽 mapping이 있다. GPU가 그 virtual address를 처음 읽으면 page fault가 발생하고 memory access가 멈춘다. Page fault는 해당 virtual page에 사용할 GPU mapping을 준비하라는 신호다.
+초기 상태에서는 managed data가 CPU memory의 physical frame에 있고, CPU mapping이 그 frame을 가리킨다. GPU가 같은 virtual address를 처음 읽으면 page fault가 발생하고 memory access가 멈춘다. Page fault는 해당 virtual page에 사용할 GPU mapping을 준비하라는 신호다.
 
-Fault를 처리하는 방법에는 migration과 remote mapping이 있다. 아래 그림은 migration 경로다. Page table과 physical frame을 관리하는 operating-system memory manager가 CUDA driver와 함께 GPU memory에 physical frame을 준비하고 page 내용을 옮긴 뒤 GPU mapping을 설치한다. Mapping이 준비되면 멈췄던 GPU instruction이 재개된다.
+Fault를 처리하는 방법에는 migration과 remote mapping이 있다. 아래 그림은 migration 경로다. Page table과 physical frame을 관리하는 operating-system memory manager가 CUDA driver와 함께 GPU memory에 physical frame을 준비하고 data를 옮긴 뒤 GPU mapping을 설치한다. Mapping이 준비되면 멈췄던 GPU instruction이 재개된다.
 
 ![Software coherence를 사용하는 Full model의 page fault와 migration](images/demand-paging.svg)
 
-Remote mapping 경로에서는 page를 CPU memory에 둔 채 GPU mapping을 그 physical frame에 연결한다. Migration은 data placement를 바꾸고, remote mapping은 placement를 유지한다.
+Remote mapping 경로에서는 data를 CPU memory의 physical frame에 둔 채 GPU mapping을 그 frame에 연결한다. Migration은 data placement를 바꾸고, remote mapping은 placement를 유지한다.
 
 CPU와 GPU가 같은 pages를 번갈아 수정하면 양방향 migration이 반복되는 page ping-pong이 생길 수 있다. `cudaMemPrefetchAsync`는 지정한 범위의 데이터를 미리 옮겨 placement 시점을 앞당긴다. CUDA synchronization은 CPU와 GPU의 실행 순서를 정한다.
 
