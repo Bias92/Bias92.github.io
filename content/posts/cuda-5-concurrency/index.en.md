@@ -15,9 +15,12 @@ A CUDA program uses a CPU and a GPU together. The CPU side is called the host an
 
 ## Host Memory and Device Memory
 
-Allocation is the act of reserving a memory region for the program to use and receiving its starting address as a pointer. A pointer is a variable that holds a memory address. Host memory is allocated with `malloc` and released with `free`. Device memory is then allocated with `cudaMalloc` and released with `cudaFree`, and the pointer returned points to a region the GPU accesses. Because the two pointers point to different memories, a value the CPU wrote into the `malloc` region has to be copied before the GPU can read it.
+Allocation is the act of reserving a memory region for the program to use and receiving its starting address as a pointer. A pointer is a variable that holds a memory address. Host memory is allocated with `malloc` and released with `free`. Device memory is then allocated with `cudaMalloc` and released with `cudaFree`, and the pointer returned points to a region the GPU accesses. Because the two pointers point to different memories, a value the CPU wrote into the `malloc` region has to be copied before the GPU can read it. In the code below, `N` is the number of `float` elements, `bytes` is their total size in bytes, and `size_t` is an integer type used for memory sizes.
 
 ```cpp
+const int N = 1000;
+const size_t bytes = N * sizeof(float);
+
 float *h_x = (float *)malloc(bytes);   // host memory
 float *d_x = nullptr;
 cudaMalloc(&d_x, bytes);               // device memory
@@ -39,7 +42,7 @@ $$
 T_{\text{serial}} = T_H + T_K + T_D
 $$
 
-All three steps are necessary, but if steps that belong to different data are slotted in between them, the GPU's copy unit and compute unit can work in the same time window. The way to do that starts from how host memory is managed inside the operating system.
+All three steps are necessary, but steps that belong to different data can overlap. For example, while a kernel processes the first input, the copy engine can perform the H2D copy of the second input, keeping the compute unit and copy unit busy at the same time. The copy engine must continue reading host memory after the CPU has moved on to subsequent code, so first we need to see how that memory is managed by the operating system.
 
 ## Page and Pageable Memory
 
@@ -51,7 +54,11 @@ When the program reads or writes a page that is not yet in RAM, a page fault occ
 
 ### Pinned Memory
 
-The GPU has a piece of hardware dedicated to copying between host memory and device memory, the copy engine. Once the CPU has issued a copy, the copy engine moves the data on its own without the CPU, and for that the RAM location of the host-side data must not change while the move is in progress. Pageable memory gives no such guarantee. So CUDA keeps a separate kind of host memory for which it has asked the operating system to leave the pages in RAM and not move them, and this host memory fixed in RAM is called pinned memory. Since its pages never go out to disk, pinned memory is also called non-pageable memory.
+The GPU has hardware dedicated to copies between host memory and device memory, called a copy engine. In this section, it executes DMA (Direct Memory Access). DMA means that dedicated hardware moves data between memories instead of a CPU core moving each byte. When the CPU calls `cudaMemcpyAsync`, the CUDA runtime passes the request to the CUDA driver. The driver is software that submits work to the GPU, and sends the source address, destination address, and size as a copy command. The copy engine executes that command while the CPU runs subsequent code.
+
+A discrete GPU is a separate card connected to the host system through PCIe. Data read from system RAM passes through the CPU's I/O path and the PCIe root complex, the host hardware that connects PCIe devices. After crossing PCIe, the data enters the GPU through PCIe I/O and its internal data path. The GPU memory subsystem contains the L2 cache, which temporarily keeps recently used data, and memory controllers, which handle reads and writes to GPU memory. The copy engine is inside the GPU and executes this H2D transfer. Exact internal placement differs by GPU architecture, so the diagram below shows only the public logical connections. The SM clusters in the diagram are groups of GPU compute units; they are separate from the copy engine.
+
+The copy engine must keep reading the same RAM pages until the copy finishes. The operating system must therefore not move those pages to different page frames or write them out to disk during the transfer. Pageable memory gives no such guarantee. CUDA asks the operating system to leave those page frames in RAM, and host memory fixed this way is called pinned memory. Since its pages do not go out to disk, pinned memory is also called non-pageable memory.
 
 Pinned memory is allocated with `cudaHostAlloc` and released with `cudaFreeHost`. `cudaHostAlloc` is an allocation function that returns host memory just like `malloc`, differing only in that the returned pointer points to pinned memory. It is not a function that copies data, and it does not replace `cudaMalloc`, which creates device memory. So even after switching host memory to pinned memory, device memory is still created separately with `cudaMalloc`.
 
@@ -62,15 +69,25 @@ Pinned memory is allocated with `cudaHostAlloc` and released with `cudaFreeHost`
 | `cudaMalloc` / `cudaFree` | device memory |
 
 ```cpp
-float *h_x = nullptr;
-cudaHostAlloc(&h_x, bytes, cudaHostAllocDefault);   // pinned host memory
-float *d_x = nullptr;
-cudaMalloc(&d_x, bytes);                            // device memory
+const int N = 1000;
+const size_t bytes = N * sizeof(float);
 
-// ... work that uses h_x and d_x ...
+float *h_x = nullptr;
+float *h_y = nullptr;
+cudaHostAlloc(&h_x, bytes, cudaHostAllocDefault);   // pinned input
+cudaHostAlloc(&h_y, bytes, cudaHostAllocDefault);   // pinned output
+
+float *d_x = nullptr;
+float *d_y = nullptr;
+cudaMalloc(&d_x, bytes);                            // device input
+cudaMalloc(&d_y, bytes);                            // device output
+
+// ... H2D copy, kernel, D2H copy ...
 
 cudaFreeHost(h_x);
+cudaFreeHost(h_y);
 cudaFree(d_x);
+cudaFree(d_y);
 ```
 
 To pin a region that was already created with `malloc`, use `cudaHostRegister`; to unpin it while keeping the region, use `cudaHostUnregister`.
@@ -81,15 +98,28 @@ Pinned memory occupies that much real RAM, so no more of it can be created than 
 
 ## Asynchronous Calls and cudaMemcpyAsync
 
-An asynchronous call is a call where the CPU moves on to the next line without waiting for the GPU work to complete. A kernel launch is asynchronous to begin with, so the CPU runs the next code before the kernel finishes. `cudaMemcpy`, by contrast, starts its copy only after all previously submitted GPU work has finished and holds the CPU until the copy is done. The function that removes this hold is `cudaMemcpyAsync`. Its arguments are the same as `cudaMemcpy` with one stream appended at the end; the CPU returns right after the call and the copy engine performs the copy later. The host-side pointer must be pinned memory in this case, because the copy engine can start at any moment only if the host-side pages do not move.
+An asynchronous call is a call where the CPU moves on to the next line without waiting for the GPU work to complete. A kernel launch is asynchronous to begin with, so the CPU runs the next code before the kernel finishes. To request a copy in the same way, use `cudaMemcpyAsync`. Its arguments are the same as `cudaMemcpy` with one stream appended at the end. To overlap CPU execution with an H2D or D2H copy as in this post, the host-side pointer must refer to pinned memory. With that condition satisfied, the CPU returns from the call before the copy finishes while the copy engine continues the transfer.
+
+For example, if a D2H copy is requested asynchronously to bring the result in `d_y` back to `h_y`, the CPU can run other code before the copy finishes. That does not mean the result in `h_y` is ready yet.
+
+```text
+CPU: request D2H copy → CPU code unrelated to the copy → wait for stream → use h_y
+GPU:                    D2H copy in progress
+```
+
+`cudaStreamSynchronize(stream)` makes the CPU wait until all work in that stream has finished. Therefore, `h_y` is read only after this wait completes.
 
 An asynchronous call only means the CPU does not wait; it does not mean two GPU operations actually run at the same time. Even when the call returns early, the two operations may run one after another inside the GPU. Which operations run in which order is decided by the stream.
 
 ## Stream
 
-A stream is a sequence of operations that execute on the GPU in the order they were submitted. There are two rules. First, two operations submitted to the same stream execute in submission order, and the later one does not start before the earlier one has finished. Second, between two operations submitted to different streams, CUDA imposes no order at all. So an operation in stream 1 may run before, at the same time as, or after an operation in stream 2. To run two operations in the same time window they must be placed in different streams, and in the same stream there is no possibility of overlap. Being in different streams is a necessary condition for overlap, not a sufficient one: when the GPU has no resources to spare, operations in different streams also run one after another.
+A stream groups GPU operations whose submission order must be preserved.
 
-A stream is declared as a variable of type `cudaStream_t` and created with `cudaStreamCreate`. The created stream goes into the last argument of `cudaMemcpyAsync` and the fourth argument of the kernel launch's `<<<>>>`. In `<<<grid, block, 0, stream>>>`, the third value is the amount of [shared memory]({{< relref "/posts/cuda-3-shared-memory" >}}), the small memory inside the GPU that the threads of a block use together, to reserve additionally at run time, and `0` means no extra space.
+Rule 1) Operations in the same stream keep their submission order. If an H2D copy, kernel, and D2H copy are placed in one stream, the kernel runs after the H2D copy finishes, and the D2H copy starts after the kernel finishes.
+
+Rule 2) There is no prescribed order between different streams. CUDA does not guarantee which operation starts first, so either one may run first, at the same time, or later. Operations must be placed in different streams to run in the same time window. Even then, if the GPU cannot run the copy and computation together, the two operations run one after another.
+
+A stream is declared as a variable of type `cudaStream_t` and created with `cudaStreamCreate`. The created stream goes into the last argument of `cudaMemcpyAsync` and the fourth argument of the kernel launch's `<<<>>>`. In `<<<grid, block, 0, stream>>>`, the third value is the number of bytes of [shared memory]({{< relref "/posts/cuda-3-shared-memory" >}}), the small memory inside the GPU that the threads of a block use together, to reserve additionally at run time, and `0` means no extra space.
 
 ```cpp
 cudaStream_t stream;
@@ -118,8 +148,31 @@ Call the H2D copy, kernel, and D2H copy for chunk 0 H0, K0, and D0, and place al
 To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`.
 
 ```cpp
+__global__ void transform(const float *x, float *y, size_t count) {
+    const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < count) {
+        y[i] = x[i] * 2.0f;
+    }
+}
+
 constexpr int streamCount = 4;
+constexpr size_t N = 1ULL << 24;
 constexpr size_t chunkElements = 1 << 20;
+constexpr size_t bytes = N * sizeof(float);
+
+float *h_x = nullptr;
+float *h_y = nullptr;
+float *d_x = nullptr;
+float *d_y = nullptr;
+
+cudaHostAlloc(&h_x, bytes, cudaHostAllocDefault);
+cudaHostAlloc(&h_y, bytes, cudaHostAllocDefault);
+cudaMalloc(&d_x, bytes);
+cudaMalloc(&d_y, bytes);
+
+for (size_t i = 0; i < N; ++i) {
+    h_x[i] = static_cast<float>(i);
+}
 
 cudaStream_t streams[streamCount];
 for (int i = 0; i < streamCount; ++i) {
@@ -128,7 +181,8 @@ for (int i = 0; i < streamCount; ++i) {
 
 for (size_t chunk = 0, offset = 0; offset < N;
      ++chunk, offset += chunkElements) {
-    const size_t count = std::min(chunkElements, N - offset);
+    const size_t count = (N - offset < chunkElements)
+                       ? N - offset : chunkElements;
     const size_t chunkBytes = count * sizeof(float);
     cudaStream_t stream = streams[chunk % streamCount];
 
@@ -149,31 +203,86 @@ cudaDeviceSynchronize();
 for (int i = 0; i < streamCount; ++i) {
     cudaStreamDestroy(streams[i]);
 }
+
+cudaFreeHost(h_x);
+cudaFreeHost(h_y);
+cudaFree(d_x);
+cudaFree(d_y);
 ```
 
-Each trip through the loop handles one chunk, submitting its H2D copy, kernel, and D2H copy back to back into the same stream before moving to the next chunk. Submitting all three stages of one chunk first is called depth-first issue order. The opposite, submitting every chunk's H2D copy first and then the kernels and D2H copies grouped by kind, is breadth-first issue order. Both can produce the same overlap, but when one kind of operation piles up at the front it can exceed what the GPU can hold and reduce the overlap, so depth-first issue order is the more reliable one.
+`transform` computes the `y[i] = x[i] * 2` operation used above. Both `h_x` and `h_y` are pinned memory because they are used for asynchronous H2D and D2H copies, while `d_x` and `d_y` are device memory. Each trip through the loop handles one chunk and submits its three operations to the same stream. After all chunks have been submitted, `cudaDeviceSynchronize` waits for all work on the device before the streams and memory are released.
 
-When a stream is reused, the new work attaches behind the earlier work in that stream. So chunk 4, which reuses `streams[0]`, runs after the D2H copy of chunk 0 has finished, and since the first rule keeps this order no extra control is needed. Memory allocation and stream creation, on the other hand, are finished before the loop. `cudaMalloc` and `cudaStreamCreate` take no stream argument, so placing them inside the loop breaks the overlap between the work before and after them. The loop therefore keeps only the copies and kernel launches that take a stream argument, and keeps using the resources made in advance.
+For two chunks, compare the submission order of the loop above with an order that groups operations by kind:
 
-The actual shape of the overlap depends on how much data each chunk copies and how long the kernel runs. If the kernel is a very short operation, the main gain comes from overlapping the H2D copy with the D2H copy rather than with the kernel.
+```text
+depth-first:   H0 → K0 → D0 → H1 → K1 → D1
+breadth-first: H0 → H1 → K0 → K1 → D0 → D1
+```
+
+Both forms preserve H0 → K0 → D0 in stream 0 and H1 → K1 → D1 in stream 1. The code here uses depth-first order, submitting all three operations for one chunk first.
+
+When a stream is reused, the new work attaches behind the earlier work in that stream. So chunk 4, which reuses `streams[0]`, runs after the D2H copy of chunk 0 has finished. Memory allocation and stream creation are setup steps that do not need to be repeated for every chunk, so they are completed once before the loop. The loop contains only the H2D copy, kernel launch, and D2H copy, and keeps using the memory and streams created in advance.
+
+The actual shape of the overlap depends on how much data each chunk copies and how long the kernel runs. If the kernel is very short, overlapping a copy with the kernel saves little time. On a GPU whose copy-engine configuration can handle H2D and D2H at the same time, the overlap between the next chunk's H2D copy and the previous chunk's D2H copy can provide a larger gain.
 
 ## Default Stream
 
-A kernel launch or `cudaMemcpy` with no stream specified goes into the default stream. In the default configuration this is the legacy default stream: work submitted to it starts only after every piece of work submitted before it, in whatever stream, has finished, and every piece of work submitted after it waits for it to finish. So if even one default-stream operation slips into the middle of the chunk loop, the overlap between the streams before and after it is cut. For this reason every copy and kernel launch in the section that builds the overlap names a stream created explicitly.
+A kernel launch or `cudaMemcpy` with no stream specified goes into the default stream. The default stream in the standard configuration is called the legacy default stream. When it is used together with streams created by `cudaStreamCreate` above, a default-stream operation starts after all previously submitted work has finished, and the next operation starts only after the default-stream operation has finished.
 
-With the compiler option `nvcc --default-stream per-thread`, the default stream behaves like an ordinary stream without this waiting and one is created per CPU thread. This option is used to mix code that was already written to use the default stream with other streams without rewriting it.
+```cpp
+workA<<<grid, block, 0, stream0>>>();   // A
+workB<<<grid, block>>>();               // B: legacy default stream
+workC<<<grid, block, 0, stream1>>>();   // C
+```
+
+In this example, B waits for A and C waits for B, producing the order A → B → C. The single line B in the middle removes the possibility that A and C overlap. For this reason, every copy and kernel launch in a region intended to overlap names a stream explicitly.
+
+With the compiler option `nvcc --default-stream per-thread`, each CPU thread gets its own default stream, and B above does not automatically block between A and C. This option is used when code written to use the default stream is run together with explicitly created streams.
 
 ![Default stream](images/default-stream-chart.svg)
 
 ## Putting a Host Function into a Stream
 
-`cudaLaunchHostFunc` is the function that submits a function to be run on the CPU into a stream. The submitted function is called when the stream's execution reaches that position, so it runs after a kernel placed earlier in the same stream has finished. No CUDA calls such as kernel launches or `cudaMalloc` are made inside this function. When the CPU has to continue processing a kernel's result, this function orders the two without stopping everything with `cudaDeviceSynchronize`, and the older `cudaStreamAddCallback` that played the same role has been replaced by it.
+`cudaLaunchHostFunc` inserts a function that runs on the CPU as an operation in a stream. For example, if a CPU function named `process` must read the result of `transform`, the kernel, D2H copy, and host function are placed in the same stream in that order. `CUDART_CB` marks the function form CUDA uses to call this CPU function.
+
+```cpp
+void CUDART_CB process(void *data) {
+    float *result = static_cast<float *>(data);
+    // Process result on the CPU. Do not call a CUDA API here.
+}
+
+transform<<<grid, block, 0, stream>>>(d_x, d_y, N);
+cudaMemcpyAsync(h_y, d_y, bytes, cudaMemcpyDeviceToHost, stream);
+cudaLaunchHostFunc(stream, process, h_y);
+```
+
+`process` is called after the D2H copy has finished, so it can read the completed `h_y`. The stream does not advance to its next operation until `process` returns, and no CUDA API calls such as kernel launches or `cudaMalloc` are made inside `process`.
 
 ## CUDA Event
 
-A CUDA event is a marker placed inside a stream. Putting it into a stream with `cudaEventRecord` records it, and it completes when the stream's execution reaches that position. So `cudaEventSynchronize` can make the CPU wait until a given event completes, and `cudaEventElapsedTime` can read the time between two events.
+A CUDA event marks a position in a stream. Calling `cudaEventRecord` inserts the event into the stream, and the event completes when all preceding operations have finished and execution reaches that position. To measure a kernel's execution time, a start event, the kernel, and a stop event are placed in the same stream in that order.
 
-Events are also used to create an order between two streams. `cudaStreamWaitEvent` makes the later work of one stream wait until an event recorded in another stream completes. This is a way for the programmer to break the second rule only at the point where it is needed, so it is used only where a wait is required.
+```cpp
+cudaEvent_t start;
+cudaEvent_t stop;
+cudaEventCreate(&start);
+cudaEventCreate(&stop);
+
+cudaEventRecord(start, stream);
+transform<<<grid, block, 0, stream>>>(d_x, d_y, N);
+cudaEventRecord(stop, stream);
+cudaEventSynchronize(stop);
+
+float milliseconds = 0.0f;
+cudaEventElapsedTime(&milliseconds, start, stop);
+
+cudaEventDestroy(start);
+cudaEventDestroy(stop);
+```
+
+`cudaEventSynchronize(stop)` makes the CPU wait until the stop event completes. After that, `cudaEventElapsedTime` writes the GPU time between start and stop into `milliseconds`.
+
+Events are also used to create an order between two streams. In the example below, `produce` writes `data` and `consume` reads that value. Because the two kernels are in different streams, `consume` could start first if no condition were added. A ready event is therefore recorded after `produce` in stream 0, and stream 1 waits for that event before `consume`.
 
 ```cpp
 cudaEvent_t ready;
@@ -189,37 +298,84 @@ cudaStreamSynchronize(stream1);
 cudaEventDestroy(ready);
 ```
 
-In the code above, `consume` runs after `produce` has finished. As a result, only the needed order between the two streams is created without stopping the CPU or the whole device.
+In the code above, `cudaStreamWaitEvent` makes only the later work in stream 1 wait; it does not make the CPU wait. The final argument `0` specifies no additional behavior. This creates only the `produce` → `consume` order without stopping the whole device.
 
 ![CUDA event](images/event-wait-chart.svg)
 
 ## Running Several Kernels at Once
 
-Not only copies and kernels but also independent kernels can be placed in different streams, which creates the possibility that they run at the same time on the same GPU. But when the GPU hands out blocks it places the blocks of the kernel submitted first before those of the next, so if the first kernel fills nearly all of the GPU's compute resources, the next kernel waits until a slot opens. To observe concurrent execution, therefore, kernels are needed that use few resources and run for a long time.
+Two kernels that process different arrays do not need to wait for each other's results. Below, `d_x0` and `d_y0` are the first pair of device arrays, while `d_x1` and `d_y1` are the second pair. Placing the two kernels in different streams creates the possibility that they run at the same time on the same GPU.
+
+```cpp
+transform<<<grid, block, 0, stream0>>>(d_x0, d_y0, N);
+transform<<<grid, block, 0, stream1>>>(d_x1, d_y1, N);
+```
+
+An SM (Streaming Multiprocessor) is a GPU compute unit on which a kernel's blocks are actually placed. If the first kernel's blocks occupy every execution slot on every SM, the second kernel waits for a slot to open even though it is in another stream. If the first kernel uses only some of the slots, blocks from the second kernel can enter the remaining slots and execute in the same time window.
 
 If a single kernel can fill the GPU, that one kernel is the fastest. Running several kernels at once is meaningful when work arrives in small units that are hard to merge into one kernel.
 
-Stream priority is the priority the GPU consults when deciding which stream's kernel to take the next block from. A stream with a priority is created with `cudaStreamCreateWithPriority`, and the available range is read with `cudaDeviceGetStreamPriorityRange`. This priority does not interrupt blocks that are already running, and if the lower-priority kernel finishes first the difference does not show.
+Stream priority is the priority the GPU consults when deciding which stream's kernel to take the next block from. For example, a long-running background kernel can be placed in a low-priority stream, while a short kernel that needs to start promptly can be placed in a high-priority stream. High priority does not interrupt a block that is already running. It only makes the GPU choose the next block from the high-priority stream first when a slot opens on an SM. Priority streams are created with `cudaStreamCreateWithPriority`, and the available priority range is read with `cudaDeviceGetStreamPriorityRange`.
 
 ## Streams on Multiple GPUs
 
-The same stream rules carry over when there are several GPUs. `cudaGetDeviceCount` reads the number of GPUs, and `cudaSetDevice` selects the GPU that subsequent CUDA calls will target. The selected GPU is the current device. Streams and events are bound to the current device at the time they are created, so submitting a kernel to that stream while a different device is selected fails.
+The same stream rules carry over when there are several GPUs. `cudaGetDeviceCount` reads the number of GPUs, and `cudaSetDevice` selects the GPU that subsequent CUDA calls will target. The selected GPU is the current device. Device memory and streams are bound to the current device at the time they are created. In the example below, `d0` and `stream0` belong to GPU 0, while `d1` and `stream1` belong to GPU 1. `work` is a kernel that processes an array on the selected GPU.
 
 ```cpp
+float *d0 = nullptr;
+float *d1 = nullptr;
+cudaStream_t stream0;
+cudaStream_t stream1;
+
 cudaSetDevice(0);
+cudaMalloc(&d0, bytes);
 cudaStreamCreate(&stream0);   // stream bound to GPU 0
+work<<<grid, block, 0, stream0>>>(d0);
 
 cudaSetDevice(1);
+cudaMalloc(&d1, bytes);
 cudaStreamCreate(&stream1);   // stream bound to GPU 1
+work<<<grid, block, 0, stream1>>>(d1);
+
+cudaSetDevice(0);
+cudaStreamSynchronize(stream0);
+cudaStreamDestroy(stream0);
+cudaFree(d0);
+
+cudaSetDevice(1);
+cudaStreamSynchronize(stream1);
+cudaStreamDestroy(stream1);
+cudaFree(d1);
 ```
 
-When the CPU switches devices and submits a kernel to each GPU's stream, the kernels on the two GPUs can run at the same time. To move data between GPUs, peer access can be used. Peer access is the ability of one GPU to read and write another GPU's memory directly, and it requires the two GPUs to be on the same interconnect such as PCIe or NVLink. `cudaDeviceCanAccessPeer` checks whether it is supported; if copies go in both directions, `cudaDeviceEnablePeerAccess` is called on both sides, and then `cudaMemcpyPeerAsync` performs the copy. The data then moves straight from one GPU's memory to the other's without passing through host memory.
+Because kernel launches do not make the CPU wait, the CPU can submit `work` to GPU 0 and then immediately submit it to GPU 1. At the end, each GPU is selected again and the CPU waits for its stream to finish. To move data between GPUs, peer access can be used. Peer access is the ability of one GPU to read and write another GPU's memory directly, and it requires the two GPUs to be on the same interconnect such as PCIe or NVLink. `cudaDeviceCanAccessPeer` checks whether it is supported; if copies go in both directions, `cudaDeviceEnablePeerAccess` is called on both sides, and then `cudaMemcpyPeerAsync` performs the copy. The data then moves straight from one GPU's memory to the other's without passing through host memory.
 
 ![Multi GPU](images/multi-gpu-chart.svg)
 
 ## Unified Memory and Prefetch
 
-The stream rules are the same with [Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory-and-managed-allocation). In that case `cudaMemPrefetchAsync` instead of `cudaMemcpyAsync` puts the migration of a managed allocation into the stream, and a kernel in the same stream runs after the migration has finished. The migration happens page by page and has to update the page records on both the CPU and the GPU, so it has more to do than `cudaMemcpyAsync`, and this can leave empty gaps on the execution timeline.
+The stream rules are the same with [Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory-and-managed-allocation). `cudaMemPrefetchAsync` moves a region created with Unified Memory toward the CPU or a GPU in advance. In the code below, `x` is a Unified Memory pointer allocated with `cudaMallocManaged`, `device` is the number of the GPU that will run the kernel, and `work` is the kernel that processes `x`.
+
+```cpp
+const int device = 0;
+cudaSetDevice(device);
+
+float *x = nullptr;
+cudaMallocManaged(&x, bytes);
+
+cudaStream_t stream;
+cudaStreamCreate(&stream);
+
+cudaMemPrefetchAsync(x, bytes, device, stream);          // move to GPU
+work<<<grid, block, 0, stream>>>(x);
+cudaMemPrefetchAsync(x, bytes, cudaCpuDeviceId, stream); // move to CPU
+cudaStreamSynchronize(stream);
+
+cudaStreamDestroy(stream);
+cudaFree(x);
+```
+
+Because all operations are in the same stream, the kernel starts after the prefetch toward the GPU finishes, and the prefetch toward the CPU starts after the kernel finishes. Once the final wait completes, the CPU can read `x`. This movement happens page by page and also updates page records on both the CPU and the GPU, which can leave empty gaps on the execution timeline.
 
 ## Checking in Nsight Systems
 
@@ -231,7 +387,7 @@ nsys profile --stats=true ./overlap
 
 This command saves the run as a report file and prints a summary of CUDA calls, kernels, and copies. Opening the report file in the Nsight Systems window shows the CPU-side calls on top and the GPU-side copies and kernels below. In the serial code the H2D copy, kernel, and D2H copy appear in a single line; in the code with several streams the rows split per stream and the kernel of one chunk appears in the same time range as the copy of another chunk.
 
-In the end, concurrency is not a technique for removing dependencies. The H2D copy → kernel → D2H copy order of the same data is kept with the same stream, and only independent chunks are split across different streams. On top of that, whether the times actually overlap is decided by pinned memory and by the resources the GPU has left.
+In the end, concurrency is not a technique for removing dependencies. The H2D copy → kernel → D2H copy order of the same data is kept with the same stream, and only independent chunks are split across different streams. Whether the times actually overlap is decided by the copy-engine configuration and by open execution slots on the SMs.
 
 ## References
 
