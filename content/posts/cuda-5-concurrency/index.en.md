@@ -105,11 +105,11 @@ cudaStreamDestroy(stream);
 
 None of the three calls holds the CPU, but because they enter the same stream, the kernel runs after the H2D copy finishes and the D2H copy starts after the kernel finishes. So the H2D copy → kernel → D2H copy order for the same data is kept by the stream. `cudaStreamSynchronize` is the function that makes the CPU wait until all work in that stream has finished, and `cudaStreamQuery` only reports whether the stream is empty without waiting. A stream that is no longer needed is removed with `cudaStreamDestroy`.
 
-![Stream ordering](images/stream-ordering-chart.svg)
-
 ## Chunk
 
 When a large array is processed in one piece, the whole H2D copy must finish before the kernel starts, and the whole kernel must finish before the D2H copy starts. For this reason the array is divided into several ranges, and one such piece is called a chunk. If each output element depends only on the input at the same position, chunks have no reason to wait for one another. The H2D copy, kernel, and D2H copy of one chunk are placed in the same stream so the first rule keeps their order, and the next chunk is placed in a different stream so the second rule leaves room for overlap. As a result, while the kernel of chunk 1 is running, the H2D copy of chunk 2 and the D2H copy of chunk 0 can proceed.
+
+![Serial processing of the whole array compared with chunked stream execution](images/stream-concurrency.gif?v=1)
 
 To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`.
 
@@ -152,8 +152,6 @@ Each trip through the loop handles one chunk, submitting its H2D copy, kernel, a
 When a stream is reused, the new work attaches behind the earlier work in that stream. So chunk 4, which reuses `streams[0]`, runs after the D2H copy of chunk 0 has finished, and since the first rule keeps this order no extra control is needed. Memory allocation and stream creation, on the other hand, are finished before the loop. `cudaMalloc` and `cudaStreamCreate` take no stream argument, so placing them inside the loop breaks the overlap between the work before and after them. The loop therefore keeps only the copies and kernel launches that take a stream argument, and keeps using the resources made in advance.
 
 The actual shape of the overlap depends on how much data each chunk copies and how long the kernel runs. If the kernel is a very short operation, the main gain comes from overlapping the H2D copy with the D2H copy rather than with the kernel.
-
-![Chunk pipeline](images/chunk-pipeline-chart.svg)
 
 ## Default Stream
 

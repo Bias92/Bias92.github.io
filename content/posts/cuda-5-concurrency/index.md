@@ -119,11 +119,11 @@ cudaStreamDestroy(stream);
 
 세 호출은 모두 CPU를 기다리게 하지 않지만 같은 stream에 들어가므로, H2D copy가 끝난 뒤 kernel이 실행되고 kernel이 끝난 뒤 D2H copy가 시작된다. 그래서 같은 데이터의 H2D copy → kernel → D2H copy 순서는 stream이 지킨다. `cudaStreamSynchronize`는 그 stream의 작업이 모두 끝날 때까지 CPU를 기다리게 하는 함수이고, `cudaStreamQuery`는 기다리지 않고 stream이 비었는지만 알려 준다. 다 쓴 stream은 `cudaStreamDestroy`로 없앤다.
 
-![Stream ordering](images/stream-ordering-chart.svg)
-
 ## Chunk
 
 큰 배열을 한 번에 처리하면 H2D copy 전체가 끝나야 kernel이 시작하고, kernel 전체가 끝나야 D2H copy가 시작한다. 이 때문에 배열을 여러 구간으로 나누는데, 이렇게 나눈 한 조각을 chunk라고 한다. 출력 원소 하나가 같은 위치의 입력에만 의존하는 연산이라면 chunk끼리 서로 기다릴 이유가 없다. 이때 한 chunk의 H2D copy, kernel, D2H copy를 같은 stream에 넣어 첫째 규칙으로 순서를 지키고, 다음 chunk는 다른 stream에 넣어 둘째 규칙으로 겹칠 여지를 만든다. 그 결과 chunk 1의 kernel이 실행되는 동안 chunk 2의 H2D copy와 chunk 0의 D2H copy가 진행될 수 있다.
+
+![전체 배열의 직렬 처리와 chunk별 stream 실행 비교](images/stream-concurrency.gif?v=1)
 
 이 구조를 코드로 옮길 때는 stream을 여러 개 만들어 chunk마다 돌려 쓴다. Device memory는 배열 전체 크기로 한 번만 할당하고, 각 chunk의 시작 위치만 `offset`으로 옮긴다.
 
@@ -166,8 +166,6 @@ for (int i = 0; i < streamCount; ++i) {
 같은 stream을 다시 쓰면 새 작업은 그 stream의 앞 작업 뒤에 붙는다. 그래서 `streams[0]`을 다시 쓰는 chunk 4는 chunk 0의 D2H copy가 끝난 뒤 실행되고, 이 순서는 첫째 규칙이 지키므로 별도의 제어가 필요 없다. 이와 달리 memory 할당과 stream 생성은 반복문 전에 마친다. `cudaMalloc`이나 `cudaStreamCreate`는 stream 인자를 받지 않아 반복문 안에 들어가면 앞뒤 작업의 겹침을 끊기 때문이다. 그래서 반복문 안에는 stream 인자를 받는 복사와 kernel launch만 남기고, 미리 만든 자원을 계속 사용한다.
 
 실제 겹침의 모양은 chunk마다 복사하는 데이터 양과 kernel 실행 시간에 따라 달라진다. Kernel이 아주 짧은 연산이라면 kernel과의 겹침보다 H2D copy와 D2H copy끼리의 겹침이 주된 이득이 된다.
-
-![Chunk pipeline](images/chunk-pipeline-chart.svg)
 
 ## Default Stream
 
