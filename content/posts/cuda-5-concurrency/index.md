@@ -121,7 +121,11 @@ cudaStreamDestroy(stream);
 
 ## Chunk
 
-큰 배열을 한 번에 처리하면 H2D copy 전체가 끝나야 kernel이 시작하고, kernel 전체가 끝나야 D2H copy가 시작한다. 이 때문에 배열을 여러 구간으로 나누는데, 이렇게 나눈 한 조각을 chunk라고 한다. 출력 원소 하나가 같은 위치의 입력에만 의존하는 연산이라면 chunk끼리 서로 기다릴 이유가 없다. 이때 한 chunk의 H2D copy, kernel, D2H copy를 같은 stream에 넣어 첫째 규칙으로 순서를 지키고, 다음 chunk는 다른 stream에 넣어 둘째 규칙으로 겹칠 여지를 만든다. 그 결과 chunk 1의 kernel이 실행되는 동안 chunk 2의 H2D copy와 chunk 0의 D2H copy가 진행될 수 있다.
+큰 배열을 통째로 처리하면 입력 전체의 H2D copy가 끝난 뒤 kernel이 시작하고, kernel 전체가 끝난 뒤 결과의 D2H copy가 시작한다. 이 대기 시간을 줄이기 위해 배열을 여러 구간으로 나눈다. 이렇게 나눈 데이터 조각 하나가 chunk다.
+
+예를 들어 `y[i] = x[i] * 2`를 계산한다고 하자. `x[0]`부터 `x[3]`까지를 chunk 0, `x[4]`부터 `x[7]`까지를 chunk 1로 나눌 수 있다. `y[0]`부터 `y[3]`까지를 계산할 때 chunk 1의 값은 필요하지 않으므로 두 chunk는 서로 기다리지 않고 처리할 수 있다.
+
+Chunk 0의 H2D copy, kernel, D2H copy를 각각 H0, K0, D0이라고 하고 세 작업을 stream 0에 넣는다. Chunk 1의 H1, K1, D1은 stream 1에 넣는다. 각 stream 안에서는 H0 → K0 → D0와 H1 → K1 → D1 순서가 유지된다. 두 stream 사이에는 정해진 순서가 없으므로, GPU가 copy와 kernel을 동시에 실행할 수 있으면 K0이 실행되는 동안 H1을 복사하고 K1이 실행되는 동안 D0을 복사할 수 있다.
 
 ![전체 배열의 직렬 처리와 chunk별 stream 실행 비교](images/stream-concurrency.gif?v=1)
 
