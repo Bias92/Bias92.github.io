@@ -56,7 +56,9 @@ $$
 
 GPU에는 host memory와 device memory 사이의 복사를 전담하는 hardware인 copy engine이 있다. 이 절에서는 copy engine을 사용하는 전형적인 pinned H2D 경로를 설명한다. Copy engine은 DMA(Direct Memory Access)를 실행한다. DMA는 CPU core가 byte를 하나씩 옮기는 대신 전용 hardware가 memory 사이의 데이터를 옮기는 방식이다. CPU가 `cudaMemcpyAsync`를 호출하면 CUDA runtime이 요청을 CUDA driver에 넘긴다. CUDA driver는 GPU에 작업을 제출하는 software이며, 원본 주소, 목적지 주소, 크기가 담긴 복사 명령을 GPU에 보낸다. Copy engine이 그 명령을 실행하는 동안 CPU는 다음 코드를 실행한다.
 
-CPU와 별도 card에 장착되고 자체 GPU memory를 가진 discrete GPU에서는 데이터가 host RAM을 읽고 쓰는 hardware인 memory controller를 거친다. 그다음 host 쪽 PCIe 연결을 관리하는 root complex에서 PCIe로 나간다. PCIe는 host system과 GPU를 연결하는 통로다. GPU에 도착한 데이터는 GPU 쪽 PCIe 연결부인 PCIe interface와 GPU 내부 연결망을 지나 GPU memory에 기록된다. 이 과정에서 copy engine이 host 쪽 page frame을 계속 사용하므로 해당 frame이 RAM에서 빠지거나 다른 자리로 옮겨지면 안 된다. Pageable memory는 그 보장을 주지 못한다. 그래서 CUDA는 운영체제에 해당 page frame을 RAM에 그대로 두라고 요청하며, 이렇게 RAM에 고정된 host memory를 pinned memory라고 한다. Pinned memory에서는 page가 disk로 나가지 않으므로 non-pageable memory라고도 부른다.
+CPU와 별도 card에 장착된 discrete GPU는 host system과 PCIe로 연결된다. System DRAM에서 읽힌 데이터는 CPU의 I/O 경로와 PCIe root complex를 거쳐 PCIe로 나간다. Root complex는 CPU 쪽 PCIe 장치를 연결하는 hardware다. GPU에 도착한 데이터는 GPU의 PCIe I/O와 내부 데이터 경로를 거쳐 GPU memory subsystem으로 간다. 이 subsystem은 최근 사용한 데이터를 잠시 보관하는 L2 cache와 GPU memory의 읽기와 쓰기를 맡는 memory controller로 이루어진다. Copy engine은 GPU 안에서 이 H2D 전송을 실행한다. 정확한 내부 배치는 GPU architecture마다 다르므로, 아래 그림은 공개된 연결 관계만 나타낸다.
+
+Copy engine이 복사하는 동안에는 같은 RAM page를 계속 읽을 수 있어야 한다. 따라서 복사가 끝나기 전에 운영체제가 그 page를 다른 frame으로 옮기거나 disk로 내보내면 안 된다. Pageable memory는 이 조건을 보장하지 못한다. 그래서 CUDA는 운영체제에 해당 page frame을 RAM에 그대로 두라고 요청하며, 이렇게 RAM에 고정된 host memory를 pinned memory라고 한다. Pinned memory에서는 page가 disk로 나가지 않으므로 non-pageable memory라고도 부른다.
 
 Pinned memory는 `cudaHostAlloc`으로 할당하고 `cudaFreeHost`로 해제한다. `cudaHostAlloc`은 `malloc`처럼 host memory를 돌려주는 할당 함수이고, 돌려준 pointer가 pinned memory를 가리킨다는 점만 다르다. 이 함수는 데이터를 복사하는 함수가 아니며, device memory를 만드는 `cudaMalloc`을 대신하지도 않는다. 그래서 host memory를 pinned memory로 바꾸더라도 device memory는 여전히 `cudaMalloc`으로 따로 만든다.
 
@@ -83,13 +85,13 @@ cudaFree(d_x);
 
 이미 `malloc`으로 만든 영역을 뒤늦게 고정할 때는 `cudaHostRegister`를 쓰고, 고정만 풀고 영역은 남길 때는 `cudaHostUnregister`를 쓴다.
 
-Pinned memory는 실제 RAM을 그만큼 차지하므로 RAM 크기보다 많이 만들 수 없고, 그 한도를 넘기면 `cudaHostAlloc`이 memory 부족 오류를 돌려준다. 그리고 RAM의 큰 부분을 고정하면 운영체제가 쓸 RAM이 줄어 host 쪽 실행이 느려지므로, GPU와 데이터를 주고받는 영역만 pinned memory로 만든다. 아래 그림에서 가는 회색 점선은 page table의 주소 연결이고, 청록색 실선은 H2D 데이터 경로다. 자홍색 점선은 CPU가 제출한 복사 명령과 copy engine의 제어 경로다.
+Pinned memory는 실제 RAM을 그만큼 차지하므로 RAM 크기보다 많이 만들 수 없고, 그 한도를 넘기면 `cudaHostAlloc`이 memory 부족 오류를 돌려준다. 그리고 RAM의 큰 부분을 고정하면 운영체제가 쓸 RAM이 줄어 host 쪽 실행이 느려지므로, GPU와 데이터를 주고받는 영역만 pinned memory로 만든다.
 
-![Pinned page frames and PCIe copy path](images/pinned-memory-chart.svg)
+![Pinned H2D hardware topology](images/pinned-memory-chart.svg)
 
 ## 비동기 호출과 cudaMemcpyAsync
 
-비동기 호출은 CPU가 GPU 작업의 완료를 기다리지 않고 바로 다음 줄로 진행하는 호출이다. Kernel launch는 원래 비동기 호출이어서 CPU는 kernel이 끝나기 전에 다음 코드를 실행한다. 반면 `cudaMemcpy`는 앞서 제출한 GPU 작업이 모두 끝난 뒤에야 복사를 시작하고, 복사가 끝날 때까지 CPU를 멈춘다. 이 멈춤을 없앤 함수가 `cudaMemcpyAsync`다. 인자는 `cudaMemcpy`와 같고 마지막에 stream 하나가 더 붙는데, CPU는 호출 직후 돌아오고 복사는 copy engine이 나중에 수행한다. 이때 host 쪽 pointer는 pinned memory여야 한다. Copy engine이 언제든 시작할 수 있으려면 host 쪽 page가 움직이지 않아야 하기 때문이다.
+비동기 호출은 CPU가 GPU 작업의 완료를 기다리지 않고 바로 다음 줄로 진행하는 호출이다. Kernel launch는 원래 비동기 호출이어서 CPU는 kernel이 끝나기 전에 다음 코드를 실행한다. 반면 `cudaMemcpy`를 호출한 CPU thread는 해당 복사가 끝날 때까지 다음 줄로 진행하지 못한다. 이 기다림을 없앤 함수가 `cudaMemcpyAsync`다. 인자는 `cudaMemcpy`와 같고 마지막에 stream 하나가 더 붙는데, CPU는 호출 직후 돌아오고 복사는 copy engine이 나중에 수행한다. 이때 host 쪽 pointer는 pinned memory여야 한다. Copy engine이 언제든 시작할 수 있으려면 host 쪽 page가 움직이지 않아야 하기 때문이다.
 
 비동기 호출은 CPU가 기다리지 않는다는 뜻일 뿐, 두 GPU 작업이 실제로 같은 시간에 실행된다는 뜻은 아니다. 호출이 일찍 돌아와도 GPU 안에서는 두 작업이 차례로 실행될 수 있다. 어떤 작업이 어떤 순서로 실행되는지는 stream이 정한다.
 
