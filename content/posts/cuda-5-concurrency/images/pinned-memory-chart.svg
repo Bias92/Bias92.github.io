@@ -1,58 +1,109 @@
-<svg width="720" height="300" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
-  <title>Pinned host memory</title>
-  <desc>Virtual pages map to pinned physical frames. A copy engine transfers data from physical RAM to GPU memory.</desc>
+<svg width="720" height="420" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>Pinned host memory and a discrete GPU copy path</title>
+  <desc>Virtual pages map to pinned page frames in host RAM. A CPU command reaches the copy engine inside the GPU, while data crosses PCIe and enters GPU memory.</desc>
   <defs>
-    <linearGradient id="ram-fill" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
-    <linearGradient id="gpu-fill" x1="0" x2="1"><stop offset="0" stop-color="#1c4653"/><stop offset="1" stop-color="#41d0ef"/></linearGradient>
-    <linearGradient id="host-fill" x1="0" x2="1"><stop offset="0" stop-color="#242a2f"/><stop offset="1" stop-color="#6f7a82"/></linearGradient>
-    <filter id="cyan-halo-wide" x="-60" y="-60" width="840" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
-    <filter id="cyan-halo-near" x="-60" y="-60" width="840" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
-    <filter id="gray-halo-wide" x="-60" y="-60" width="840" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="9"/></filter>
-    <filter id="gray-halo-near" x="-60" y="-60" width="840" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="2.5"/></filter>
-    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1L9 5L1 9Z" fill="#46d9ff"/></marker>
+    <linearGradient id="cyan-fill" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
+    <linearGradient id="gray-fill" x1="0" x2="1"><stop offset="0" stop-color="#242a2f"/><stop offset="1" stop-color="#5f6970"/></linearGradient>
+    <filter id="cyan-wide" x="-80" y="-80" width="880" height="580" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="cyan-near" x="-80" y="-80" width="880" height="580" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="2.6"/></filter>
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1L9 5L1 9Z" fill="#46d9ff"/></marker>
+    <marker id="arrow-magenta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1L9 5L1 9Z" fill="#e46fd6"/></marker>
   </defs>
 
-  <rect width="720" height="300" fill="#0d0e10"/>
-  <g stroke="#1e252b" stroke-width="1"><line x1="224" y1="28" x2="224" y2="274"/><line x1="474" y1="28" x2="474" y2="274"/></g>
-  <g fill="#d5d8dc" font-size="15" font-weight="650" letter-spacing="0.6" text-anchor="middle">
-    <text x="118" y="42">VIRTUAL PAGES</text><text x="350" y="42">PHYSICAL RAM</text><text x="608" y="42">GPU MEMORY</text>
+  <rect width="720" height="420" fill="#0d0e10"/>
+  <rect x="14" y="18" width="370" height="384" rx="12" fill="none" stroke="#22323a" stroke-width="1.4"/>
+  <rect x="448" y="18" width="258" height="384" rx="12" fill="none" stroke="#22323a" stroke-width="1.4"/>
+
+  <g fill="#d5d8dc" font-size="15" font-weight="700" letter-spacing="0.7" text-anchor="middle">
+    <text x="199" y="44">HOST SYSTEM</text>
+    <text x="577" y="44">DISCRETE GPU</text>
+  </g>
+  <g fill="#8f9aa1" font-size="12" font-weight="650" letter-spacing="0.4" text-anchor="middle">
+    <text x="84" y="72">VIRTUAL PAGES</text>
+    <text x="247" y="72">RAM PAGE FRAMES</text>
+    <text x="160" y="87" font-size="9.5">PAGE TABLE MAP</text>
   </g>
 
-  <g fill="#a4b1b8" opacity="0.1" filter="url(#gray-halo-wide)">
-    <rect x="62" y="82" width="112" height="36" rx="18"/><rect x="62" y="134" width="112" height="36" rx="18"/><rect x="62" y="186" width="112" height="36" rx="18"/>
+  <g stroke="#8f9aa1" stroke-width="1.2" fill="url(#gray-fill)">
+    <rect x="38" y="92" width="92" height="30" rx="15"/>
+    <rect x="38" y="136" width="92" height="30" rx="15"/>
+    <rect x="38" y="180" width="92" height="30" rx="15"/>
   </g>
-  <g fill="none" stroke="#a4b1b8" stroke-width="3" opacity="0.56" filter="url(#gray-halo-near)">
-    <rect x="62" y="82" width="112" height="36" rx="18"/><rect x="62" y="134" width="112" height="36" rx="18"/><rect x="62" y="186" width="112" height="36" rx="18"/>
+  <g fill="#edf4f7" font-size="13" font-weight="650" text-anchor="middle">
+    <text x="84" y="112">V0</text><text x="84" y="156">V1</text><text x="84" y="200">V2</text>
   </g>
-  <g stroke="#a4b1b8" stroke-width="1.2" fill="url(#host-fill)">
-    <rect x="62" y="82" width="112" height="36" rx="18"/><rect x="62" y="134" width="112" height="36" rx="18"/><rect x="62" y="186" width="112" height="36" rx="18"/>
-  </g>
-  <g fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">
-    <text x="118" y="105">V0</text><text x="118" y="157">V1</text><text x="118" y="209">V2</text>
-  </g>
-  <g stroke="#455159" stroke-width="1.4">
-    <line x1="174" y1="100" x2="286" y2="100"/><line x1="174" y1="152" x2="286" y2="152"/><line x1="174" y1="204" x2="286" y2="204"/>
+  <g stroke="#68747b" stroke-width="1.2" stroke-dasharray="2 4">
+    <line x1="130" y1="107" x2="191" y2="107"/>
+    <line x1="130" y1="151" x2="191" y2="151"/>
+    <line x1="130" y1="195" x2="191" y2="195"/>
   </g>
 
-  <g fill="#46d9ff" opacity="0.18" filter="url(#cyan-halo-wide)">
-    <rect x="286" y="82" width="142" height="36" rx="18"/><rect x="286" y="134" width="142" height="36" rx="18"/><rect x="286" y="186" width="142" height="36" rx="18"/>
+  <g fill="#46d9ff" opacity="0.15" filter="url(#cyan-wide)">
+    <rect x="191" y="92" width="112" height="30" rx="15"/>
+    <rect x="191" y="136" width="112" height="30" rx="15"/>
+    <rect x="191" y="180" width="112" height="30" rx="15"/>
   </g>
-  <g fill="none" stroke="#46d9ff" stroke-width="3" opacity="0.82" filter="url(#cyan-halo-near)">
-    <rect x="286" y="82" width="142" height="36" rx="18"/><rect x="286" y="134" width="142" height="36" rx="18"/><rect x="286" y="186" width="142" height="36" rx="18"/>
+  <g fill="none" stroke="#78e5ff" stroke-width="2.8" opacity="0.72" filter="url(#cyan-near)">
+    <rect x="191" y="92" width="112" height="30" rx="15"/>
+    <rect x="191" y="136" width="112" height="30" rx="15"/>
+    <rect x="191" y="180" width="112" height="30" rx="15"/>
   </g>
-  <g fill="url(#ram-fill)" stroke="#46d9ff" stroke-width="1.5">
-    <rect x="286" y="82" width="142" height="36" rx="18"/><rect x="286" y="134" width="142" height="36" rx="18"/><rect x="286" y="186" width="142" height="36" rx="18"/>
+  <g fill="url(#cyan-fill)" stroke="#46d9ff" stroke-width="1.4">
+    <rect x="191" y="92" width="112" height="30" rx="15"/>
+    <rect x="191" y="136" width="112" height="30" rx="15"/>
+    <rect x="191" y="180" width="112" height="30" rx="15"/>
   </g>
-  <g fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">
-    <text x="357" y="105">F7</text><text x="357" y="157">F2</text><text x="357" y="209">F9</text>
+  <g fill="#edf4f7" font-size="13" font-weight="650" text-anchor="middle">
+    <text x="247" y="112">F7</text><text x="247" y="156">F2</text><text x="247" y="200">F9</text>
   </g>
-  <path d="M274 72H262V232H274" fill="none" stroke="#46d9ff" stroke-width="1.7"/>
-  <text x="258" y="58" fill="#46d9ff" font-size="14" font-weight="650">PINNED</text>
+  <path d="M181 84H169V218H181" fill="none" stroke="#46d9ff" stroke-width="1.6"/>
+  <text x="169" y="232" fill="#46d9ff" font-size="12" font-weight="700">PINNED</text>
 
-  <line x1="442" y1="152" x2="548" y2="152" stroke="#46d9ff" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="495" y="134" fill="#8c949d" font-size="14" font-weight="600" text-anchor="middle">COPY ENGINE</text>
-  <rect x="558" y="112" width="122" height="80" rx="40" fill="#46d9ff" opacity="0.18" filter="url(#cyan-halo-wide)"/>
-  <rect x="558" y="112" width="122" height="80" rx="40" fill="none" stroke="#46d9ff" stroke-width="3" opacity="0.82" filter="url(#cyan-halo-near)"/>
-  <rect x="558" y="112" width="122" height="80" rx="40" fill="url(#gpu-fill)" stroke="#46d9ff" stroke-width="1.7"/>
-  <text x="619" y="157" fill="#edf4f7" font-size="14" font-weight="650" text-anchor="middle">BUFFER</text>
+  <g fill="none" stroke="#46d9ff" stroke-width="1.6">
+    <path d="M303 107H342M303 151H342M303 195H342M342 107V240" marker-end="url(#arrow-cyan)"/>
+    <line x1="288" y1="284" x2="288" y2="320" marker-end="url(#arrow-cyan)"/>
+    <line x1="362" y1="343" x2="470" y2="343" marker-end="url(#arrow-cyan)"/>
+    <line x1="576" y1="343" x2="588" y2="343" marker-end="url(#arrow-cyan)"/>
+    <line x1="636" y1="320" x2="636" y2="276" marker-end="url(#arrow-cyan)"/>
+    <line x1="636" y1="230" x2="636" y2="148" marker-end="url(#arrow-cyan)"/>
+  </g>
+  <path d="M98 320V302H430V107H470" fill="none" stroke="#e46fd6" stroke-width="1.4" stroke-dasharray="5 5" marker-end="url(#arrow-magenta)"/>
+  <text x="178" y="296" fill="#e46fd6" font-size="11" font-weight="650" text-anchor="middle">cudaMemcpyAsync</text>
+  <text x="416" y="334" fill="#46d9ff" font-size="13" font-weight="700" text-anchor="middle">PCIe</text>
+
+  <g fill="#171c20" stroke="#3f5962" stroke-width="1.4">
+    <rect x="214" y="240" width="148" height="44" rx="8"/>
+    <rect x="214" y="320" width="148" height="46" rx="8"/>
+    <rect x="38" y="320" width="120" height="48" rx="8"/>
+    <rect x="470" y="320" width="106" height="46" rx="8"/>
+    <rect x="588" y="320" width="96" height="46" rx="8"/>
+    <rect x="588" y="230" width="96" height="46" rx="8"/>
+  </g>
+  <g fill="#c7d0d4" font-size="11.5" font-weight="650" text-anchor="middle">
+    <text x="288" y="258">HOST MEMORY</text><text x="288" y="273">CONTROLLER</text>
+    <text x="288" y="338">PCIe ROOT</text><text x="288" y="353">COMPLEX</text>
+    <text x="98" y="338">CPU</text><text x="98" y="353" font-size="10.5">RUNTIME + DRIVER</text>
+    <text x="523" y="338">GPU PCIe</text><text x="523" y="353">INTERFACE</text>
+    <text x="636" y="338">GPU INTERNAL</text><text x="636" y="353">LINK</text>
+    <text x="636" y="248">GPU MEMORY</text><text x="636" y="263">CONTROLLER</text>
+  </g>
+
+  <path d="M523 130V304H636M523 304V320M636 304V320" fill="none" stroke="#e46fd6" stroke-width="1.3" stroke-dasharray="4 4"/>
+  <text x="576" y="298" fill="#e46fd6" font-size="10" font-weight="650" text-anchor="middle">DMA CONTROL</text>
+  <g fill="#46d9ff" opacity="0.12" filter="url(#cyan-wide)">
+    <rect x="470" y="84" width="106" height="46" rx="9"/>
+    <rect x="588" y="84" width="96" height="64" rx="12"/>
+  </g>
+  <g fill="none" stroke="#78e5ff" stroke-width="2.6" opacity="0.65" filter="url(#cyan-near)">
+    <rect x="470" y="84" width="106" height="46" rx="9"/>
+    <rect x="588" y="84" width="96" height="64" rx="12"/>
+  </g>
+  <g fill="url(#cyan-fill)" stroke="#46d9ff" stroke-width="1.5">
+    <rect x="470" y="84" width="106" height="46" rx="9"/>
+    <rect x="588" y="84" width="96" height="64" rx="12"/>
+  </g>
+  <g fill="#edf4f7" font-size="12" font-weight="700" text-anchor="middle">
+    <text x="523" y="103">COPY ENGINE</text><text x="523" y="119">DMA</text>
+    <text x="636" y="110">GPU MEMORY</text><text x="636" y="129">BUFFER</text>
+  </g>
 </svg>

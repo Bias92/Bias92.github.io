@@ -46,7 +46,7 @@ $$
 
 ## Page와 Pageable Memory
 
-운영체제는 host memory를 page라는 일정한 크기의 단위로 나눠 관리한다. 흔한 page 크기는 4KB다. 프로그램이 보는 주소 공간과 실제 RAM이 둘 다 이 크기로 나뉘고, 운영체제는 프로그램의 각 page가 RAM의 어느 위치에 놓였는지 표로 기록한다. `malloc`으로 할당하면 우선 프로그램 주소 공간의 page만 잡히고, RAM은 그 주소를 처음 읽거나 쓸 때 붙는다. 이렇게 RAM과의 연결이 필요할 때 만들어지고 나중에 바뀔 수도 있는 host memory를 pageable memory라고 한다.
+운영체제는 host memory를 page라는 일정한 크기의 단위로 나눠 관리한다. 흔한 page 크기는 4KB다. 프로그램이 보는 주소 공간의 조각을 virtual page라고 하고, 실제 RAM을 같은 크기로 나눈 자리를 page frame이라고 한다. 운영체제는 각 virtual page가 어느 page frame에 놓였는지 page table에 기록한다. `malloc`으로 할당하면 우선 프로그램 주소 공간의 page만 잡히고, RAM은 그 주소를 처음 읽거나 쓸 때 붙는다. 이렇게 RAM과의 연결이 필요할 때 만들어지고 나중에 바뀔 수도 있는 host memory를 pageable memory라고 한다.
 
 ### Page Fault
 
@@ -54,7 +54,9 @@ $$
 
 ### Pinned Memory
 
-GPU에는 host memory와 device memory 사이의 복사를 전담하는 hardware인 copy engine이 있다. Copy engine은 CPU가 복사를 지시한 뒤에는 CPU와 상관없이 스스로 데이터를 옮기는데, 그러려면 옮기는 동안 host 쪽 데이터가 RAM의 어느 위치에 있는지가 바뀌지 않아야 한다. Pageable memory는 그 보장을 주지 못한다. 그래서 CUDA는 운영체제에 해당 page를 RAM에 그대로 두고 위치도 바꾸지 말라고 요청한 host memory를 따로 두며, 이렇게 RAM에 고정된 host memory를 pinned memory라고 한다. Pinned memory에서는 page가 disk로 나가지 않으므로 non-pageable memory라고도 부른다.
+GPU에는 host memory와 device memory 사이의 복사를 전담하는 hardware인 copy engine이 있다. 이 절에서는 copy engine을 사용하는 전형적인 pinned H2D 경로를 설명한다. Copy engine은 DMA(Direct Memory Access)를 실행한다. DMA는 CPU core가 byte를 하나씩 옮기는 대신 전용 hardware가 memory 사이의 데이터를 옮기는 방식이다. CPU가 `cudaMemcpyAsync`를 호출하면 CUDA runtime이 요청을 CUDA driver에 넘긴다. CUDA driver는 GPU에 작업을 제출하는 software이며, 원본 주소, 목적지 주소, 크기가 담긴 복사 명령을 GPU에 보낸다. Copy engine이 그 명령을 실행하는 동안 CPU는 다음 코드를 실행한다.
+
+CPU와 별도 card에 장착되고 자체 GPU memory를 가진 discrete GPU에서는 데이터가 host RAM을 읽고 쓰는 hardware인 memory controller를 거친다. 그다음 host 쪽 PCIe 연결을 관리하는 root complex에서 PCIe로 나간다. PCIe는 host system과 GPU를 연결하는 통로다. GPU에 도착한 데이터는 GPU 쪽 PCIe 연결부인 PCIe interface와 GPU 내부 연결망을 지나 GPU memory에 기록된다. 이 과정에서 copy engine이 host 쪽 page frame을 계속 사용하므로 해당 frame이 RAM에서 빠지거나 다른 자리로 옮겨지면 안 된다. Pageable memory는 그 보장을 주지 못한다. 그래서 CUDA는 운영체제에 해당 page frame을 RAM에 그대로 두라고 요청하며, 이렇게 RAM에 고정된 host memory를 pinned memory라고 한다. Pinned memory에서는 page가 disk로 나가지 않으므로 non-pageable memory라고도 부른다.
 
 Pinned memory는 `cudaHostAlloc`으로 할당하고 `cudaFreeHost`로 해제한다. `cudaHostAlloc`은 `malloc`처럼 host memory를 돌려주는 할당 함수이고, 돌려준 pointer가 pinned memory를 가리킨다는 점만 다르다. 이 함수는 데이터를 복사하는 함수가 아니며, device memory를 만드는 `cudaMalloc`을 대신하지도 않는다. 그래서 host memory를 pinned memory로 바꾸더라도 device memory는 여전히 `cudaMalloc`으로 따로 만든다.
 
@@ -81,9 +83,9 @@ cudaFree(d_x);
 
 이미 `malloc`으로 만든 영역을 뒤늦게 고정할 때는 `cudaHostRegister`를 쓰고, 고정만 풀고 영역은 남길 때는 `cudaHostUnregister`를 쓴다.
 
-Pinned memory는 실제 RAM을 그만큼 차지하므로 RAM 크기보다 많이 만들 수 없고, 그 한도를 넘기면 `cudaHostAlloc`이 memory 부족 오류를 돌려준다. 그리고 RAM의 큰 부분을 고정하면 운영체제가 쓸 RAM이 줄어 host 쪽 실행이 느려지므로, GPU와 데이터를 주고받는 영역만 pinned memory로 만든다.
+Pinned memory는 실제 RAM을 그만큼 차지하므로 RAM 크기보다 많이 만들 수 없고, 그 한도를 넘기면 `cudaHostAlloc`이 memory 부족 오류를 돌려준다. 그리고 RAM의 큰 부분을 고정하면 운영체제가 쓸 RAM이 줄어 host 쪽 실행이 느려지므로, GPU와 데이터를 주고받는 영역만 pinned memory로 만든다. 아래 그림에서 가는 회색 점선은 page table의 주소 연결이고, 청록색 실선은 H2D 데이터 경로다. 자홍색 점선은 CPU가 제출한 복사 명령과 copy engine의 제어 경로다.
 
-![Pinned memory](images/pinned-memory-chart.svg)
+![Pinned page frames and PCIe copy path](images/pinned-memory-chart.svg)
 
 ## 비동기 호출과 cudaMemcpyAsync
 
