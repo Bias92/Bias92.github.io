@@ -15,9 +15,12 @@ CUDA 프로그램은 CPU와 GPU를 함께 사용한다. 이때 CPU 쪽을 host, 
 
 ## Host Memory와 Device Memory
 
-할당(allocation)은 프로그램이 사용할 memory 영역을 확보하고 그 시작 주소를 pointer로 돌려받는 일이다. Pointer는 memory 주소를 담는 변수다. Host memory는 `malloc`으로 할당하고 `free`로 해제한다. 그다음 device memory는 `cudaMalloc`으로 할당하고 `cudaFree`로 해제하며, 돌려받은 pointer는 GPU가 접근하는 영역을 가리킨다. 두 pointer가 서로 다른 memory를 가리키기 때문에 CPU가 `malloc` 영역에 써 둔 값을 GPU가 읽으려면 복사가 필요하다.
+할당(allocation)은 프로그램이 사용할 memory 영역을 확보하고 그 시작 주소를 pointer로 돌려받는 일이다. Pointer는 memory 주소를 담는 변수다. Host memory는 `malloc`으로 할당하고 `free`로 해제한다. 그다음 device memory는 `cudaMalloc`으로 할당하고 `cudaFree`로 해제하며, 돌려받은 pointer는 GPU가 접근하는 영역을 가리킨다. 두 pointer가 서로 다른 memory를 가리키기 때문에 CPU가 `malloc` 영역에 써 둔 값을 GPU가 읽으려면 복사가 필요하다. 아래 코드에서 `N`은 `float` 원소의 개수이고, `bytes`는 그 원소들이 차지하는 전체 byte 수다. `size_t`는 memory 크기를 담는 정수 타입이다.
 
 ```cpp
+const int N = 1000;
+const size_t bytes = N * sizeof(float);
+
 float *h_x = (float *)malloc(bytes);   // host memory
 float *d_x = nullptr;
 cudaMalloc(&d_x, bytes);               // device memory
@@ -62,6 +65,9 @@ Pinned memory는 `cudaHostAlloc`으로 할당하고 `cudaFreeHost`로 해제한�
 | `cudaMalloc` / `cudaFree` | device memory |
 
 ```cpp
+const int N = 1000;
+const size_t bytes = N * sizeof(float);
+
 float *h_x = nullptr;
 cudaHostAlloc(&h_x, bytes, cudaHostAllocDefault);   // pinned host memory
 float *d_x = nullptr;
