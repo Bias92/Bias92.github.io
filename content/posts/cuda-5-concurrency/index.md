@@ -97,7 +97,17 @@ Pinned memory는 실제 RAM을 그만큼 차지하므로 RAM 크기보다 많이
 
 ## Stream
 
-Stream은 GPU에서 제출된 순서대로 실행되는 작업의 열이다. 규칙은 둘이다. 첫째, 같은 stream에 제출한 두 작업은 제출 순서대로 실행되며, 앞 작업이 끝나기 전에 뒤 작업이 시작하지 않는다. 둘째, 서로 다른 stream에 제출한 두 작업 사이에는 CUDA가 아무 순서도 정하지 않는다. 그래서 stream 1의 작업은 stream 2의 작업보다 먼저, 동시에, 또는 나중에 실행될 수 있다. 두 작업을 같은 시간대에 실행하려면 서로 다른 stream에 넣어야 하고, 같은 stream에 넣으면 겹칠 가능성이 없다. 서로 다른 stream에 넣는 것은 겹침의 필요조건이지 충분조건은 아니어서, GPU에 남는 자원이 없으면 다른 stream의 작업도 차례로 실행된다.
+Stream은 GPU에 제출한 작업의 실행 순서를 관리하는 열이다. 규칙은 두 가지다.
+
+1. 같은 stream
+
+   같은 stream에 넣은 작업은 제출한 순서대로 실행된다. 앞 작업이 끝나기 전에 뒤 작업이 시작하지 않으므로 서로 겹치지 않는다.
+
+2. 서로 다른 stream
+
+   서로 다른 stream에 넣은 작업 사이에는 CUDA가 실행 순서를 정하지 않는다. 한 작업은 다른 작업보다 먼저, 동시에, 또는 나중에 실행될 수 있다.
+
+두 작업을 같은 시간대에 실행하려면 서로 다른 stream에 넣어야 한다. 그렇다고 반드시 겹치는 것은 아니다. GPU에 남는 자원이 없으면 서로 다른 stream의 작업도 차례로 실행된다.
 
 Stream은 `cudaStream_t` 타입의 변수로 선언하고 `cudaStreamCreate`로 만든다. 만든 stream은 `cudaMemcpyAsync`의 마지막 인자와 kernel launch의 `<<<>>>` 네 번째 인자에 넣는다. `<<<grid, block, 0, stream>>>`에서 세 번째 값은 block 안의 thread들이 함께 쓰는 GPU 안의 작은 memory인 [shared memory]({{< relref "/posts/cuda-3-shared-memory" >}})를 실행 중에 추가로 확보할 크기이고, `0`이면 추가 공간을 쓰지 않는다.
 
