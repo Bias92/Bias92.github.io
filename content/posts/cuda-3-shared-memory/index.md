@@ -15,9 +15,9 @@ Shared memory를 쓰면 global memory에서 한 번 읽은 데이터를 block �
 
 ## Global Memory와 Coalescing
 
-GPU는 thread를 하나씩 실행하지 않고 32개씩 묶어 한 번에 같은 명령을 실행하는데, 이 32개 묶음을 warp라고 하고 warp 안의 각 thread 자리를 lane이라고 한다. 한 warp가 global memory를 읽는 명령을 실행하면 32개 lane이 각자의 주소를 내놓고, memory 장치는 그 주소들을 32바이트 단위인 sector로 묶어 가져온다. 이렇게 여러 lane의 접근을 적은 수의 sector 전송으로 합치는 것을 coalescing이라고 한다. 그래서 global memory 접근 비용은 lane 수가 아니라 실제로 건드린 서로 다른 sector 수로 정해진다.
+GPU는 thread를 하나씩 실행하지 않고 32개씩 묶어 한 번에 같은 명령을 실행하는데, 이 32개 묶음을 warp라고 하고 warp 안의 각 thread 자리를 lane이라고 한다. 한 warp가 global memory를 읽는 명령을 실행하면 32개 lane이 각자의 주소를 내놓는다. 이때 global memory는 byte 하나씩 팔지 않고 sector라는 32바이트 덩어리 단위로만 데이터를 보낸다. Sector의 경계는 주소 0부터 32바이트 간격으로 미리 정해져 있어서, 그 안의 1바이트만 필요해도 sector 전체가 전송된다. 이렇게 여러 lane의 접근을 적은 수의 sector 전송으로 합치는 것을 coalescing이라고 한다. 그래서 global memory 접근 비용은 lane 수가 아니라 실제로 건드린 서로 다른 sector 수로 정해진다.
 
-`float`는 4바이트이므로 32개 lane이 연속된 `float` 32개를 읽으면 128바이트 범위이고, 시작 주소가 32바이트 경계에 맞춰져 있으면 sector 4개로 끝난다. 이때 시작 주소가 `float` 하나만큼 어긋나면 같은 128바이트가 sector 경계를 하나 더 걸쳐 5개가 되고, lane 사이 간격이 32바이트 이상으로 벌어지면 lane마다 다른 sector를 건드려 32개까지 늘어난다. 세 경우 모두 쓸모 있는 데이터는 128바이트로 같지만 실제로 옮기는 양은 128, 160, 1024바이트로 달라진다.
+`float`는 4바이트이므로 32개 lane이 연속된 `float` 32개를 읽으면 128바이트 범위이고, 시작 주소가 sector 경계(32의 배수 주소)에 맞춰져 있으면 sector 4개로 끝난다. 이때 시작 주소가 `float` 하나만큼 어긋나면 같은 128바이트가 sector 경계를 하나 더 걸쳐 5개가 되고, lane 사이 간격이 32바이트 이상으로 벌어지면 lane마다 다른 sector를 건드려 32개까지 늘어난다. 세 경우 모두 쓸모 있는 데이터는 128바이트로 같지만 실제로 옮기는 양은 128, 160, 1024바이트로 달라진다.
 
 ![Coalescing](images/coalescing.svg?v=2)
 
