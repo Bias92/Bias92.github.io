@@ -20,7 +20,7 @@ Depending on when the translation happens, there are three ways to run a program
 
 The difference shows up as time once the same function is called repeatedly. Below are per-call times for the same integer loop called twelve times as CPython (interpreter), numba (JIT), and a C library compiled ahead of time with `clang -O2` (AOT). All three return the same value.
 
-![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
+![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif?v=2#medium)
 
 The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call.
 

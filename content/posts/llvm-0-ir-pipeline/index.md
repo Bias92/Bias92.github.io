@@ -20,7 +20,7 @@ summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하�
 
 이 차이는 같은 함수를 반복 호출하면 시간으로 드러난다. 아래는 동일한 정수 반복 계산을 CPython(인터프리터), numba(JIT), `clang -O2`로 미리 컴파일한 C 라이브러리(AOT)로 12번씩 호출해 기록한 호출별 시간이다. 반환값은 셋 다 같다.
 
-![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
+![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif?v=2#medium)
 
 인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다.
 
