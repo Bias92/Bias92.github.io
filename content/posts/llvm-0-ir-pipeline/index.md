@@ -22,7 +22,7 @@ summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하�
 
 ![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
 
-인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다. y축은 log 눈금이라 한 칸이 10배 차이다.
+인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다.
 
 LLVM은 C/C++ 같은 native 언어를 위한 AOT 컴파일러다. native 언어는 가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어를 말한다.
 

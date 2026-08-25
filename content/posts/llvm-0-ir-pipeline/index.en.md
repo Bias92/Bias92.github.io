@@ -22,7 +22,7 @@ The difference shows up as time once the same function is called repeatedly. Bel
 
 ![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
 
-The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call. The y axis is a log scale, one gridline step being a factor of ten.
+The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call.
 
 LLVM is an AOT compiler for native languages like C and C++. A native language is one that compiles to machine code the CPU executes directly, without a virtual machine.
 
