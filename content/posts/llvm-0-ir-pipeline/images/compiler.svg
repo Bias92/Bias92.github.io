@@ -1,0 +1,38 @@
+<svg width="720" height="300" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>What a compiler does</title>
+  <desc>Handwritten-style note: source code that humans read and write is translated by a compiler into machine code that the CPU executes.</desc>
+  <style>
+    text{font-family:'Chalkboard SE','Comic Sans MS','Segoe Print','Bradley Hand',cursive;fill:#dff0f7}
+    .big{font-size:22px}
+    .side{font-size:16px;fill:#9fdcec}
+    .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:15px;fill:#dff0f7}
+  </style>
+
+  <rect width="720" height="300" fill="#0d0e10"/>
+  <g stroke="#191e23" stroke-width="1">
+    <line x1="0" y1="60"  x2="720" y2="60"/>
+    <line x1="0" y1="120" x2="720" y2="120"/>
+    <line x1="0" y1="180" x2="720" y2="180"/>
+    <line x1="0" y1="240" x2="720" y2="240"/>
+  </g>
+
+  <!-- source side -->
+  <text x="90" y="52" class="big" transform="rotate(-0.6 90 52)">source code</text>
+  <text x="96" y="88" class="mono" transform="rotate(0.4 96 88)">int a = 4;</text>
+  <text x="90" y="122" class="side" transform="rotate(-0.4 90 122)">humans read and write this</text>
+
+  <!-- wobbly arrow down -->
+  <g fill="none" stroke="#cfe9f2" stroke-width="2.2" stroke-linecap="round">
+    <path d="M150 138 C 153 156, 147 172, 151 194"/>
+    <path d="M145 186 L 151 196 L 156 187"/>
+  </g>
+  <text x="185" y="172" class="big" transform="rotate(-0.5 185 172)">compiler = translator</text>
+
+  <!-- machine side -->
+  <text x="90" y="232" class="big" transform="rotate(0.5 90 232)">machine code</text>
+  <text x="96" y="262" class="mono" transform="rotate(-0.4 96 262)">1101 0010 1000 0000 ...</text>
+  <text x="330" y="262" class="side" transform="rotate(0.3 330 262)">the only thing a CPU can run</text>
+
+  <!-- highlighter on compiler -->
+  <rect x="178" y="154" width="248" height="26" rx="10" fill="#ffdf3f" opacity="0.2" transform="rotate(-0.6 300 167)"/>
+</svg>

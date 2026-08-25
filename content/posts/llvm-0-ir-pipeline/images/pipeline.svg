@@ -4,7 +4,6 @@
   <style>
     text{font-family:'Chalkboard SE','Comic Sans MS','Segoe Print','Bradley Hand',cursive;fill:#dff0f7}
     .f{font-size:24px;letter-spacing:.02em}
-    .tag{font-size:15px;fill:#6f8b96}
     .cmd{font-size:17px;fill:#9fdcec}
     .red{font-size:20px;fill:#e46fd6}
   </style>
@@ -29,19 +28,14 @@
 
   <!-- filenames + tags -->
   <text x="100" y="55"  class="f" transform="rotate(-0.6 100 55)">Test.c</text>
-  <text x="260" y="53"  class="tag">// C source</text>
 
   <text x="100" y="146" class="f" transform="rotate(0.5 100 146)">Test.ll</text>
-  <text x="260" y="144" class="tag">// IR</text>
 
   <text x="100" y="266" class="f" transform="rotate(-0.4 100 266)">Test.ll'</text>
-  <text x="268" y="264" class="tag">// optimized IR</text>
 
   <text x="100" y="386" class="f" transform="rotate(0.6 100 386)">Test.s</text>
-  <text x="256" y="384" class="tag">// assembly</text>
 
   <text x="100" y="466" class="f" transform="rotate(-0.5 100 466)">a.out</text>
-  <text x="240" y="464" class="tag">// executable</text>
 
   <!-- wobbly down arrows -->
   <g fill="none" stroke="#cfe9f2" stroke-width="2.2" stroke-linecap="round">

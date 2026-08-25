@@ -8,6 +8,12 @@ series: ["LLVM"]
 summary: "Emit LLVM IR from C with clang, decode the IR line by line, and lower it to ARM assembly with llc to map the three layers. Observe how optimization passes rewrite code via an -O0 vs -O1 diff, and record the optnone attribute that makes opt silently do nothing."
 ---
 
+A compiler is a program that translates source code, which humans read and write, into the machine code a CPU executes. A CPU executes only machine code, so code written in a language like C goes through this translation before it runs.
+
+![Source code is translated by a compiler into machine code](images/compiler.svg)
+
+The same structure appeared with nvcc in [CUDA C Basics]({{< relref "/posts/cuda-c-basics" >}}#the-nvcc-compilation-pipeline): nvcc lowers device code to PTX, an intermediate instruction set, and then to SASS, the GPU's machine code. CPU-side compilers step down through intermediate stages the same way, and LLVM is the representative one.
+
 LLVM is an ahead-of-time compiler for native languages like C and C++. A native language is one that compiles to machine code the CPU executes directly, without a virtual machine. Ahead-of-time (AOT) means translating everything to machine code before the program runs, as opposed to JIT, which translates during execution, and interpreters, which never translate and re-interpret every time.
 
 ## The Pipeline
