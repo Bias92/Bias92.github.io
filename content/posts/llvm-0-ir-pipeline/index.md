@@ -10,7 +10,7 @@ summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하�
 
 컴파일러 공부를 시작했다. 커리큘럼은 llvm → licm → opencl → tvm 순서다. 이 글은 그 첫 기록으로, C 코드 한 조각이 기계어가 되기까지의 층을 직접 확인한 과정을 담았다.
 
-읽은 자료는 [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html)의 앞 세 챕터다. 저자는 LLVM을 이렇게 정의한다. C/C++ 같은 native 언어를 위한, hackable한 ahead-of-time 컴파일러. ahead-of-time(AOT)은 실행 전에 전부 기계어로 번역해 두는 방식이다. 실행 중에 번역하는 JIT, 번역 없이 매번 해석하는 인터프리터와 대비된다.
+LLVM은 C/C++ 같은 native 언어를 위한 ahead-of-time 컴파일러다. ahead-of-time(AOT)은 실행 전에 전부 기계어로 번역해 두는 방식으로, 실행 중에 번역하는 JIT나 번역 없이 매번 해석하는 인터프리터와 대비된다.
 
 ## 전체 그림
 
@@ -134,3 +134,9 @@ func1이 `ret i32 4` 한 줄로 접힌다. IR로 pass 실험을 할 때는 이 �
 - `-O0` IR에는 optnone이 붙는다. opt가 조용히 아무것도 안 하면 이것부터 의심한다
 
 다음 글은 licm(loop invariant code motion)이다. 반복문 안의 불변 계산을 밖으로 빼는 변환 pass 하나를 골라, 이번과 같은 방식으로 전후 IR을 비교한다.
+
+## 참고
+
+- [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): What is LLVM? / The Pieces / Understanding LLVM IR 세 챕터. 이 글의 뼈대.
+- [LLVM Language Reference](https://llvm.org/docs/LangRef.html): IR 문법의 공식 정의.
+- [The Architecture of Open Source Applications: LLVM](https://aosabook.org/en/v1/llvm.html): Chris Lattner가 쓴 LLVM 설계 배경.

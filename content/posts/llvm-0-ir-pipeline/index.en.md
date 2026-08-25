@@ -10,7 +10,7 @@ summary: "Emit LLVM IR from C with clang, decode the IR line by line, and lower 
 
 I started studying compilers. The curriculum goes llvm → licm → opencl → tvm. This is the first entry. The goal is simple: watch a piece of C code travel through every layer on its way to machine code.
 
-The reading was the first three chapters of [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html). The author defines LLVM as a nice, hackable, ahead-of-time compiler for native languages like C and C++. Ahead-of-time (AOT) means translating everything to machine code before the program runs. JIT translates during execution instead, and interpreters never translate at all, re-interpreting every time.
+LLVM is an ahead-of-time compiler for native languages like C and C++. Ahead-of-time (AOT) means translating everything to machine code before the program runs, as opposed to JIT, which translates during execution, and interpreters, which never translate and re-interpret every time.
 
 ## The Big Picture
 
@@ -134,3 +134,9 @@ func1 folds to a single `ret i32 4`. When emitting IR for pass experiments, this
 - `-O0` IR carries optnone. When opt silently does nothing, suspect it first
 
 Next up is licm (loop invariant code motion): pick one transformation pass that hoists loop-invariant computation out of loops, and compare the IR before and after, the same way as here.
+
+## References
+
+- [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): the What is LLVM? / The Pieces / Understanding LLVM IR chapters. The backbone of this post.
+- [LLVM Language Reference](https://llvm.org/docs/LangRef.html): the official definition of IR syntax.
+- [The Architecture of Open Source Applications: LLVM](https://aosabook.org/en/v1/llvm.html): Chris Lattner on the design background of LLVM.
