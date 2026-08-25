@@ -1,0 +1,65 @@
+<svg width="720" height="212" viewBox="0 0 720 212" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>LLVM compilation pipeline: C source to executable through IR</title>
+  <desc>Five file stages flow left to right: Test.c becomes Test.ll through the clang frontend, passes transform Test.ll into optimized Test.ll prime, the llc backend lowers it to Test.s, and the assembler and linker produce the executable. A dashed bracket under the two IR stages notes that one IR format flows through every stage.</desc>
+  <style>
+    text{font-family:'Roboto','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;fill:#cfe9f2}
+    .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace}
+    .tool{font-size:12.5px;fill:#9fdcec;letter-spacing:.03em}
+    .sub{font-size:10px;fill:#6f8b96;letter-spacing:.04em}
+    .file{font-size:13px;fill:#dff0f7}
+    .tag{font-size:10.5px;fill:#6f8b96}
+    .note{font-size:11px;fill:#e46fd6;letter-spacing:.04em}
+  </style>
+
+  <rect width="720" height="212" fill="#0d0e10"/>
+
+  <!-- tool labels above arrows -->
+  <text x="139" y="44" class="tool" text-anchor="middle">clang 프런트엔드</text>
+  <text x="139" y="60" class="sub" text-anchor="middle">파싱 → AST → 타입검사</text>
+  <text x="286" y="44" class="tool" text-anchor="middle">pass들</text>
+  <text x="286" y="60" class="sub" text-anchor="middle">IR → IR 변환</text>
+  <text x="433" y="44" class="tool" text-anchor="middle">llc 백엔드</text>
+  <text x="433" y="60" class="sub" text-anchor="middle">codegen</text>
+  <text x="580" y="44" class="tool" text-anchor="middle">어셈블러 · 링커</text>
+
+  <!-- file boxes -->
+  <g>
+    <rect x="21"  y="82" width="90" height="52" rx="7" fill="#12171b" stroke="#22323a"/>
+    <text x="66"  y="104" class="file mono" text-anchor="middle">Test.c</text>
+    <text x="66"  y="122" class="tag" text-anchor="middle">C 소스</text>
+
+    <rect x="168" y="82" width="90" height="52" rx="7" fill="#12171b" stroke="#3a5560"/>
+    <text x="213" y="104" class="file mono" text-anchor="middle">Test.ll</text>
+    <text x="213" y="122" class="tag" text-anchor="middle">IR</text>
+
+    <rect x="315" y="82" width="90" height="52" rx="7" fill="#12171b" stroke="#3a5560"/>
+    <text x="360" y="104" class="file mono" text-anchor="middle">Test.ll'</text>
+    <text x="360" y="122" class="tag" text-anchor="middle">최적화된 IR</text>
+
+    <rect x="462" y="82" width="90" height="52" rx="7" fill="#12171b" stroke="#22323a"/>
+    <text x="507" y="104" class="file mono" text-anchor="middle">Test.s</text>
+    <text x="507" y="122" class="tag" text-anchor="middle">어셈블리</text>
+
+    <rect x="609" y="82" width="90" height="52" rx="7" fill="#12171b" stroke="#22323a"/>
+    <text x="654" y="104" class="file mono" text-anchor="middle">a.out</text>
+    <text x="654" y="122" class="tag" text-anchor="middle">실행 파일</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#4d6a76" stroke-width="1.6">
+    <line x1="111" y1="108" x2="160" y2="108"/>
+    <line x1="258" y1="108" x2="307" y2="108"/>
+    <line x1="405" y1="108" x2="454" y2="108"/>
+    <line x1="552" y1="108" x2="601" y2="108"/>
+  </g>
+  <g fill="#4d6a76">
+    <path d="M160 103L168 108L160 113Z"/>
+    <path d="M307 103L315 108L307 113Z"/>
+    <path d="M454 103L462 108L454 113Z"/>
+    <path d="M601 103L609 108L601 113Z"/>
+  </g>
+
+  <!-- one-IR bracket under the IR stages -->
+  <path d="M168 154 v8 h237 v-8" fill="none" stroke="#e46fd6" stroke-dasharray="5 4"/>
+  <text x="286" y="186" class="note" text-anchor="middle">같은 IR 규격 하나가 모든 단계를 흐른다</text>
+</svg>
