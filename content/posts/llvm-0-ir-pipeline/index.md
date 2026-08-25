@@ -14,7 +14,11 @@ summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하�
 
 ![The LLVM stack and the nvcc stack from the CUDA C post, layer by layer](images/cpu-gpu-stack.svg)
 
-LLVM은 C/C++ 같은 native 언어를 위한 ahead-of-time 컴파일러다. native 언어는 가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어를 말한다. ahead-of-time(AOT)은 실행 전에 전부 기계어로 번역해 두는 방식으로, 실행 중에 번역하는 JIT나 번역 없이 매번 해석하는 인터프리터와 대비된다.
+LLVM은 C/C++ 같은 native 언어를 위한 ahead-of-time 컴파일러다. native 언어는 가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어를 말한다. ahead-of-time(AOT)은 실행 전에 전부 기계어로 번역해 두는 방식으로, 실행 중에 번역하는 JIT나 번역 없이 매번 해석하는 인터프리터와 대비된다. 세 방식의 차이는 같은 함수를 반복 호출해 보면 시간으로 드러난다. 아래는 동일한 정수 반복 계산을 CPython(인터프리터), numba(JIT), `clang -O2`로 미리 컴파일한 C 라이브러리(AOT)로 12번씩 호출해 기록한 호출별 시간이다. 반환값은 셋 다 같다.
+
+![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
+
+인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다. y축은 log 눈금이라 한 칸이 10배 차이고, 코드는 [bench.py](/code/llvm-00/bench.py)에 있다.
 
 ## 파이프라인
 
@@ -126,14 +130,6 @@ opt -passes=mem2reg Test_noopt.ll -S
 ```
 
 func1이 `ret i32 4` 한 줄로 접힌다. IR로 pass 실험을 할 때는 이 옵션으로 뽑는다.
-
-## 번역 시점의 비용
-
-같은 계산을 하는 함수를 12번 반복 호출하면 번역 시점의 차이가 실행 시간으로 드러난다. 다음은 동일한 정수 반복 계산을 세 방식으로 실행해 호출별 시간을 기록한 결과다. 인터프리터는 CPython이 소스를 그대로 실행하고, JIT는 numba가 같은 함수를 실행 중에 컴파일하며, AOT는 같은 계산을 C로 옮겨 `clang -O2`로 미리 컴파일한 라이브러리를 호출한다. 세 방식의 반환값은 같다.
-
-![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
-
-인터프리터는 매 호출 같은 비용을 낸다. 호출할 때마다 같은 해석을 되풀이하기 때문이다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup), 그다음부터는 번역해 둔 기계어를 재사용해 34배 빨라진다. AOT는 그 비용을 실행 전에 내서 첫 호출부터 68배 빠르다. 그래프의 y축은 log 눈금이라 한 칸이 10배 차이다. 코드는 [bench.py](/code/llvm-00/bench.py)에 있다.
 
 ## 참고
 

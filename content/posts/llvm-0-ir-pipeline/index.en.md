@@ -14,7 +14,11 @@ The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics"
 
 ![The LLVM stack and the nvcc stack from the CUDA C post, layer by layer](images/cpu-gpu-stack.svg)
 
-LLVM is an ahead-of-time compiler for native languages like C and C++. A native language is one that compiles to machine code the CPU executes directly, without a virtual machine. Ahead-of-time (AOT) means translating everything to machine code before the program runs, as opposed to JIT, which translates during execution, and interpreters, which never translate and re-interpret every time.
+LLVM is an ahead-of-time compiler for native languages like C and C++. A native language is one that compiles to machine code the CPU executes directly, without a virtual machine. Ahead-of-time (AOT) means translating everything to machine code before the program runs, as opposed to JIT, which translates during execution, and interpreters, which never translate and re-interpret every time. The difference shows up as time once the same function is called repeatedly. Below are per-call times for the same integer loop called twelve times as CPython (interpreter), numba (JIT), and a C library compiled ahead of time with `clang -O2` (AOT). All three return the same value.
+
+![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
+
+The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call. The y axis is a log scale, one gridline step being a factor of ten, and the code is in [bench.py](/code/llvm-00/bench.py).
 
 ## The Pipeline
 
@@ -126,14 +130,6 @@ opt -passes=mem2reg Test_noopt.ll -S
 ```
 
 func1 folds to a single `ret i32 4`. This option is the standard way to emit IR for pass experiments.
-
-## The Cost of Translation Timing
-
-Calling a function that performs the same computation twelve times in a row makes the difference in translation timing visible as running time. The chart below records per-call times for the same integer loop executed three ways: the interpreter is CPython running the source directly, the JIT is numba compiling the same function during execution, and the AOT build is the same computation written in C, compiled ahead of time with `clang -O2`, and called as a library. All three return the same value.
-
-![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
-
-The interpreter pays the same cost on every call, because it repeats the same interpretation each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, running 34x faster. The AOT build pays that cost before the program runs, so it is 68x faster from the first call. The y axis is a log scale, so one gridline step is a factor of ten. The code is in [bench.py](/code/llvm-00/bench.py).
 
 ## References
 
