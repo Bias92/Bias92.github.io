@@ -24,7 +24,7 @@ summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하�
 
 인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다.
 
-LLVM은 C/C++ 같은 native 언어를 위한 AOT 컴파일러다. native 언어는 가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어를 말한다.
+LLVM은 C/C++ 같은 native 언어(가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어)를 위한 AOT 컴파일러다.
 
 같은 구조가 [CUDA C 기초]({{< relref "/posts/cuda-c-basics" >}}#nvcc-컴파일-파이프라인)에 이미 나왔다. NVIDIA의 CUDA 컴파일러인 nvcc는 `.cu` 파일을 CPU에서 실행할 host 코드와 GPU에서 실행할 device 코드로 나누어 처리하는데, device 코드를 PTX라는 중간 명령어로 바꾸고, PTX를 GPU 기계어인 SASS로 내린다. CPU 쪽 컴파일러도 같은 방식으로 중간 단계를 거쳐 내려가며, 그 대표가 LLVM이다. 실제로 nvcc의 device 코드 컴파일러인 cicc가 LLVM 위에서 만들어져 있어서, 두 스택은 층별로 그대로 대응한다.
 

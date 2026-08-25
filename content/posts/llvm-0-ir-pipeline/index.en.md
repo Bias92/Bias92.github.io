@@ -24,7 +24,7 @@ The difference shows up as time once the same function is called repeatedly. Bel
 
 The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call.
 
-LLVM is an AOT compiler for native languages like C and C++. A native language is one that compiles to machine code the CPU executes directly, without a virtual machine.
+LLVM is an AOT compiler for native languages (languages that compile to machine code the CPU executes directly, with no virtual machine) like C and C++.
 
 The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics" >}}#the-nvcc-compilation-pipeline). nvcc, NVIDIA's CUDA compiler, splits a `.cu` file into host code that runs on the CPU and device code that runs on the GPU, lowering the device code to PTX, an intermediate instruction set, and then to SASS, the GPU's machine code. CPU-side compilers step down through intermediate stages the same way, and LLVM is the representative one. In fact cicc, the device code compiler inside nvcc, is built on LLVM, so the two stacks correspond layer by layer.
 
