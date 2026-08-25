@@ -54,16 +54,24 @@ int main(void)  { return 0; }
 clang -emit-llvm -S Test.c   # → Test.ll
 ```
 
-`-emit-llvm -S` tells clang to stop at human-readable IR instead of going all the way to machine code. func1 in the resulting `Test.ll` reads as follows; the meaning of each line is in the comments.
+`-emit-llvm -S` tells clang to stop at human-readable IR instead of going all the way to machine code. func1 in the resulting `Test.ll` reads as follows.
 
 ```llvm
-define i32 @func1() #0 {          ; function func1 returning i32 (32-bit int). #0 refers to an attribute group
-  %1 = alloca i32, align 4        ; reserve one i32 slot on the stack; its address is named %1
-  store i32 4, ptr %1, align 4    ; store 4 at that address            ← int a = 4;
-  %2 = load i32, ptr %1, align 4  ; load from that address into %2     ← reading a in "return a"
-  ret i32 %2                      ; return %2
+define i32 @func1() #0 {
+  %1 = alloca i32, align 4
+  store i32 4, ptr %1, align 4
+  %2 = load i32, ptr %1, align 4
+  ret i32 %2
 }
 ```
+
+| IR | Meaning | C counterpart |
+|---|---|---|
+| `define i32 @func1() #0` | define function func1 returning i32 (32-bit int); `#0` refers to an attribute group | `int func1(void)` |
+| `%1 = alloca i32, align 4` | reserve one i32 slot on the stack; its address is named `%1` | the slot for `int a` |
+| `store i32 4, ptr %1` | store 4 at that address | `a = 4` |
+| `%2 = load i32, ptr %1` | load from that address into `%2` | reading a in `return a` |
+| `ret i32 %2` | return `%2` | `return` |
 
 Four symbols are enough to read the body.
 

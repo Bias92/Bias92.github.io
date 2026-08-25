@@ -54,16 +54,24 @@ int main(void)  { return 0; }
 clang -emit-llvm -S Test.c   # → Test.ll
 ```
 
-`-emit-llvm -S`는 기계어까지 가지 않고 사람이 읽을 수 있는 IR에서 멈추라는 옵션이다. 나온 `Test.ll`의 func1은 다음과 같다. 각 줄의 뜻은 주석과 같다.
+`-emit-llvm -S`는 기계어까지 가지 않고 사람이 읽을 수 있는 IR에서 멈추라는 옵션이다. 나온 `Test.ll`의 func1은 다음과 같다.
 
 ```llvm
-define i32 @func1() #0 {          ; i32(32비트 정수)를 반환하는 함수 func1. #0은 attributes 묶음 참조
-  %1 = alloca i32, align 4        ; 스택에 i32 한 칸 확보. 그 주소에 %1이라는 이름표
-  store i32 4, ptr %1, align 4    ; 그 주소에 4 저장            ← int a = 4;
-  %2 = load i32, ptr %1, align 4  ; 그 주소에서 읽어 %2에 담기   ← return a의 a 읽기
-  ret i32 %2                      ; %2 반환
+define i32 @func1() #0 {
+  %1 = alloca i32, align 4
+  store i32 4, ptr %1, align 4
+  %2 = load i32, ptr %1, align 4
+  ret i32 %2
 }
 ```
+
+| IR | 뜻 | 대응 C 코드 |
+|---|---|---|
+| `define i32 @func1() #0` | i32(32비트 정수)를 반환하는 함수 func1 정의. `#0`은 attributes 묶음 참조 | `int func1(void)` |
+| `%1 = alloca i32, align 4` | 스택에 i32 한 칸 확보. 그 주소에 `%1`이라는 이름표 | `int a`의 자리 |
+| `store i32 4, ptr %1` | 그 주소에 4 저장 | `a = 4` |
+| `%2 = load i32, ptr %1` | 그 주소에서 읽어 `%2`에 담기 | `return a`의 a 읽기 |
+| `ret i32 %2` | `%2` 반환 | `return` |
 
 기호는 네 개만 알면 본문이 읽힌다.
 
