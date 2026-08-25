@@ -91,6 +91,17 @@ llc Test.ll -o Test.s
 
 `Test.ll`의 `store i32 4`를 `store i32 9`로 바꾸고 `llc`를 다시 돌리면 `mov w8, #9`가 나온다. IR 텍스트 자체가 컴파일러의 입력이라, 프런트엔드를 거치지 않고 IR을 고치는 것만으로 프로그램이 바뀐다.
 
+## 어셈블리에서 실행 파일로
+
+`Test.s`는 아직 글자다. 어셈블러(as)가 이 글자를 CPU가 실행하는 비트로 바꾼 것이 object 파일 `Test.o`다. Object 파일은 기계어이지만 혼자서는 실행되지 않는 조각으로, 다른 조각이나 라이브러리에 있는 함수의 주소가 아직 비어 있다. 링커(ld)가 조각들을 모아 빈 주소를 채우고 이어 붙이면 실행 파일이 된다.
+
+```bash
+clang -c Test.s -o Test.o   # assemble
+clang Test.o -o a.out       # link
+```
+
+두 단계 모두 clang 명령으로 부를 수 있고, clang이 내부에서 as와 ld를 호출한다.
+
 ## 최적화를 diff로 관찰하기
 
 읽을 수 있는 IR의 장점은 최적화 전후를 비교할 때 나온다.

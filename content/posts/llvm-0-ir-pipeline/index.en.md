@@ -91,6 +91,17 @@ Assigning virtual names (%N) to physical places (registers, stack slots) is the 
 
 Change `store i32 4` to `store i32 9` in `Test.ll`, run `llc` again, and the output shows `mov w8, #9`. The IR text itself is the compiler input, so editing the IR alone changes the program without going through the frontend.
 
+## From Assembly to an Executable
+
+`Test.s` is still text. The assembler (as) turns that text into the bits a CPU executes, producing the object file `Test.o`. An object file is machine code but not runnable on its own: it is a fragment whose references to functions in other fragments or libraries are still unresolved. The linker (ld) collects the fragments, fills in those addresses, and joins them into an executable.
+
+```bash
+clang -c Test.s -o Test.o   # assemble
+clang Test.o -o a.out       # link
+```
+
+Both steps can be invoked through the clang command, which calls as and ld internally.
+
 ## Watching Optimization as a Diff
 
 The payoff of readable IR shows up when comparing before and after optimization.
