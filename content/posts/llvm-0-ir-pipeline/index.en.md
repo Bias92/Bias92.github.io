@@ -12,9 +12,23 @@ LLVM is an ahead-of-time compiler for native languages like C and C++. A native 
 
 This post takes one piece of C code, emits its IR and decodes it line by line, lowers it to ARM assembly to map the three layers, and then observes optimization passes rewriting the IR.
 
-## The Big Picture
+## The Pipeline
 
-![The compilation pipeline from C source through the clang frontend, passes, and the llc backend to an executable](images/pipeline.svg)
+```
+Test.c
+  | clang -emit-llvm -S
+  v
+Test.ll        # IR
+  | opt
+  v
+Test.ll'       # optimized IR
+  | llc
+  v
+Test.s         # assembly
+  | clang
+  v
+a.out
+```
 
 IR (intermediate representation) is the language that sits between source and machine code. One IR flows between every stage. Most compilers keep their IR as an in-memory object structure that cannot be written down. LLVM IR is a text format with a published grammar, so it can be saved to a file, edited by hand, and fed back to the compiler. This post checks all three.
 

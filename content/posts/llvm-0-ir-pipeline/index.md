@@ -12,9 +12,23 @@ LLVM은 C/C++ 같은 native 언어를 위한 ahead-of-time 컴파일러다. nati
 
 이 글은 C 코드 한 조각을 IR로 뽑아 한 줄씩 해독하고, ARM 어셈블리까지 내려 세 층을 대응시킨 뒤, 최적화 pass가 IR을 바꾸는 과정을 관찰한다.
 
-## 전체 그림
+## 파이프라인
 
-![C 소스가 clang 프런트엔드, pass, llc 백엔드를 거쳐 실행 파일이 되는 컴파일 파이프라인](images/pipeline.svg)
+```
+Test.c
+  | clang -emit-llvm -S
+  v
+Test.ll        # IR
+  | opt
+  v
+Test.ll'       # 최적화된 IR
+  | llc
+  v
+Test.s         # 어셈블리
+  | clang
+  v
+a.out
+```
 
 IR(intermediate representation)는 소스와 기계어 사이의 중간 언어다. 모든 단계 사이를 흐르는 것은 IR 하나다. 다른 컴파일러의 IR은 실행 중인 컴파일러의 메모리 안에만 존재하는 객체 구조라 파일로 적을 수 없다. LLVM IR은 문법이 공개된 텍스트 규격이라 파일로 저장하고, 손으로 고치고, 다시 컴파일러에 입력할 수 있다. 이 글에서 세 가지를 차례로 확인한다.
 
