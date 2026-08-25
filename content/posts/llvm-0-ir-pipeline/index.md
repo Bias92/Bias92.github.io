@@ -1,5 +1,5 @@
 ---
-title: "LLVM 00: C 코드가 기계어가 되기까지 — IR와 컴파일 파이프라인"
+title: "LLVM 00: C 코드가 기계어가 되기까지"
 date: 2026-08-25
 draft: false
 tags: ["LLVM", "Compiler", "IR", "clang", "Assembly"]
@@ -8,7 +8,7 @@ series: ["LLVM"]
 summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하고, llc로 ARM 어셈블리까지 내려 세 층을 직접 대응시킨다. 최적화 pass가 코드를 바꾸는 과정을 -O0와 -O1의 diff로 관찰하고, opt가 조용히 아무것도 안 하게 만드는 optnone 함정을 기록한다."
 ---
 
-컴파일러 공부를 시작했다. 커리큘럼은 llvm → licm → opencl → tvm 순서다. 이 글은 그 첫 기록이다. 목표는 하나다. C 코드 한 조각이 기계어가 되기까지의 층을 직접 눈으로 확인하는 것.
+컴파일러 공부를 시작했다. 커리큘럼은 llvm → licm → opencl → tvm 순서다. 이 글은 그 첫 기록으로, C 코드 한 조각이 기계어가 되기까지의 층을 직접 확인한 과정을 담았다.
 
 읽은 자료는 [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html)의 앞 세 챕터다. 저자는 LLVM을 이렇게 정의한다. C/C++ 같은 native 언어를 위한, hackable한 ahead-of-time 컴파일러. ahead-of-time(AOT)은 실행 전에 전부 기계어로 번역해 두는 방식이다. 실행 중에 번역하는 JIT, 번역 없이 매번 해석하는 인터프리터와 대비된다.
 
@@ -89,7 +89,7 @@ IR이 텍스트라는 것도 여기서 확인했다. `Test.ll`의 `store i32 4`�
 
 ## 최적화를 diff로 관찰하기
 
-읽을 수 있는 IR의 진짜 장점은 최적화 전후를 비교할 때 나온다.
+읽을 수 있는 IR의 장점은 최적화 전후를 비교할 때 나온다.
 
 ```bash
 clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
@@ -115,7 +115,7 @@ pass는 컴파일러가 프로그램 전체(IR)를 한 차례 훑으면서 정�
 opt -passes=mem2reg Test.ll -S -o Test_m2r.ll
 ```
 
-결과가 입력과 똑같았다. 원인은 attributes에 있었다. `-O0`로 IR을 뽑으면 clang이 모든 함수에 `optnone`이라는 "최적화 금지" 표식을 붙이고, `opt`는 그 표식을 존중해 pass를 건너뛴다. attributes가 장식이 아니라 pass의 실행 여부를 제어하는 스위치라는 것을 여기서 배웠다.
+결과가 입력과 똑같았다. 원인은 attributes에 있었다. `-O0`로 IR을 뽑으면 clang이 모든 함수에 `optnone`이라는 "최적화 금지" 표식을 붙이고, `opt`는 그 표식을 존중해 pass를 건너뛴다. attributes가 pass의 실행 여부까지 제어한다는 것을 여기서 배웠다.
 
 표식 없이 뽑으면 정상 동작한다.
 

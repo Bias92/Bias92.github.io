@@ -1,5 +1,5 @@
 ---
-title: "LLVM 00: From C Code to Machine Code — IR and the Compilation Pipeline"
+title: "LLVM 00: From C Code to Machine Code"
 date: 2026-08-25
 draft: false
 tags: ["LLVM", "Compiler", "IR", "clang", "Assembly"]
@@ -10,7 +10,7 @@ summary: "Emit LLVM IR from C with clang, decode the IR line by line, and lower 
 
 I started studying compilers. The curriculum goes llvm → licm → opencl → tvm. This is the first entry. The goal is simple: watch a piece of C code travel through every layer on its way to machine code.
 
-The reading was the first three chapters of [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html). The author defines LLVM as a nice, hackable, ahead-of-time compiler for native languages like C and C++. Ahead-of-time (AOT) means translating everything to machine code before the program runs — as opposed to JIT, which translates during execution, and interpreters, which never translate and re-interpret every time.
+The reading was the first three chapters of [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html). The author defines LLVM as a nice, hackable, ahead-of-time compiler for native languages like C and C++. Ahead-of-time (AOT) means translating everything to machine code before the program runs. JIT translates during execution instead, and interpreters never translate at all, re-interpreting every time.
 
 ## The Big Picture
 
@@ -62,8 +62,8 @@ Four symbols are enough to read the body.
 | Symbol | Meaning |
 |---|---|
 | `i32` | 32-bit integer type. i1, i8, i64 also exist |
-| `%name` | local name — a virtual register, unlimited in number |
-| `@name` | global name — functions live here |
+| `%name` | local name. A virtual register, so there is no limit on how many |
+| `@name` | global name. Functions live here |
 | `;` | comment |
 
 The `target triple` at the top and the `attributes` / `!` metadata at the bottom are environment configuration; they are not needed to decode the body. One note: older LLVM (pre-15) wrote typed pointers like `i32*` instead of `ptr`. Opaque pointers unified this in LLVM 15. Same meaning, different generation of syntax.
@@ -103,7 +103,7 @@ define noundef i32 @func1() local_unnamed_addr #0 {
 }
 ```
 
-The optimization passes proved "this function stores 4 to memory and immediately loads it back — the answer is always 4" and erased the variable's existence. The C code did not change, the program went from four lines to one, and the whole event is captured in a text diff.
+The optimization passes proved "this function stores 4 to memory and immediately loads it back, so the answer is always 4" and erased the variable's existence. The C code did not change, the program went from four lines to one, and the whole event is captured in a text diff.
 
 A pass is a unit of work in which the compiler sweeps over the entire program (IR) once, performing one predetermined analysis or transformation. `-O1` is a clang option that runs many passes in a fixed order; `opt` is the tool that runs a single pass of your choosing.
 
@@ -115,7 +115,7 @@ I tried running just mem2reg (the pass that promotes local variables from memory
 opt -passes=mem2reg Test.ll -S -o Test_m2r.ll
 ```
 
-The output was identical to the input. The culprit was in the attributes. When clang emits IR at `-O0`, it stamps every function with `optnone` — a "do not optimize" marker — and `opt` respects it by skipping the function entirely. Attributes are not decoration; they are switches that control whether passes run.
+The output was identical to the input. The culprit was in the attributes. When clang emits IR at `-O0`, it stamps every function with `optnone`, a "do not optimize" marker, and `opt` respects it by skipping the function entirely. This is where I learned that attributes control whether passes run at all.
 
 Emit without the marker and it works:
 
@@ -130,7 +130,7 @@ func1 folds to a single `ret i32 4`. When emitting IR for pass experiments, this
 
 - There are three layers: C source (for humans) → IR (the compiler's public draft, CPU-agnostic) → assembly (physical CPU instructions)
 - clang is the frontend and also the driver of the whole pipeline; llc is the backend; opt runs passes one at a time
-- LLVM IR is a real language you can save, edit, and feed back — which is why optimization becomes observable as a diff
+- LLVM IR is a real language you can save, edit, and feed back. That is why optimization becomes observable as a diff
 - `-O0` IR carries optnone. When opt silently does nothing, suspect it first
 
 Next up is licm (loop invariant code motion): pick one transformation pass that hoists loop-invariant computation out of loops, and compare the IR before and after, the same way as here.
