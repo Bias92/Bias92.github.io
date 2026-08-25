@@ -64,6 +64,6 @@
   <!-- red pen circle around the opt stage -->
   <path d="M88 172 C 60 190, 66 236, 100 244 C 200 262, 420 258, 496 240 C 540 228, 534 190, 492 180 C 380 158, 170 160, 88 172 Z"
         fill="none" stroke="#c9372c" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/>
-  <text x="530" y="196" class="red" transform="rotate(-2 530 196)">hackable!</text>
+  <text x="530" y="196" class="red" transform="rotate(-2 530 196)">hackable</text>
   <path d="M528 200 C 516 208, 508 214, 500 220" fill="none" stroke="#c9372c" stroke-width="2" stroke-linecap="round"/>
 </svg>
