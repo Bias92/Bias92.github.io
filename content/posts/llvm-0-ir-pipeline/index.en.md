@@ -127,6 +127,14 @@ opt -passes=mem2reg Test_noopt.ll -S
 
 func1 folds to a single `ret i32 4`. This option is the standard way to emit IR for pass experiments.
 
+## The Cost of Translation Timing
+
+Calling a function that performs the same computation twelve times in a row makes the difference in translation timing visible as running time. The chart below records per-call times for the same integer loop executed three ways: the interpreter is CPython running the source directly, the JIT is numba compiling the same function during execution, and the AOT build is the same computation written in C, compiled ahead of time with `clang -O2`, and called as a library. All three return the same value.
+
+![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
+
+The interpreter pays the same cost on every call, because it repeats the same interpretation each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, running 34x faster. The AOT build pays that cost before the program runs, so it is 68x faster from the first call. The y axis is a log scale, so one gridline step is a factor of ten. The code is in [bench.py](/code/llvm-00/bench.py).
+
 ## References
 
 - [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): the What is LLVM? / The Pieces / Understanding LLVM IR chapters.
