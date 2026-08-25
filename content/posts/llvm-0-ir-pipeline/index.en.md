@@ -10,15 +10,25 @@ summary: "Emit LLVM IR from C with clang, decode the IR line by line, and lower 
 
 A compiler is a program that translates source code, which humans read and write, into the machine code a CPU executes. A CPU executes only machine code, so code written in a language like C goes through this translation before it runs.
 
-The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics" >}}#the-nvcc-compilation-pipeline). nvcc, NVIDIA's CUDA compiler, splits a `.cu` file into host code that runs on the CPU and device code that runs on the GPU, lowering the device code to PTX, an intermediate instruction set, and then to SASS, the GPU's machine code. CPU-side compilers step down through intermediate stages the same way, and LLVM is the representative one. In fact cicc, the device code compiler inside nvcc, is built on LLVM, so the two stacks correspond layer by layer.
+Depending on when the translation happens, there are three ways to run a program.
 
-![The LLVM stack and the nvcc stack from the CUDA C post, layer by layer](images/cpu-gpu-stack.svg)
+| Method | When it translates | What persists between runs | Examples |
+|---|---|---|---|
+| Interpreter | never; re-interprets the source on every run | nothing | CPython |
+| JIT (just-in-time) | during execution, only for hot code | machine code kept in memory | Java JVM, V8 in browsers |
+| AOT (ahead-of-time) | everything, before the program runs | an executable file | clang, GCC |
 
-LLVM is an ahead-of-time compiler for native languages like C and C++. A native language is one that compiles to machine code the CPU executes directly, without a virtual machine. Ahead-of-time (AOT) means translating everything to machine code before the program runs, as opposed to JIT, which translates during execution, and interpreters, which never translate and re-interpret every time. The difference shows up as time once the same function is called repeatedly. Below are per-call times for the same integer loop called twelve times as CPython (interpreter), numba (JIT), and a C library compiled ahead of time with `clang -O2` (AOT). All three return the same value.
+The difference shows up as time once the same function is called repeatedly. Below are per-call times for the same integer loop called twelve times as CPython (interpreter), numba (JIT), and a C library compiled ahead of time with `clang -O2` (AOT). All three return the same value.
 
 ![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
 
-The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call. The y axis is a log scale, one gridline step being a factor of ten, and the code is in [bench.py](/code/llvm-00/bench.py).
+The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call. The y axis is a log scale, one gridline step being a factor of ten.
+
+LLVM is an AOT compiler for native languages like C and C++. A native language is one that compiles to machine code the CPU executes directly, without a virtual machine.
+
+The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics" >}}#the-nvcc-compilation-pipeline). nvcc, NVIDIA's CUDA compiler, splits a `.cu` file into host code that runs on the CPU and device code that runs on the GPU, lowering the device code to PTX, an intermediate instruction set, and then to SASS, the GPU's machine code. CPU-side compilers step down through intermediate stages the same way, and LLVM is the representative one. In fact cicc, the device code compiler inside nvcc, is built on LLVM, so the two stacks correspond layer by layer.
+
+![The LLVM stack and the nvcc stack from the CUDA C post, layer by layer](images/cpu-gpu-stack.svg)
 
 ## The Pipeline
 

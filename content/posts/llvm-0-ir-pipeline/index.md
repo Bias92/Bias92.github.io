@@ -10,15 +10,25 @@ summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하�
 
 컴파일러는 사람이 읽고 쓰는 소스 코드를 CPU가 실행하는 기계어로 번역하는 프로그램이다. CPU는 기계어만 실행하므로, C처럼 기계어로 번역되는 언어로 쓴 코드는 실행 전에 이 번역을 거친다.
 
-같은 구조가 [CUDA C 기초]({{< relref "/posts/cuda-c-basics" >}}#nvcc-컴파일-파이프라인)에 이미 나왔다. NVIDIA의 CUDA 컴파일러인 nvcc는 `.cu` 파일을 CPU에서 실행할 host 코드와 GPU에서 실행할 device 코드로 나누어 처리하는데, device 코드를 PTX라는 중간 명령어로 바꾸고, PTX를 GPU 기계어인 SASS로 내린다. CPU 쪽 컴파일러도 같은 방식으로 중간 단계를 거쳐 내려가며, 그 대표가 LLVM이다. 실제로 nvcc의 device 코드 컴파일러인 cicc가 LLVM 위에서 만들어져 있어서, 두 스택은 층별로 그대로 대응한다.
+번역을 언제 하느냐에 따라 프로그램을 실행하는 방식이 셋으로 갈린다.
 
-![The LLVM stack and the nvcc stack from the CUDA C post, layer by layer](images/cpu-gpu-stack.svg)
+| 방식 | 번역 시점 | 실행 사이에 남는 것 | 예 |
+|---|---|---|---|
+| 인터프리터 | 번역하지 않고 실행할 때마다 소스를 해석 | 없음 | CPython |
+| JIT(just-in-time) | 실행 중에, 자주 실행되는 부분만 | 메모리에 둔 기계어 | Java JVM, 브라우저의 V8 |
+| AOT(ahead-of-time) | 실행 전에 전부 | 실행 파일 | clang, GCC |
 
-LLVM은 C/C++ 같은 native 언어를 위한 ahead-of-time 컴파일러다. native 언어는 가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어를 말한다. ahead-of-time(AOT)은 실행 전에 전부 기계어로 번역해 두는 방식으로, 실행 중에 번역하는 JIT나 번역 없이 매번 해석하는 인터프리터와 대비된다. 세 방식의 차이는 같은 함수를 반복 호출해 보면 시간으로 드러난다. 아래는 동일한 정수 반복 계산을 CPython(인터프리터), numba(JIT), `clang -O2`로 미리 컴파일한 C 라이브러리(AOT)로 12번씩 호출해 기록한 호출별 시간이다. 반환값은 셋 다 같다.
+이 차이는 같은 함수를 반복 호출하면 시간으로 드러난다. 아래는 동일한 정수 반복 계산을 CPython(인터프리터), numba(JIT), `clang -O2`로 미리 컴파일한 C 라이브러리(AOT)로 12번씩 호출해 기록한 호출별 시간이다. 반환값은 셋 다 같다.
 
 ![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif)
 
-인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다. y축은 log 눈금이라 한 칸이 10배 차이고, 코드는 [bench.py](/code/llvm-00/bench.py)에 있다.
+인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다. y축은 log 눈금이라 한 칸이 10배 차이다.
+
+LLVM은 C/C++ 같은 native 언어를 위한 AOT 컴파일러다. native 언어는 가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어를 말한다.
+
+같은 구조가 [CUDA C 기초]({{< relref "/posts/cuda-c-basics" >}}#nvcc-컴파일-파이프라인)에 이미 나왔다. NVIDIA의 CUDA 컴파일러인 nvcc는 `.cu` 파일을 CPU에서 실행할 host 코드와 GPU에서 실행할 device 코드로 나누어 처리하는데, device 코드를 PTX라는 중간 명령어로 바꾸고, PTX를 GPU 기계어인 SASS로 내린다. CPU 쪽 컴파일러도 같은 방식으로 중간 단계를 거쳐 내려가며, 그 대표가 LLVM이다. 실제로 nvcc의 device 코드 컴파일러인 cicc가 LLVM 위에서 만들어져 있어서, 두 스택은 층별로 그대로 대응한다.
+
+![The LLVM stack and the nvcc stack from the CUDA C post, layer by layer](images/cpu-gpu-stack.svg)
 
 ## 파이프라인
 
