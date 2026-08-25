@@ -14,21 +14,7 @@ LLVM은 C/C++ 같은 native 언어를 위한 ahead-of-time 컴파일러다. nati
 
 ## 파이프라인
 
-```
-Test.c                 # C source
-  | clang              (frontend: parse -> AST -> typecheck)
-  v
-Test.ll                # IR
-  | opt                (passes: IR -> IR transform)
-  v
-Test.ll'               # optimized IR
-  | llc                (backend: codegen)
-  v
-Test.s                 # assembly
-  | clang              (assemble + link)
-  v
-a.out                  # executable
-```
+![C 소스가 clang, opt, llc를 거쳐 실행 파일이 되는 파이프라인 필기 그림](images/pipeline.svg)
 
 IR(intermediate representation)는 소스와 기계어 사이의 중간 언어다. 모든 단계 사이를 흐르는 것은 IR 하나다. 다른 컴파일러의 IR은 실행 중인 컴파일러의 메모리 안에만 존재하는 객체 구조라 파일로 적을 수 없다. LLVM IR은 문법이 공개된 텍스트 규격이라 파일로 저장하고, 손으로 고치고, 다시 컴파일러에 입력할 수 있다. 이 글에서 세 가지를 차례로 확인한다.
 
