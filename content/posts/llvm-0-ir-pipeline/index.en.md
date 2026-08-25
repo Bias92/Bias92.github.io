@@ -36,17 +36,6 @@ The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics"
 
 IR (intermediate representation) is the language that sits between source and machine code. One IR flows between every stage. Most compilers keep their IR as an in-memory object structure that cannot be written down. LLVM IR is a text format with a published grammar, so it can be saved to a file, edited by hand, and fed back to the compiler.
 
-## Setup
-
-The stock macOS clang ships without `llc` and `opt`, so LLVM comes from Homebrew.
-
-```bash
-brew install llvm
-echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
-```
-
-LLVM is keg-only, so the PATH is registered manually. That is Homebrew's policy for avoiding clashes with the system clang.
-
 ## From C to IR
 
 The example is a two-function C file.
