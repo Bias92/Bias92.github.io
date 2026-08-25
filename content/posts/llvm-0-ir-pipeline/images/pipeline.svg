@@ -1,4 +1,4 @@
-<svg width="720" height="520" viewBox="0 0 720 520" xmlns="http://www.w3.org/2000/svg" role="img">
+<svg width="720" height="600" viewBox="0 0 720 600" xmlns="http://www.w3.org/2000/svg" role="img">
   <title>LLVM compilation pipeline, hand-drawn</title>
   <desc>A handwritten-style note on a dark background: Test.c flows down through clang, opt, llc, and clang again to become a.out. The opt stage is circled with the word hackable.</desc>
   <style>
@@ -9,7 +9,7 @@
   </style>
 
   <!-- dark notebook -->
-  <rect width="720" height="520" fill="#0d0e10"/>
+  <rect width="720" height="600" fill="#0d0e10"/>
   <g stroke="#191e23" stroke-width="1">
     <line x1="0" y1="60"  x2="720" y2="60"/>
     <line x1="0" y1="120" x2="720" y2="120"/>
@@ -19,12 +19,13 @@
     <line x1="0" y1="360" x2="720" y2="360"/>
     <line x1="0" y1="420" x2="720" y2="420"/>
     <line x1="0" y1="480" x2="720" y2="480"/>
+    <line x1="0" y1="540" x2="720" y2="540"/>
   </g>
 
   <!-- highlighter swipes -->
   <rect x="96" y="127" width="132" height="24" rx="10" fill="#ffdf3f" opacity="0.22" transform="rotate(-1.2 162 139)"/>
   <rect x="96" y="247" width="150" height="24" rx="10" fill="#ffdf3f" opacity="0.22" transform="rotate(0.8 170 259)"/>
-  <rect x="96" y="447" width="110" height="24" rx="10" fill="#7fd8a4" opacity="0.2" transform="rotate(-0.9 150 459)"/>
+  <rect x="96" y="527" width="110" height="24" rx="10" fill="#7fd8a4" opacity="0.2" transform="rotate(-0.9 150 539)"/>
 
   <!-- filenames + tags -->
   <text x="100" y="55"  class="f" transform="rotate(-0.6 100 55)">Test.c</text>
@@ -35,7 +36,8 @@
 
   <text x="100" y="386" class="f" transform="rotate(0.6 100 386)">Test.s</text>
 
-  <text x="100" y="466" class="f" transform="rotate(-0.5 100 466)">a.out</text>
+  <text x="100" y="466" class="f" transform="rotate(0.4 100 466)">Test.o</text>
+  <text x="100" y="546" class="f" transform="rotate(-0.5 100 546)">a.out</text>
 
   <!-- wobbly down arrows -->
   <g fill="none" stroke="#cfe9f2" stroke-width="2.2" stroke-linecap="round">
@@ -47,13 +49,16 @@
     <path d="M123 348 L 129 358 L 134 349"/>
     <path d="M128 396 C 125 408, 131 420, 128 436"/>
     <path d="M122 428 L 128 438 L 133 429"/>
+    <path d="M128 478 C 131 490, 125 502, 128 516"/>
+    <path d="M122 508 L 128 518 L 133 509"/>
   </g>
 
   <!-- stage commands next to arrows -->
   <text x="160" y="98"  class="cmd" transform="rotate(-0.4 160 98)">clang : parse &#8594; AST &#8594; typecheck  (frontend)</text>
   <text x="160" y="204" class="cmd" transform="rotate(0.4 160 204)">opt : passes, IR &#8594; IR  (middle-end)</text>
   <text x="160" y="324" class="cmd" transform="rotate(-0.3 160 324)">llc : codegen  (backend)</text>
-  <text x="160" y="422" class="cmd" transform="rotate(0.3 160 422)">clang : assemble + link</text>
+  <text x="160" y="422" class="cmd" transform="rotate(0.3 160 422)">as : assemble</text>
+  <text x="160" y="502" class="cmd" transform="rotate(-0.3 160 502)">ld : link</text>
 
   <!-- pen circle around the opt stage -->
   <path d="M88 172 C 60 190, 66 236, 100 244 C 200 262, 420 258, 496 240 C 540 228, 534 190, 492 180 C 380 158, 170 160, 88 172 Z"

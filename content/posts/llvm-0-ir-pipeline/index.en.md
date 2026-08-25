@@ -32,7 +32,7 @@ The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics"
 
 ## The Pipeline
 
-![Hand-drawn pipeline from C source through clang, opt, and llc to an executable](images/pipeline.svg)
+![Hand-drawn pipeline from C source through clang, opt, and llc to an executable](images/pipeline.svg?v=2)
 
 IR (intermediate representation) is the language that sits between source and machine code. One IR flows between every stage. Most compilers keep their IR as an in-memory object structure that cannot be written down. LLVM IR is a text format with a published grammar, so it can be saved to a file, edited by hand, and fed back to the compiler.
 
