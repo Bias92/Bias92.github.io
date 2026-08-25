@@ -20,14 +20,20 @@ IR(intermediate representation)는 소스와 기계어 사이의 중간 언어�
 
 ## 준비
 
-macOS 기본 clang에는 `llc`와 `opt`가 없어 Homebrew로 LLVM을 설치한다.
+실습 환경은 Apple Silicon 맥이다. macOS 기본 clang에는 `llc`와 `opt`가 없어 Homebrew로 LLVM을 설치한다. LLVM은 keg-only라 PATH를 직접 등록하는데, 시스템 clang과의 충돌을 피하기 위한 Homebrew의 정책이다.
 
 ```bash
 brew install llvm
 echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
 ```
 
-LLVM은 keg-only라 PATH를 직접 등록한다. 시스템 clang과의 충돌을 피하기 위한 Homebrew의 정책이다.
+Ubuntu에서는 패키지로 바로 설치한다.
+
+```bash
+sudo apt install clang llvm
+```
+
+이후 내용은 어느 쪽이든 동일하게 동작한다. 어셈블리 출력만 CPU에 따라 달라진다(맥은 ARM64, 일반적인 리눅스 서버는 x86-64).
 
 ## C에서 IR로
 

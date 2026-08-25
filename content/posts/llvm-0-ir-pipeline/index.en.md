@@ -20,14 +20,20 @@ IR (intermediate representation) is the language that sits between source and ma
 
 ## Setup
 
-The stock macOS clang ships without `llc` and `opt`, so LLVM comes from Homebrew.
+The working environment is an Apple Silicon Mac. The stock macOS clang ships without `llc` and `opt`, so LLVM comes from Homebrew. LLVM is keg-only, so the PATH is registered manually; that is Homebrew's policy for avoiding clashes with the system clang.
 
 ```bash
 brew install llvm
 echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
 ```
 
-LLVM is keg-only, so the PATH is registered manually. That is Homebrew's policy for avoiding clashes with the system clang.
+On Ubuntu the packages install directly.
+
+```bash
+sudo apt install clang llvm
+```
+
+Everything after this works the same on either platform. Only the assembly output differs by CPU (ARM64 on the Mac, x86-64 on a typical Linux server).
 
 ## From C to IR
 
