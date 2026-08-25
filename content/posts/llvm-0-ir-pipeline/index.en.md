@@ -10,13 +10,11 @@ summary: "Emit LLVM IR from C with clang, decode the IR line by line, and lower 
 
 LLVM is an ahead-of-time compiler for native languages like C and C++. A native language is one that compiles to machine code the CPU executes directly, without a virtual machine. Ahead-of-time (AOT) means translating everything to machine code before the program runs, as opposed to JIT, which translates during execution, and interpreters, which never translate and re-interpret every time.
 
-This post takes one piece of C code, emits its IR and decodes it line by line, lowers it to ARM assembly to map the three layers, and then observes optimization passes rewriting the IR.
-
 ## The Pipeline
 
 ![Hand-drawn pipeline from C source through clang, opt, and llc to an executable](images/pipeline.svg)
 
-IR (intermediate representation) is the language that sits between source and machine code. One IR flows between every stage. Most compilers keep their IR as an in-memory object structure that cannot be written down. LLVM IR is a text format with a published grammar, so it can be saved to a file, edited by hand, and fed back to the compiler. This post checks all three.
+IR (intermediate representation) is the language that sits between source and machine code. One IR flows between every stage. Most compilers keep their IR as an in-memory object structure that cannot be written down. LLVM IR is a text format with a published grammar, so it can be saved to a file, edited by hand, and fed back to the compiler.
 
 ## Setup
 
@@ -43,7 +41,7 @@ int main(void)  { return 0; }
 clang -emit-llvm -S Test.c   # → Test.ll
 ```
 
-`-emit-llvm -S` tells clang to stop at human-readable IR instead of going all the way to machine code. func1 in the resulting `Test.ll` reads as follows, with the meaning of each line as a comment.
+`-emit-llvm -S` tells clang to stop at human-readable IR instead of going all the way to machine code. func1 in the resulting `Test.ll` reads as follows; the meaning of each line is in the comments.
 
 ```llvm
 define i32 @func1() #0 {          ; function func1 returning i32 (32-bit int). #0 refers to an attribute group
@@ -82,7 +80,7 @@ llc Test.ll -o Test.s
 
 Assigning virtual names (%N) to physical places (registers, stack slots) is the backend's job. An assembly file has three kinds of lines: lines starting with `.` are assembler directives and can be skipped, `name:` lines are labels, and only the indented lines are actual CPU instructions.
 
-That IR is text becomes concrete once it is edited by hand. Change `store i32 4` to `store i32 9` in `Test.ll`, run `llc` again, and the output shows `mov w8, #9`. The program changed without going through the frontend at all.
+Change `store i32 4` to `store i32 9` in `Test.ll`, run `llc` again, and the output shows `mov w8, #9`. The IR text itself is the compiler input, so editing the IR alone changes the program without going through the frontend.
 
 ## Watching Optimization as a Diff
 
@@ -106,13 +104,13 @@ A pass is a unit of work in which the compiler sweeps over the entire program (I
 
 ## optnone
 
-Running just mem2reg with `opt` makes a good single-pass experiment. mem2reg is the pass that promotes local variables from memory to registers.
+mem2reg is the pass that promotes local variables from memory to registers, and `opt` can apply this single pass on its own.
 
 ```bash
 opt -passes=mem2reg Test.ll -S -o Test_m2r.ll
 ```
 
-The output comes back identical to the input. The cause is in the attributes. When clang emits IR at `-O0`, it stamps every function with `optnone`, a do-not-optimize marker, and `opt` respects it by skipping the function entirely. Attributes control whether passes run at all.
+Applied to IR emitted at `-O0`, however, the output comes back identical to the input. The cause is in the attributes. When clang emits IR at `-O0`, it stamps every function with `optnone`, a do-not-optimize marker, and `opt` respects it by skipping the function entirely. Attributes control whether passes run at all.
 
 Emitting without the marker restores normal behavior.
 
@@ -123,17 +121,8 @@ opt -passes=mem2reg Test_noopt.ll -S
 
 func1 folds to a single `ret i32 4`. This option is the standard way to emit IR for pass experiments.
 
-## Recap
-
-- There are three layers: C source (for humans) → IR (the compiler's public draft, CPU-agnostic) → assembly (physical CPU instructions)
-- clang is the frontend and the driver of the whole pipeline; llc is the backend; opt runs passes one at a time
-- LLVM IR is a real language that can be saved, edited, and fed back, which is why optimization becomes observable as a diff
-- `-O0` IR carries optnone. When opt silently does nothing, check this first
-
-The next post is licm (loop invariant code motion): pick one transformation pass that hoists loop-invariant computation out of loops, and compare the IR before and after, the same way as here.
-
 ## References
 
-- [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): the What is LLVM? / The Pieces / Understanding LLVM IR chapters. The backbone of this post.
+- [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): the What is LLVM? / The Pieces / Understanding LLVM IR chapters.
 - [LLVM Language Reference](https://llvm.org/docs/LangRef.html): the official definition of IR syntax.
 - [The Architecture of Open Source Applications: LLVM](https://aosabook.org/en/v1/llvm.html): Chris Lattner on the design background of LLVM.

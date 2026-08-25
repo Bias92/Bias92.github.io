@@ -10,13 +10,11 @@ summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하�
 
 LLVM은 C/C++ 같은 native 언어를 위한 ahead-of-time 컴파일러다. native 언어는 가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어를 말한다. ahead-of-time(AOT)은 실행 전에 전부 기계어로 번역해 두는 방식으로, 실행 중에 번역하는 JIT나 번역 없이 매번 해석하는 인터프리터와 대비된다.
 
-이 글은 C 코드 한 조각을 IR로 뽑아 한 줄씩 해독하고, ARM 어셈블리까지 내려 세 층을 대응시킨 뒤, 최적화 pass가 IR을 바꾸는 과정을 관찰한다.
-
 ## 파이프라인
 
 ![C 소스가 clang, opt, llc를 거쳐 실행 파일이 되는 파이프라인 필기 그림](images/pipeline.svg)
 
-IR(intermediate representation)는 소스와 기계어 사이의 중간 언어다. 모든 단계 사이를 흐르는 것은 IR 하나다. 다른 컴파일러의 IR은 실행 중인 컴파일러의 메모리 안에만 존재하는 객체 구조라 파일로 적을 수 없다. LLVM IR은 문법이 공개된 텍스트 규격이라 파일로 저장하고, 손으로 고치고, 다시 컴파일러에 입력할 수 있다. 이 글에서 세 가지를 차례로 확인한다.
+IR(intermediate representation)는 소스와 기계어 사이의 중간 언어다. 모든 단계 사이를 흐르는 것은 IR 하나다. 다른 컴파일러의 IR은 실행 중인 컴파일러의 메모리 안에만 존재하는 객체 구조라 파일로 적을 수 없다. LLVM IR은 문법이 공개된 텍스트 규격이라 파일로 저장하고, 손으로 고치고, 다시 컴파일러에 입력할 수 있다.
 
 ## 준비
 
@@ -43,7 +41,7 @@ int main(void)  { return 0; }
 clang -emit-llvm -S Test.c   # → Test.ll
 ```
 
-`-emit-llvm -S`는 기계어까지 가지 않고 사람이 읽을 수 있는 IR에서 멈추라는 옵션이다. 나온 `Test.ll`의 func1은 다음과 같다. 각 줄의 뜻을 주석으로 단다.
+`-emit-llvm -S`는 기계어까지 가지 않고 사람이 읽을 수 있는 IR에서 멈추라는 옵션이다. 나온 `Test.ll`의 func1은 다음과 같다. 각 줄의 뜻은 주석과 같다.
 
 ```llvm
 define i32 @func1() #0 {          ; i32(32비트 정수)를 반환하는 함수 func1. #0은 attributes 묶음 참조
@@ -82,7 +80,7 @@ llc Test.ll -o Test.s
 
 가상 이름표(%N)를 실물 장소(레지스터, 스택 칸)에 배정하는 것이 백엔드의 일이다. 어셈블리 파일의 줄은 세 종류로 나뉜다. `.`으로 시작하는 줄은 어셈블러 지시자라 건너뛰고, `이름:`은 라벨, 들여쓰인 줄만 실제 CPU 명령이다.
 
-IR이 텍스트라는 것은 손으로 고쳐 보면 확인된다. `Test.ll`의 `store i32 4`를 `store i32 9`로 바꾸고 `llc`를 다시 돌리면 `mov w8, #9`가 나온다. 프런트엔드를 거치지 않고 IR을 직접 편집해 프로그램을 바꾼 것이다.
+`Test.ll`의 `store i32 4`를 `store i32 9`로 바꾸고 `llc`를 다시 돌리면 `mov w8, #9`가 나온다. IR 텍스트 자체가 컴파일러의 입력이라, 프런트엔드를 거치지 않고 IR을 고치는 것만으로 프로그램이 바뀐다.
 
 ## 최적화를 diff로 관찰하기
 
@@ -106,13 +104,13 @@ pass는 컴파일러가 프로그램 전체(IR)를 한 차례 훑으면서 정�
 
 ## optnone
 
-`opt`로 mem2reg 하나만 돌려 본다. mem2reg는 지역 변수를 메모리에서 레지스터로 승격시키는 pass다.
+mem2reg는 지역 변수를 메모리에서 레지스터로 승격시키는 pass다. `opt`로 이 pass 하나만 적용할 수 있다.
 
 ```bash
 opt -passes=mem2reg Test.ll -S -o Test_m2r.ll
 ```
 
-결과가 입력과 똑같이 나온다. 원인은 attributes에 있다. `-O0`로 IR을 뽑으면 clang이 모든 함수에 `optnone`이라는 최적화 금지 표식을 붙이고, `opt`는 그 표식을 존중해 pass를 건너뛴다. attributes가 pass의 실행 여부까지 제어하는 것이다.
+그런데 `-O0`로 뽑은 IR에 적용하면 출력이 입력과 똑같이 나온다. 원인은 attributes에 있다. `-O0`로 IR을 뽑으면 clang이 모든 함수에 `optnone`이라는 최적화 금지 표식을 붙이고, `opt`는 그 표식을 존중해 pass를 건너뛴다. attributes가 pass의 실행 여부까지 제어하는 것이다.
 
 표식 없이 뽑으면 정상 동작한다.
 
@@ -123,17 +121,8 @@ opt -passes=mem2reg Test_noopt.ll -S
 
 func1이 `ret i32 4` 한 줄로 접힌다. IR로 pass 실험을 할 때는 이 옵션으로 뽑는다.
 
-## 정리
-
-- 층은 셋이다. C 소스(사람) → IR(컴파일러 내부의 공개 초안, CPU 무관) → 어셈블리(CPU 실물 명령)
-- clang은 프런트엔드이자 파이프라인 전체의 지휘자다. llc는 백엔드, opt는 pass 낱개 실행기다
-- LLVM IR은 저장, 수정, 재입력이 되는 정식 언어라 최적화가 한 일을 diff로 잡을 수 있다
-- `-O0` IR에는 optnone이 붙는다. opt가 조용히 아무것도 안 하면 이것부터 확인한다
-
-다음 글은 licm(loop invariant code motion)이다. 반복문 안의 불변 계산을 밖으로 빼는 변환 pass 하나를 골라, 이번과 같은 방식으로 전후 IR을 비교한다.
-
 ## 참고
 
-- [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): What is LLVM? / The Pieces / Understanding LLVM IR 세 챕터. 이 글의 뼈대.
+- [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): What is LLVM? / The Pieces / Understanding LLVM IR 세 챕터.
 - [LLVM Language Reference](https://llvm.org/docs/LangRef.html): IR 문법의 공식 정의.
 - [The Architecture of Open Source Applications: LLVM](https://aosabook.org/en/v1/llvm.html): Chris Lattner가 쓴 LLVM 설계 배경.
