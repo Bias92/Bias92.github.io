@@ -1,0 +1,71 @@
+<svg width="720" height="430" viewBox="0 0 720 430" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>The LLVM stack and the nvcc stack side by side</title>
+  <desc>Two parallel compilation stacks drawn as a handwritten note. Left, the CPU side: a C file goes through clang to LLVM IR, then through llc to x86 or ARM machine code. Right, the GPU side from the CUDA C post: a cu file goes through cicc to PTX, then through ptxas to SASS. Dashed lines connect LLVM IR with PTX as the same chip-independent middle layer, and machine code with SASS as what each chip runs. A pen note points out that cicc itself is built on LLVM.</desc>
+  <style>
+    text{font-family:'Chalkboard SE','Comic Sans MS','Segoe Print','Bradley Hand',cursive;fill:#dff0f7}
+    .h{font-size:19px;fill:#9fdcec}
+    .f{font-size:21px}
+    .t{font-size:15px;fill:#9fdcec}
+    .link{font-size:14px;fill:#e46fd6}
+  </style>
+
+  <rect width="720" height="430" fill="#0d0e10"/>
+  <g stroke="#191e23" stroke-width="1">
+    <line x1="0" y1="60"  x2="720" y2="60"/>
+    <line x1="0" y1="120" x2="720" y2="120"/>
+    <line x1="0" y1="180" x2="720" y2="180"/>
+    <line x1="0" y1="240" x2="720" y2="240"/>
+    <line x1="0" y1="300" x2="720" y2="300"/>
+    <line x1="0" y1="360" x2="720" y2="360"/>
+  </g>
+
+  <!-- column headers -->
+  <text x="150" y="40" class="h" text-anchor="middle" transform="rotate(-0.5 150 40)">CPU</text>
+  <text x="540" y="40" class="h" text-anchor="middle" transform="rotate(0.4 540 40)">GPU (CUDA C post)</text>
+
+  <!-- CPU column -->
+  <text x="150" y="86"  class="f" text-anchor="middle" transform="rotate(-0.4 150 86)">Test.c</text>
+  <text x="150" y="196" class="f" text-anchor="middle" transform="rotate(0.4 150 196)">LLVM IR</text>
+  <text x="150" y="326" class="f" text-anchor="middle" transform="rotate(-0.3 150 326)">x86 / ARM</text>
+
+  <!-- GPU column -->
+  <text x="540" y="86"  class="f" text-anchor="middle" transform="rotate(0.5 540 86)">kernel.cu</text>
+  <text x="540" y="196" class="f" text-anchor="middle" transform="rotate(-0.4 540 196)">PTX</text>
+  <text x="540" y="326" class="f" text-anchor="middle" transform="rotate(0.3 540 326)">SASS</text>
+
+  <!-- highlighter on the middle layer -->
+  <rect x="82"  y="177" width="140" height="26" rx="10" fill="#ffdf3f" opacity="0.2" transform="rotate(-0.8 152 190)"/>
+  <rect x="498" y="177" width="86"  height="26" rx="10" fill="#ffdf3f" opacity="0.2" transform="rotate(0.7 540 190)"/>
+
+  <!-- CPU arrows -->
+  <g fill="none" stroke="#cfe9f2" stroke-width="2.2" stroke-linecap="round">
+    <path d="M150 98 C 153 118, 147 146, 150 172"/>
+    <path d="M144 164 L 150 174 L 156 165"/>
+    <path d="M150 208 C 147 234, 153 270, 150 302"/>
+    <path d="M144 294 L 150 304 L 156 295"/>
+  </g>
+  <text x="172" y="140" class="t" transform="rotate(-0.4 172 140)">clang</text>
+  <text x="172" y="262" class="t" transform="rotate(0.3 172 262)">llc</text>
+
+  <!-- GPU arrows -->
+  <g fill="none" stroke="#cfe9f2" stroke-width="2.2" stroke-linecap="round">
+    <path d="M540 98 C 537 118, 543 146, 540 172"/>
+    <path d="M534 164 L 540 174 L 546 165"/>
+    <path d="M540 208 C 543 234, 537 270, 540 302"/>
+    <path d="M534 294 L 540 304 L 546 295"/>
+  </g>
+  <text x="562" y="140" class="t" transform="rotate(0.4 562 140)">cicc</text>
+  <text x="562" y="262" class="t" transform="rotate(-0.3 562 262)">ptxas</text>
+
+  <!-- correspondence links -->
+  <g fill="none" stroke="#e46fd6" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 5" opacity="0.85">
+    <path d="M238 190 C 320 184, 400 196, 490 190"/>
+    <path d="M242 320 C 330 314, 410 326, 486 320"/>
+  </g>
+  <text x="364" y="172" class="link" text-anchor="middle" transform="rotate(-0.5 364 172)">middle layer, not tied to one chip</text>
+  <text x="364" y="348" class="link" text-anchor="middle" transform="rotate(0.4 364 348)">what each chip actually runs</text>
+
+  <!-- pen note: cicc is LLVM-based -->
+  <text x="714" y="118" class="link" text-anchor="end" transform="rotate(-2 714 118)">cicc is built on LLVM</text>
+  <path d="M648 124 C 630 130, 612 134, 596 137" fill="none" stroke="#e46fd6" stroke-width="2" stroke-linecap="round"/>
+</svg>
