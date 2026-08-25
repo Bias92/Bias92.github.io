@@ -15,19 +15,19 @@ This post takes one piece of C code, emits its IR and decodes it line by line, l
 ## The Pipeline
 
 ```
-Test.c
-  | clang -emit-llvm -S
+Test.c                 # C source
+  | clang              (frontend: parse -> AST -> typecheck)
   v
-Test.ll        # IR
-  | opt
+Test.ll                # IR
+  | opt                (passes: IR -> IR transform)
   v
-Test.ll'       # optimized IR
-  | llc
+Test.ll'               # optimized IR
+  | llc                (backend: codegen)
   v
-Test.s         # assembly
-  | clang
+Test.s                 # assembly
+  | clang              (assemble + link)
   v
-a.out
+a.out                  # executable
 ```
 
 IR (intermediate representation) is the language that sits between source and machine code. One IR flows between every stage. Most compilers keep their IR as an in-memory object structure that cannot be written down. LLVM IR is a text format with a published grammar, so it can be saved to a file, edited by hand, and fed back to the compiler. This post checks all three.
