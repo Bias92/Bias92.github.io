@@ -34,7 +34,9 @@ The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics"
 
 ![Hand-drawn pipeline from C source through clang, opt, and llc to an executable](images/pipeline.svg?v=2)
 
-IR (intermediate representation) is the language that sits between source and machine code. One IR flows between every stage. Most compilers keep their IR as an in-memory object structure that cannot be written down. LLVM IR is a text format with a published grammar, so it can be saved to a file, edited by hand, and fed back to the compiler.
+Reading the figure top to bottom: clang, the frontend, parses `Test.c`, checks its types, and produces the IR file `Test.ll`. opt, the middle-end, rewrites the IR through transformation units called passes, yielding the optimized `Test.ll'`. llc, the backend, lowers it to the CPU assembly `Test.s`; the assembler turns that text into the bit-level fragment `Test.o`, and the linker joins fragments into the executable. The sections below walk these layers one by one from the top.
+
+IR (intermediate representation), flowing through the middle, is the language that sits between source and machine code: what the frontend produces, what passes rewrite, and what the backend consumes are all this one format. Most compilers keep their IR as an in-memory object structure that cannot be written down. LLVM IR is a text format with a published grammar, so it can be saved to a file, edited by hand, and fed back to the compiler.
 
 ## From C to IR
 
