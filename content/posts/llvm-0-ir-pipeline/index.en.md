@@ -141,7 +141,22 @@ The left side of the screen is before optimization (`-O0`), and the right side i
 
 The optimization passes proved that this function stores 4 to memory and immediately loads it back, so the answer is always 4, and erased the variable's existence. The C code did not change, the program went from four lines to one, and the whole event is captured in a text diff.
 
-A pass is a unit of work in which the compiler sweeps over the entire program (IR) once, performing one predetermined analysis or transformation. `-O1` is a clang option that runs many passes in a fixed order; `opt` is the tool that runs a single pass of your choosing.
+A pass is a small program built into LLVM that sweeps over the entire IR once, performing one predetermined analysis or transformation. `-O1` is a clang option that runs a predefined list of passes in order; `opt` is the tool that runs a single pass of your choosing.
+
+The levels `-O0` through `-O3` nest: raising the level adds passes to the list.
+
+| Option | Pass list it runs |
+|---|---|
+| `-O0` | none (the default) |
+| `-O1` | the base list, 98 entries as of LLVM 22 |
+| `-O2` | the `-O1` list plus more, 115 entries. The de facto standard for release builds |
+| `-O3` | the `-O2` list plus more, 118 entries. Trades code size for speed |
+
+The following command prints the actual contents of a list. mem2reg, seen earlier in this post, is inside the `-O1` list.
+
+```bash
+opt -passes='default<O1>' -print-pipeline-passes Test.ll -S -o /dev/null
+```
 
 ## optnone
 
