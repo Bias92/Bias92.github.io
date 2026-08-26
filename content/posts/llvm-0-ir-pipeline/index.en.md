@@ -124,7 +124,7 @@ clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
 
 Comparing `Test.ll` emitted at `-O0` (the default) with `Test_O1.ll` emitted at `-O1` in the VS Code diff editor gives the following.
 
-![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=2)
+![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=3)
 
 The left side of the screen is before optimization (`-O0`), and the right side is after (`-O1`). Mapping the body of func1 line by line:
 

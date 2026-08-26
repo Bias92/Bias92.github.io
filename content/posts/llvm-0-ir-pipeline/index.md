@@ -124,7 +124,7 @@ clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
 
 `-O0`(기본값)로 뽑은 `Test.ll`과 `-O1`로 뽑은 `Test_O1.ll`을 VS Code의 diff 편집기로 비교하면 다음과 같다.
 
-![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=2)
+![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=3)
 
 화면의 왼쪽이 최적화 전(`-O0`), 오른쪽이 최적화 후(`-O1`)다. func1의 본문이 어떻게 바뀌었는지 줄 단위로 대응시키면 다음과 같다.
 
