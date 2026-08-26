@@ -5,7 +5,7 @@ draft: false
 tags: ["LLVM", "Compiler", "IR", "clang", "Assembly"]
 categories: ["Compiler"]
 series: ["LLVM"]
-summary: "clang으로 C 코드를 LLVM IR로 뽑고, IR을 한 줄씩 해독하고, llc로 ARM 어셈블리까지 내려 세 층을 대응시킨다. 최적화 pass가 코드를 바꾸는 과정을 -O0와 -O1의 diff로 관찰하고, opt가 조용히 아무것도 안 하게 만드는 optnone을 기록한다."
+summary: "인터프리터, JIT, AOT의 차이에서 시작해 clang으로 C 코드를 LLVM IR로 뽑아 해독하고, llc로 어셈블리를 거쳐 실행 파일까지 내려가는 컴파일 파이프라인 전체를 다룬다. 최적화 pass가 IR을 바꾸는 과정을 -O0와 -O1의 diff로 관찰하고, opt가 조용히 아무것도 안 하게 만드는 optnone을 기록한다."
 ---
 
 컴파일러는 사람이 읽고 쓰는 소스 코드를 CPU가 실행하는 기계어로 번역하는 프로그램이다. CPU는 기계어만 실행하므로, C처럼 기계어로 번역되는 언어로 쓴 코드는 실행 전에 이 번역을 거친다.

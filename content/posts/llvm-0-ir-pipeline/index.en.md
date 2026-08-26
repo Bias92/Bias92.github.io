@@ -5,7 +5,7 @@ draft: false
 tags: ["LLVM", "Compiler", "IR", "clang", "Assembly"]
 categories: ["Compiler"]
 series: ["LLVM"]
-summary: "Emit LLVM IR from C with clang, decode the IR line by line, and lower it to ARM assembly with llc to map the three layers. Observe how optimization passes rewrite code via an -O0 vs -O1 diff, and record the optnone attribute that makes opt silently do nothing."
+summary: "Starting from the difference between interpreters, JITs, and AOT compilers, emit LLVM IR from C with clang, decode it, and follow the compilation pipeline down through assembly to an executable. Observe how optimization passes rewrite the IR via an -O0 vs -O1 diff, and record the optnone attribute that makes opt silently do nothing."
 ---
 
 A compiler is a program that translates source code, which humans read and write, into the machine code a CPU executes. A CPU executes only machine code, so code written in a language like C goes through this translation before it runs.
