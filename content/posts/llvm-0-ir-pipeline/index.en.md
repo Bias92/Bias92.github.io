@@ -135,7 +135,7 @@ There are two ways to run them. `opt` runs a single pass of your choosing, while
 
 $$ O_0(0) \subset O_1(98) \subset O_2(115) \subset O_3(118) $$
 
-The counts are as of LLVM 22. The price of a higher level is compile time, and the passes `-O3` adds trade code size for speed, which is why release builds usually stop at `-O2`.
+The price of a higher level is compile time, and the passes `-O3` adds trade code size for speed, which is why release builds usually stop at `-O2`.
 
 The following command prints the actual contents of a list. Every pass in the table above is inside it.
 
