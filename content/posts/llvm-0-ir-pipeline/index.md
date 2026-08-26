@@ -90,7 +90,9 @@ define i32 @func1() #0 {
 llc Test.ll -o Test.s
 ```
 
-`llc`는 백엔드다. IR을 타겟 CPU의 어셈블리로 내린다. Apple Silicon에서는 ARM64 어셈블리가 나온다. func1의 대응은 다음과 같다.
+`llc`는 백엔드다. llc는 IR을 target triple(IR 파일 첫머리에 적힌 대상 CPU와 운영체제 명세)이 가리키는 CPU의 어셈블리로 내린다. 그래서 출력되는 어셈블리는 대상 CPU마다 다르다. x86-64를 지정하면 x86-64 어셈블리가, ARM64를 지정하면 ARM64 어셈블리가, RISC-V를 지정하면 RISC-V 어셈블리가 나오고, `llc -mtriple=x86_64-pc-linux-gnu Test.ll`처럼 옵션으로 대상을 바꿀 수 있다. IR은 하나인데 백엔드가 대상별로 갈라지는 이 구조가 파이프라인 절에서 말한 IR의 역할이다.
+
+다음은 ARM64 대상의 출력에서 func1을 대응시킨 표다.
 
 | Test.ll (가상) | Test.s (ARM 실물) | 뜻 |
 |---|---|---|

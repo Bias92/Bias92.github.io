@@ -90,7 +90,9 @@ The `target triple` at the top and the `attributes` and `!` metadata at the bott
 llc Test.ll -o Test.s
 ```
 
-`llc` is the backend. It lowers IR to the target CPU's assembly, which on Apple Silicon is ARM64. The mapping for func1:
+`llc` is the backend. llc lowers IR to the assembly of the CPU named by the target triple (the CPU-and-OS specification written at the top of the IR file), so the output assembly differs per target CPU: targeting x86-64 produces x86-64 assembly, ARM64 produces ARM64 assembly, RISC-V produces RISC-V assembly, and an option such as `llc -mtriple=x86_64-pc-linux-gnu Test.ll` switches the target. One IR fanning out to per-target backends is exactly the role of IR described in the pipeline section.
+
+The following table maps func1 in the ARM64-target output.
 
 | Test.ll (virtual) | Test.s (ARM, physical) | What happens |
 |---|---|---|
