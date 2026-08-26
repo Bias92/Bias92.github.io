@@ -131,10 +131,9 @@ A pass is a small program built into LLVM that sweeps over the entire IR once, p
 | dce | deletes instructions that do not affect the result (dead code elimination) |
 | licm | moves computations whose value is the same on every iteration out of the loop (loop invariant code motion) |
 
-There are two ways to run them. `opt` runs a single pass of your choosing, while clang's `-O1` `-O2` `-O3` options run a predefined list of passes in order. The lists nest.
+There are two ways to run them. `opt` runs a single pass of your choosing, while clang's `-O1` `-O2` `-O3` options run a predefined list of passes in order. The lists nest.[^1]
 
 $$ O_0(0) \subset O_1(98) \subset O_2(115) \subset O_3(118) $$
-[^1]
 
 The price of a higher level is compile time, and the passes `-O3` adds trade code size for speed, which is why release builds usually stop at `-O2`.
 
@@ -169,13 +168,15 @@ The optimization passes proved that this function stores 4 to memory and immedia
 
 ## optnone
 
-mem2reg is the pass that promotes local variables from memory to registers, and `opt` can apply this single pass on its own.
+optnone is a do-not-optimize marker that clang attaches to the attributes of every function when it emits IR at `-O0`. The marker shows itself as follows when experimenting with passes.
+
+Apply mem2reg from the previous section on its own with `opt`.
 
 ```bash
 opt -passes=mem2reg Test.ll -S -o Test_m2r.ll
 ```
 
-Applied to IR emitted at `-O0`, however, the output comes back identical to the input. The cause is in the attributes. When clang emits IR at `-O0`, it stamps every function with `optnone`, a do-not-optimize marker, and `opt` respects it by skipping the function entirely. Attributes control whether passes run at all.
+The output comes back identical to the input. Before processing a function, `opt` reads its attributes and skips the function when it sees optnone. Attributes control whether passes run at all.
 
 Emitting without the marker restores normal behavior.
 

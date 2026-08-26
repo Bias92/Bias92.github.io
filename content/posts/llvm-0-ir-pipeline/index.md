@@ -131,10 +131,9 @@ pass는 LLVM에 내장된 작은 프로그램으로, IR 전체를 한 차례 훑
 | dce | 결과에 영향을 주지 않는 명령을 지운다 (dead code elimination) |
 | licm | 반복문 안에서 반복마다 값이 같은 계산을 반복문 앞으로 옮긴다 (loop invariant code motion) |
 
-실행 방법은 둘이다. `opt`는 pass를 낱개로 골라 실행하는 도구이고, clang의 `-O1` `-O2` `-O3` 옵션은 미리 정해둔 pass 목록을 순서대로 실행한다. 목록은 포함 관계다.
+실행 방법은 둘이다. `opt`는 pass를 낱개로 골라 실행하는 도구이고, clang의 `-O1` `-O2` `-O3` 옵션은 미리 정해둔 pass 목록을 순서대로 실행한다. 목록은 포함 관계다.[^1]
 
 $$ O_0(0) \subset O_1(98) \subset O_2(115) \subset O_3(118) $$
-[^1]
 
 레벨을 올리는 대가는 컴파일 시간이고, `-O3`의 추가분은 코드 크기를 늘려서라도 속도를 우선하는 pass들이라 배포 빌드는 보통 `-O2`에서 멈춘다.
 
@@ -169,13 +168,15 @@ func1의 본문이 어떻게 바뀌었는지 줄 단위로 대응시키면 다�
 
 ## optnone
 
-mem2reg는 지역 변수를 메모리에서 레지스터로 승격시키는 pass다. `opt`로 이 pass 하나만 적용할 수 있다.
+optnone은 `-O0`로 IR을 뽑을 때 clang이 모든 함수의 attributes에 붙이는 최적화 금지 표식이다. pass를 실험할 때 이 표식이 다음과 같이 드러난다.
+
+앞 절의 mem2reg를 `opt`로 단독 적용해 본다.
 
 ```bash
 opt -passes=mem2reg Test.ll -S -o Test_m2r.ll
 ```
 
-그런데 `-O0`로 뽑은 IR에 적용하면 출력이 입력과 똑같이 나온다. 원인은 attributes에 있다. `-O0`로 IR을 뽑으면 clang이 모든 함수에 `optnone`이라는 최적화 금지 표식을 붙이고, `opt`는 그 표식을 존중해 pass를 건너뛴다. attributes가 pass의 실행 여부까지 제어하는 것이다.
+그런데 출력이 입력과 똑같이 나온다. `opt`가 함수를 처리하기 전에 attributes를 읽고, optnone이 보이면 그 함수를 건너뛰기 때문이다. attributes가 pass의 실행 여부까지 제어하는 것이다.
 
 표식 없이 뽑으면 정상 동작한다.
 
