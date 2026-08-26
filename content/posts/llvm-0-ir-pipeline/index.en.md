@@ -13,19 +13,19 @@ A compiler is a program that translates source code, which humans read and write
 
 Depending on when the translation happens, there are three ways to run a program.
 
-| Method | When it translates | What persists between runs | Examples |
+| Method | When it translates | What persists between runs | Examples[^ex] |
 |---|---|---|---|
 | Interpreter | never; re-interprets the source on every run | nothing | CPython |
 | JIT (just-in-time) | during execution, only for hot code | machine code kept in memory | Java JVM, V8 in browsers |
 | AOT (ahead-of-time) | everything, before the program runs | an executable file | clang, GCC |
 
-The difference shows up as time once the same function is called repeatedly. Below are per-call times for the same integer loop called twelve times as CPython (interpreter), numba (JIT), and a C library compiled ahead of time with `clang -O2` (AOT). All three return the same value.
+The difference shows up as time once the same function is called repeatedly. Below are per-call times for the same integer loop called twelve times as CPython (interpreter), numba[^numba] (JIT), and a C library compiled ahead of time with `clang -O2` (AOT). All three return the same value.
 
 ![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif?v=2#medium)
 
-The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call.
+The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup[^warmup]) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call.
 
-LLVM is an AOT compiler for native languages (languages that compile to machine code the CPU executes directly, with no virtual machine) like C and C++.
+LLVM is an AOT compiler for native languages (languages that compile to machine code the CPU executes directly, with no virtual machine[^vm]) like C and C++.
 
 The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics" >}}#the-nvcc-compilation-pipeline). nvcc, NVIDIA's CUDA compiler, splits a `.cu` file into host code that runs on the CPU and device code that runs on the GPU, lowering the device code to PTX, an intermediate instruction set, and then to SASS, the GPU's machine code. CPU-side compilers step down through intermediate stages the same way, and LLVM is the representative one. In fact cicc, the device code compiler inside nvcc, is built on LLVM, so the two stacks correspond layer by layer.
 
@@ -35,7 +35,7 @@ The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics"
 
 ![Hand-drawn pipeline from C source through clang, opt, and llc to an executable](images/pipeline.svg?v=2)
 
-- **Frontend (clang)**: `Test.c` → `Test.ll`. Parsing and type checking.
+- **Frontend (clang)**: `Test.c` → `Test.ll`. Parsing[^parse] and type checking.
 - **Middle-end (opt)**: `Test.ll` → `Test.ll'`. Passes rewriting the IR, which is optimization.
 - **Backend (llc, as, ld)**: `Test.ll'` → `Test.s` → `Test.o` → `a.out`. Code generation and assembly.
 
@@ -69,7 +69,7 @@ define i32 @func1() #0 {
 | IR | Meaning | C counterpart |
 |---|---|---|
 | `define i32 @func1() #0` | define function func1 returning i32 (32-bit int); `#0` refers to an attribute group | `int func1(void)` |
-| `%1 = alloca i32, align 4` | reserve one i32 slot on the stack; its address is named `%1` | the slot for `int a` |
+| `%1 = alloca i32, align 4` | reserve one i32 slot on the stack[^stack]; its address is named `%1`[^align] | the slot for `int a` |
 | `store i32 4, ptr %1` | store 4 at that address | `a = 4` |
 | `%2 = load i32, ptr %1` | load from that address into `%2` | reading a in `return a` |
 | `ret i32 %2` | return `%2` | `return` |
@@ -79,11 +79,11 @@ Four symbols are enough to read the body.
 | Symbol | Meaning |
 |---|---|
 | `i32` | 32-bit integer type. i1, i8, i64 also exist |
-| `%name` | local name. A virtual register, so there is no limit on how many |
+| `%name` | local name. A virtual register[^reg], so there is no limit on how many |
 | `@name` | global name. Functions live here |
 | `;` | comment |
 
-The `target triple` at the top, the attributes at the bottom (a list collecting the properties applied to a function — the `attributes #0 = {...}` line, which the `#0` on a function points to), and the `!` metadata are environment configuration, not needed for decoding the body. Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`; opaque pointers unified this in LLVM 15. Different generation of syntax, same meaning.
+The `target triple` at the top, the attributes at the bottom (a list collecting the properties applied to a function — the `attributes #0 = {...}` line, which the `#0` on a function points to), and the `!` metadata are environment configuration, not needed for decoding the body. Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`; opaque pointers[^opaque] unified this in LLVM 15. Different generation of syntax, same meaning.
 
 ## From IR to Assembly
 
@@ -91,9 +91,9 @@ The `target triple` at the top, the attributes at the bottom (a list collecting 
 llc Test.ll -o Test.s
 ```
 
-`llc` is the backend. llc lowers IR to the assembly of the CPU named by the target triple (the CPU-and-OS specification written at the top of the IR file), so the output assembly differs per target CPU: targeting x86-64 produces x86-64 assembly, ARM64 produces ARM64 assembly, RISC-V produces RISC-V assembly, and an option such as `llc -mtriple=x86_64-pc-linux-gnu Test.ll` switches the target. One IR fanning out to per-target backends is exactly the role of IR described in the pipeline section.
+`llc` is the backend. llc lowers IR to the assembly[^asm] of the CPU named by the target triple (the CPU-and-OS specification written at the top of the IR file), so the output assembly differs per target CPU: targeting x86-64 produces x86-64 assembly, ARM64 produces ARM64 assembly, RISC-V produces RISC-V assembly, and an option such as `llc -mtriple=x86_64-pc-linux-gnu Test.ll` switches the target. One IR fanning out to per-target backends is exactly the role of IR described in the pipeline section.
 
-The following table maps func1 in the ARM64-target output.
+The following table maps func1 in the ARM64-target output.[^armregs]
 
 | Test.ll (virtual) | Test.s (ARM, physical) | What happens |
 |---|---|---|
@@ -102,7 +102,7 @@ The following table maps func1 in the ARM64-target output.
 | `%2 = load i32, ptr %1` | `ldr w0, [sp, #12]` | load from the stack into w0; `%2` becomes w0 |
 | `ret i32 %2` | `add sp, sp, #16` → `ret` | release the frame and return; w0 carries the return value |
 
-Assigning virtual names (%N) to physical places (registers, stack slots) is the backend's job. An assembly file has three kinds of lines: lines starting with `.` are assembler directives and can be skipped, `name:` lines are labels, and only the indented lines are actual CPU instructions.
+Assigning virtual names (%N) to physical places (registers, stack slots) is the backend's job. An assembly file has three kinds of lines: lines starting with `.` are assembler directives[^directive] and can be skipped, `name:` lines are labels[^label], and only the indented lines are actual CPU instructions.
 
 Change `store i32 4` to `store i32 9` in `Test.ll`, run `llc` again, and the output shows `mov w8, #9`. The IR text itself is the compiler input, so editing the IR alone changes the program without going through the frontend.
 
@@ -127,7 +127,7 @@ A pass is a small program built into LLVM that sweeps over the entire IR once, p
 |---|---|
 | mem2reg | replaces the memory round trip of local variables (alloca, store, load) with direct value flow |
 | instcombine | rewrites instruction combinations into shorter ones with the same result |
-| simplifycfg | deletes unreachable blocks and simplifies branches |
+| simplifycfg | deletes unreachable blocks[^block] and simplifies branches |
 | dce | deletes instructions that do not affect the result (dead code elimination) |
 | licm | moves computations whose value is the same on every iteration out of the loop (loop invariant code motion) |
 
@@ -151,7 +151,7 @@ The payoff of readable IR shows up when comparing before and after optimization.
 clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
 ```
 
-Comparing `Test.ll` emitted at `-O0` (the default, left) with `Test_O1.ll` emitted at `-O1` (right) in the VS Code diff editor gives the following.
+Comparing `Test.ll` emitted at `-O0` (the default, left) with `Test_O1.ll` emitted at `-O1` (right) in the VS Code diff editor[^diffed] gives the following.
 
 ![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=3)
 
@@ -178,7 +178,7 @@ opt -passes=mem2reg Test.ll -S -o Test_m2r.ll
 
 The output comes back identical to the input. Before processing a function, `opt` reads its attributes and skips the function when it sees optnone. Attributes control whether passes run at all.
 
-Emitting without the marker restores normal behavior.
+Emitting without the marker restores normal behavior.[^xclang]
 
 ```bash
 clang -Xclang -disable-O0-optnone -emit-llvm -S Test.c -o Test_noopt.ll
@@ -194,3 +194,20 @@ func1 folds to a single `ret i32 4`. This option is the standard way to emit IR 
 - [The Architecture of Open Source Applications: LLVM](https://aosabook.org/en/v1/llvm.html): Chris Lattner on the design background of LLVM.
 
 [^1]: The numbers in parentheses count the passes in the printed pipeline of LLVM 22 and vary by version.
+
+[^ex]: CPython is the standard Python interpreter, the Java JVM runs Java, V8 is the JavaScript engine in Chrome, and GCC is another C/C++ compiler in the same role as clang.
+[^numba]: A JIT library that compiles Python functions to machine code during execution.
+[^warmup]: The name for the slow early calls in which a JIT pays its translation cost.
+[^vm]: A program that executes intermediate code instead of machine code; the Java JVM is the canonical example.
+[^parse]: Breaking source characters down by grammar rules into a structured tree.
+[^stack]: The stack is the memory region where a function's local data accumulates; it grows on function entry and shrinks on return.
+[^align]: align 4 tells the compiler to place the address at a multiple of four bytes.
+[^reg]: A register is one of a CPU's few fast internal storage slots, fixed in number. A virtual register is a name the IR can mint without limit; the backend assigns it to a physical register.
+[^asm]: Assembly is a notation that writes CPU instructions as human-readable text. Its relation to machine-code bits is covered in the next section.
+[^armregs]: In the table, sp is the register holding the current top address of the stack (the stack pointer); w8 and w0 are ARM general-purpose registers, and w0 carries the return value.
+[^directive]: A directive is an instruction to the assembler, not a CPU instruction.
+[^label]: A label is a name attached to a position in the code; branches and calls refer to positions by these names.
+[^diffed]: A view showing the differences between two files side by side: deleted lines in red on the left, added lines in green on the right.
+[^xclang]: In the command, -Xclang makes clang pass the following option straight to its internal frontend, and -disable-O0-optnone is the option that suppresses the marker.
+[^opaque]: A pointer notation that does not spell out the pointed-to type.
+[^block]: A block (basic block) is a run of instructions executed strictly top to bottom with no branches inside.

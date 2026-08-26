@@ -13,19 +13,19 @@ summary: "인터프리터, JIT, AOT의 차이에서 시작해 clang으로 C 코�
 
 번역을 언제 하느냐에 따라 프로그램을 실행하는 방식이 셋으로 갈린다.
 
-| 방식 | 번역 시점 | 실행 사이에 남는 것 | 예 |
+| 방식 | 번역 시점 | 실행 사이에 남는 것 | 예[^ex] |
 |---|---|---|---|
 | 인터프리터 | 번역하지 않고 실행할 때마다 소스를 해석 | 없음 | CPython |
 | JIT(just-in-time) | 실행 중에, 자주 실행되는 부분만 | 메모리에 둔 기계어 | Java JVM, 브라우저의 V8 |
 | AOT(ahead-of-time) | 실행 전에 전부 | 실행 파일 | clang, GCC |
 
-이 차이는 같은 함수를 반복 호출하면 시간으로 드러난다. 아래는 동일한 정수 반복 계산을 CPython(인터프리터), numba(JIT), `clang -O2`로 미리 컴파일한 C 라이브러리(AOT)로 12번씩 호출해 기록한 호출별 시간이다. 반환값은 셋 다 같다.
+이 차이는 같은 함수를 반복 호출하면 시간으로 드러난다. 아래는 동일한 정수 반복 계산을 CPython(인터프리터), numba[^numba](JIT), `clang -O2`로 미리 컴파일한 C 라이브러리(AOT)로 12번씩 호출해 기록한 호출별 시간이다. 반환값은 셋 다 같다.
 
 ![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif?v=2#medium)
 
-인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다.
+인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup[^warmup]) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다.
 
-LLVM은 C/C++ 같은 native 언어(가상 머신 없이 CPU가 직접 실행하는 기계어로 번역되는 언어)를 위한 AOT 컴파일러다.
+LLVM은 C/C++ 같은 native 언어(가상 머신[^vm] 없이 CPU가 직접 실행하는 기계어로 번역되는 언어)를 위한 AOT 컴파일러다.
 
 같은 구조가 [CUDA C 기초]({{< relref "/posts/cuda-c-basics" >}}#nvcc-컴파일-파이프라인)에 이미 나왔다. NVIDIA의 CUDA 컴파일러인 nvcc는 `.cu` 파일을 CPU에서 실행할 host 코드와 GPU에서 실행할 device 코드로 나누어 처리하는데, device 코드를 PTX라는 중간 명령어로 바꾸고, PTX를 GPU 기계어인 SASS로 내린다. CPU 쪽 컴파일러도 같은 방식으로 중간 단계를 거쳐 내려가며, 그 대표가 LLVM이다. 실제로 nvcc의 device 코드 컴파일러인 cicc가 LLVM 위에서 만들어져 있어서, 두 스택은 층별로 그대로 대응한다.
 
@@ -35,7 +35,7 @@ LLVM은 C/C++ 같은 native 언어(가상 머신 없이 CPU가 직접 실행하�
 
 ![C 소스가 clang, opt, llc를 거쳐 실행 파일이 되는 파이프라인 필기 그림](images/pipeline.svg?v=2)
 
-- **프런트엔드(clang)**: `Test.c` → `Test.ll`. 파싱과 타입 검사.
+- **프런트엔드(clang)**: `Test.c` → `Test.ll`. 파싱[^parse]과 타입 검사.
 - **미들엔드(opt)**: `Test.ll` → `Test.ll'`. pass들이 IR을 고쳐 쓰는 최적화.
 - **백엔드(llc, as, ld)**: `Test.ll'` → `Test.s` → `Test.o` → `a.out`. 기계어 생성과 조립.
 
@@ -69,7 +69,7 @@ define i32 @func1() #0 {
 | IR | 뜻 | 대응 C 코드 |
 |---|---|---|
 | `define i32 @func1() #0` | i32(32비트 정수)를 반환하는 함수 func1 정의. `#0`은 attributes 묶음 참조 | `int func1(void)` |
-| `%1 = alloca i32, align 4` | 스택에 i32 한 칸 확보. 그 주소에 `%1`이라는 이름표 | `int a`의 자리 |
+| `%1 = alloca i32, align 4` | 스택[^stack]에 i32 한 칸 확보. 그 주소에 `%1`이라는 이름표[^align] | `int a`의 자리 |
 | `store i32 4, ptr %1` | 그 주소에 4 저장 | `a = 4` |
 | `%2 = load i32, ptr %1` | 그 주소에서 읽어 `%2`에 담기 | `return a`의 a 읽기 |
 | `ret i32 %2` | `%2` 반환 | `return` |
@@ -79,11 +79,11 @@ define i32 @func1() #0 {
 | 기호 | 뜻 |
 |---|---|
 | `i32` | 32비트 정수 타입. i1, i8, i64도 있다 |
-| `%이름` | 지역 이름표. 가상 레지스터라 개수 제한이 없다 |
+| `%이름` | 지역 이름표. 가상 레지스터[^reg]라 개수 제한이 없다 |
 | `@이름` | 전역 이름표. 함수 이름이 여기 속한다 |
 | `;` | 주석 |
 
-파일 머리의 `target triple`과 꼬리의 attributes(함수에 적용되는 속성들을 모아 둔 목록 — `attributes #0 = {...}` 줄, 함수의 `#0`이 이걸 가리킨다), `!` 메타데이터는 환경 설정이라 본문 해독에는 필요 없다. 그리고 옛 LLVM(14 이전)은 `ptr` 대신 `i32*`로 타입까지 표기했는데, LLVM 15부터 opaque pointer로 통일됐다. 문법 세대가 다를 뿐 뜻은 같다.
+파일 머리의 `target triple`과 꼬리의 attributes(함수에 적용되는 속성들을 모아 둔 목록 — `attributes #0 = {...}` 줄, 함수의 `#0`이 이걸 가리킨다), `!` 메타데이터는 환경 설정이라 본문 해독에는 필요 없다. 그리고 옛 LLVM(14 이전)은 `ptr` 대신 `i32*`로 타입까지 표기했는데, LLVM 15부터 opaque pointer[^opaque]로 통일됐다. 문법 세대가 다를 뿐 뜻은 같다.
 
 ## IR에서 어셈블리로
 
@@ -91,9 +91,9 @@ define i32 @func1() #0 {
 llc Test.ll -o Test.s
 ```
 
-`llc`는 백엔드다. llc는 IR을 target triple(IR 파일 첫머리에 적힌 대상 CPU와 운영체제 명세)이 가리키는 CPU의 어셈블리로 내린다. 그래서 출력되는 어셈블리는 대상 CPU마다 다르다. x86-64를 지정하면 x86-64 어셈블리가, ARM64를 지정하면 ARM64 어셈블리가, RISC-V를 지정하면 RISC-V 어셈블리가 나오고, `llc -mtriple=x86_64-pc-linux-gnu Test.ll`처럼 옵션으로 대상을 바꿀 수 있다. IR은 하나인데 백엔드가 대상별로 갈라지는 이 구조가 파이프라인 절에서 말한 IR의 역할이다.
+`llc`는 백엔드다. llc는 IR을 target triple(IR 파일 첫머리에 적힌 대상 CPU와 운영체제 명세)이 가리키는 CPU의 어셈블리[^asm]로 내린다. 그래서 출력되는 어셈블리는 대상 CPU마다 다르다. x86-64를 지정하면 x86-64 어셈블리가, ARM64를 지정하면 ARM64 어셈블리가, RISC-V를 지정하면 RISC-V 어셈블리가 나오고, `llc -mtriple=x86_64-pc-linux-gnu Test.ll`처럼 옵션으로 대상을 바꿀 수 있다. IR은 하나인데 백엔드가 대상별로 갈라지는 이 구조가 파이프라인 절에서 말한 IR의 역할이다.
 
-다음은 ARM64 대상의 출력에서 func1을 대응시킨 표다.
+다음은 ARM64 대상의 출력에서 func1을 대응시킨 표다.[^armregs]
 
 | Test.ll (가상) | Test.s (ARM 실물) | 뜻 |
 |---|---|---|
@@ -102,7 +102,7 @@ llc Test.ll -o Test.s
 | `%2 = load i32, ptr %1` | `ldr w0, [sp, #12]` | 스택에서 읽어 w0에. `%2`의 실체는 w0 |
 | `ret i32 %2` | `add sp, sp, #16` → `ret` | 프레임 반납 후 복귀. w0가 반환값 |
 
-가상 이름표(%N)를 실물 장소(레지스터, 스택 칸)에 배정하는 것이 백엔드의 일이다. 어셈블리 파일의 줄은 세 종류로 나뉜다. `.`으로 시작하는 줄은 어셈블러 지시자라 건너뛰고, `이름:`은 라벨, 들여쓰인 줄만 실제 CPU 명령이다.
+가상 이름표(%N)를 실물 장소(레지스터, 스택 칸)에 배정하는 것이 백엔드의 일이다. 어셈블리 파일의 줄은 세 종류로 나뉜다. `.`으로 시작하는 줄은 어셈블러 지시자[^directive]라 건너뛰고, `이름:`은 라벨[^label], 들여쓰인 줄만 실제 CPU 명령이다.
 
 `Test.ll`의 `store i32 4`를 `store i32 9`로 바꾸고 `llc`를 다시 돌리면 `mov w8, #9`가 나온다. IR 텍스트 자체가 컴파일러의 입력이라, 프런트엔드를 거치지 않고 IR을 고치는 것만으로 프로그램이 바뀐다.
 
@@ -127,7 +127,7 @@ pass는 LLVM에 내장된 작은 프로그램으로, IR 전체를 한 차례 훑
 |---|---|
 | mem2reg | 지역 변수의 메모리 왕복(alloca, store, load)을 값 전달로 바꾼다 |
 | instcombine | 명령 조합을 같은 결과의 더 짧은 조합으로 바꾼다 |
-| simplifycfg | 도달할 수 없는 블록을 지우고 분기를 단순화한다 |
+| simplifycfg | 도달할 수 없는 블록[^block]을 지우고 분기를 단순화한다 |
 | dce | 결과에 영향을 주지 않는 명령을 지운다 (dead code elimination) |
 | licm | 반복문 안에서 반복마다 값이 같은 계산을 반복문 앞으로 옮긴다 (loop invariant code motion) |
 
@@ -151,7 +151,7 @@ opt -passes='default<O1>' -print-pipeline-passes Test.ll -S -o /dev/null
 clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
 ```
 
-`-O0`(기본값)로 뽑은 `Test.ll`(좌측)과 `-O1`로 뽑은 `Test_O1.ll`(우측)을 VS Code의 diff 편집기로 비교하면 다음과 같다.
+`-O0`(기본값)로 뽑은 `Test.ll`(좌측)과 `-O1`로 뽑은 `Test_O1.ll`(우측)을 VS Code의 diff 편집기[^diffed]로 비교하면 다음과 같다.
 
 ![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=3)
 
@@ -178,7 +178,7 @@ opt -passes=mem2reg Test.ll -S -o Test_m2r.ll
 
 그런데 출력이 입력과 똑같이 나온다. `opt`가 함수를 처리하기 전에 attributes를 읽고, optnone이 보이면 그 함수를 건너뛰기 때문이다. attributes가 pass의 실행 여부까지 제어하는 것이다.
 
-표식 없이 뽑으면 정상 동작한다.
+표식 없이 뽑으면 정상 동작한다.[^xclang]
 
 ```bash
 clang -Xclang -disable-O0-optnone -emit-llvm -S Test.c -o Test_noopt.ll
@@ -194,3 +194,20 @@ func1이 `ret i32 4` 한 줄로 접힌다. IR로 pass 실험을 할 때는 이 �
 - [The Architecture of Open Source Applications: LLVM](https://aosabook.org/en/v1/llvm.html): Chris Lattner가 쓴 LLVM 설계 배경.
 
 [^1]: 괄호 안은 LLVM 22의 목록 출력을 센 pass 수이며, 버전에 따라 달라진다.
+
+[^ex]: CPython은 파이썬의 표준 인터프리터, Java JVM은 자바 실행기, V8은 크롬 브라우저의 자바스크립트 실행기, GCC는 clang과 같은 역할의 또 다른 C/C++ 컴파일러다.
+[^numba]: 파이썬 함수를 실행 중에 기계어로 컴파일하는 JIT 라이브러리.
+[^warmup]: JIT가 초반 호출에서 번역 비용을 지불하느라 느린 구간을 부르는 말.
+[^vm]: 기계어 대신 중간 코드를 받아 실행해 주는 프로그램. 자바의 JVM이 대표다.
+[^parse]: 소스 코드 문자를 문법 규칙에 따라 분해해 구조(트리)로 만드는 일.
+[^stack]: 스택은 함수의 지역 데이터가 쌓이는 메모리 영역이다. 함수에 들어갈 때 늘어나고 반환할 때 줄어든다.
+[^align]: align 4는 그 주소를 4바이트 배수에 맞추라는 정렬 지시다.
+[^reg]: 레지스터는 CPU 내부의 고속 저장 칸으로 개수가 정해져 있다. 가상 레지스터는 IR이 제한 없이 만들어 쓰는 이름표이고, 백엔드가 실물 레지스터에 배정한다.
+[^asm]: 어셈블리는 CPU 명령을 사람이 읽을 수 있는 글자로 적은 표기법이다. 기계어 비트와의 관계는 다음 절에서 다룬다.
+[^armregs]: 표의 sp는 스택의 현재 꼭대기 주소를 담는 레지스터(스택 포인터)이고, w8과 w0는 ARM의 범용 레지스터이며 w0는 반환값 전달에 쓰인다.
+[^directive]: 지시자는 어셈블러에게 주는 지시문으로, CPU 명령이 아니다.
+[^label]: 라벨은 코드 위치에 붙인 이름이다. 분기와 호출이 이 이름으로 위치를 가리킨다.
+[^diffed]: 두 파일의 차이를 좌우로 나란히 표시하는 화면. 삭제된 줄은 왼쪽에 빨간색, 추가된 줄은 오른쪽에 초록색으로 표시된다.
+[^xclang]: 명령의 -Xclang은 clang이 뒤따르는 옵션을 내부 프런트엔드에 그대로 전달하게 하는 스위치이고, -disable-O0-optnone이 표식을 붙이지 말라는 옵션이다.
+[^opaque]: 가리키는 대상의 타입을 적지 않는 포인터 표기.
+[^block]: 블록(basic block)은 분기 없이 위에서 아래로만 실행되는 명령 묶음이다.
