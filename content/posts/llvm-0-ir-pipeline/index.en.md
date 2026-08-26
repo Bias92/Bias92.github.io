@@ -126,7 +126,14 @@ Comparing `Test.ll` emitted at `-O0` (the default) with `Test_O1.ll` emitted at 
 
 ![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=2)
 
-On the left, at `-O0`, the body of func1 is four lines: alloca → store → load → ret. On the right, at `-O1`, it is the single line `ret i32 4`.
+The left side of the screen is before optimization (`-O0`), and the right side is after (`-O1`). Mapping the body of func1 line by line:
+
+| Left, `-O0` (before) | Right, `-O1` (after) | Change |
+|---|---|---|
+| `%1 = alloca i32` | gone | the stack slot for variable a is removed |
+| `store i32 4, ptr %1` | gone | the instruction writing 4 to memory is removed |
+| `%2 = load i32, ptr %1` | gone | the instruction reading it back from memory is removed |
+| `ret i32 %2` | `ret i32 4` | the constant 4 is returned directly instead of a value read from the variable |
 
 The optimization passes proved that this function stores 4 to memory and immediately loads it back, so the answer is always 4, and erased the variable's existence. The C code did not change, the program went from four lines to one, and the whole event is captured in a text diff.
 
