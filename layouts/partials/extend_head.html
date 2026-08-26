@@ -42,3 +42,56 @@
         margin: 1.1rem auto;
     }
 </style>
+
+{{- /* 각주 툴팁: 각주 번호에 마우스를 올리면(모바일은 탭) 그 자리에서 상자로 내용 표시.
+       기본 동작(페이지 하단으로 점프)은 막는다. */ -}}
+<style>
+    .fn-tip {
+        position: absolute;
+        max-width: 380px;
+        background: var(--entry, #161b20);
+        color: var(--content, #dadadb);
+        border: 1px solid var(--border, #2b3a42);
+        border-radius: 8px;
+        padding: .55rem .8rem;
+        font-size: .86rem;
+        line-height: 1.55;
+        z-index: 1000;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+    }
+    .fn-tip p { margin: 0; }
+</style>
+<script defer>
+document.addEventListener('DOMContentLoaded', function () {
+    var tip = null, hideTimer = null;
+    function hide() { if (tip) { tip.remove(); tip = null; } }
+    function show(ref) {
+        hide();
+        var id = decodeURIComponent(ref.getAttribute('href')).slice(1);
+        var fn = document.getElementById(id);
+        if (!fn) return;
+        var clone = fn.cloneNode(true);
+        clone.querySelectorAll('.footnote-backref').forEach(function (a) { a.remove(); });
+        tip = document.createElement('div');
+        tip.className = 'fn-tip';
+        tip.innerHTML = clone.innerHTML;
+        document.body.appendChild(tip);
+        var r = ref.getBoundingClientRect();
+        var left = r.left + window.scrollX - 12;
+        var maxLeft = window.scrollX + document.documentElement.clientWidth - tip.offsetWidth - 12;
+        if (left > maxLeft) left = Math.max(window.scrollX + 12, maxLeft);
+        tip.style.top = (r.bottom + window.scrollY + 8) + 'px';
+        tip.style.left = left + 'px';
+        tip.addEventListener('mouseenter', function () { clearTimeout(hideTimer); });
+        tip.addEventListener('mouseleave', function () { hideTimer = setTimeout(hide, 200); });
+    }
+    document.querySelectorAll('a.footnote-ref').forEach(function (ref) {
+        ref.addEventListener('mouseenter', function () { clearTimeout(hideTimer); show(ref); });
+        ref.addEventListener('mouseleave', function () { hideTimer = setTimeout(hide, 200); });
+        ref.addEventListener('click', function (e) { e.preventDefault(); if (tip) { hide(); } else { show(ref); } });
+    });
+    document.addEventListener('click', function (e) {
+        if (tip && !tip.contains(e.target) && !e.target.closest('a.footnote-ref')) hide();
+    });
+});
+</script>
