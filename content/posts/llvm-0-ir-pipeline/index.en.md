@@ -83,7 +83,7 @@ Four symbols are enough to read the body.
 | `@name` | global name. Functions live here |
 | `;` | comment |
 
-The `target triple` at the top, the attributes at the bottom (a list collecting the properties applied to a function — the `attributes #0 = {...}` line, which the `#0` on a function points to), and the `!` metadata are environment configuration, not needed for decoding the body. Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`; opaque pointers[^opaque] unified this in LLVM 15. Different generation of syntax, same meaning.
+The `target triple` at the top, the attributes[^attr] at the bottom, and the `!` metadata are environment configuration, not needed for decoding the body. Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`; opaque pointers[^opaque] unified this in LLVM 15. Different generation of syntax, same meaning.
 
 ## From IR to Assembly
 
@@ -168,7 +168,7 @@ The optimization passes proved that this function stores 4 to memory and immedia
 
 ## optnone
 
-optnone is a do-not-optimize marker that clang attaches to the attributes of every function when it emits IR at `-O0`. The marker shows itself as follows when experimenting with passes.
+optnone is a do-not-optimize marker that clang attaches to the attributes[^attr] of every function when it emits IR at `-O0`. The marker shows itself as follows when experimenting with passes.
 
 Apply mem2reg from the previous section on its own with `opt`.
 
@@ -211,3 +211,5 @@ func1 folds to a single `ret i32 4`. This option is the standard way to emit IR 
 [^xclang]: In the command, -Xclang makes clang pass the following option straight to its internal frontend, and -disable-O0-optnone is the option that suppresses the marker.
 [^opaque]: A pointer notation that does not spell out the pointed-to type.
 [^block]: A block (basic block) is a run of instructions executed strictly top to bottom with no branches inside.
+
+[^attr]: attributes is the list collecting the properties applied to a function: the `attributes #0 = {...}` line near the bottom of the IR file, which the `#0` on a function definition points to.

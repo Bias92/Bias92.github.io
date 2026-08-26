@@ -83,7 +83,7 @@ define i32 @func1() #0 {
 | `@이름` | 전역 이름표. 함수 이름이 여기 속한다 |
 | `;` | 주석 |
 
-파일 머리의 `target triple`과 꼬리의 attributes(함수에 적용되는 속성들을 모아 둔 목록 — `attributes #0 = {...}` 줄, 함수의 `#0`이 이걸 가리킨다), `!` 메타데이터는 환경 설정이라 본문 해독에는 필요 없다. 그리고 옛 LLVM(14 이전)은 `ptr` 대신 `i32*`로 타입까지 표기했는데, LLVM 15부터 opaque pointer[^opaque]로 통일됐다. 문법 세대가 다를 뿐 뜻은 같다.
+파일 머리의 `target triple`과 꼬리의 attributes[^attr], `!` 메타데이터는 환경 설정이라 본문 해독에는 필요 없다. 그리고 옛 LLVM(14 이전)은 `ptr` 대신 `i32*`로 타입까지 표기했는데, LLVM 15부터 opaque pointer[^opaque]로 통일됐다. 문법 세대가 다를 뿐 뜻은 같다.
 
 ## IR에서 어셈블리로
 
@@ -168,7 +168,7 @@ func1의 본문이 어떻게 바뀌었는지 줄 단위로 대응시키면 다�
 
 ## optnone
 
-optnone은 `-O0`로 IR을 뽑을 때 clang이 모든 함수의 attributes에 붙이는 최적화 금지 표식이다. pass를 실험할 때 이 표식이 다음과 같이 드러난다.
+optnone은 `-O0`로 IR을 뽑을 때 clang이 모든 함수의 attributes[^attr]에 붙이는 최적화 금지 표식이다. pass를 실험할 때 이 표식이 다음과 같이 드러난다.
 
 앞 절의 mem2reg를 `opt`로 단독 적용해 본다.
 
@@ -211,3 +211,5 @@ func1이 `ret i32 4` 한 줄로 접힌다. IR로 pass 실험을 할 때는 이 �
 [^xclang]: 명령의 -Xclang은 clang이 뒤따르는 옵션을 내부 프런트엔드에 그대로 전달하게 하는 스위치이고, -disable-O0-optnone이 표식을 붙이지 말라는 옵션이다.
 [^opaque]: 가리키는 대상의 타입을 적지 않는 포인터 표기.
 [^block]: 블록(basic block)은 분기 없이 위에서 아래로만 실행되는 명령 묶음이다.
+
+[^attr]: attributes는 함수에 적용되는 속성들을 모아 둔 목록이다. IR 파일 아래쪽의 `attributes #0 = {...}` 줄이 그것이고, 함수 정의의 `#0`이 이 묶음을 가리킨다.
