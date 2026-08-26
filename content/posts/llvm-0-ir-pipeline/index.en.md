@@ -141,6 +141,8 @@ The left side of the screen is before optimization (`-O0`), and the right side i
 
 The optimization passes proved that this function stores 4 to memory and immediately loads it back, so the answer is always 4, and erased the variable's existence. The C code did not change, the program went from four lines to one, and the whole event is captured in a text diff.
 
+## Passes and Optimization Levels
+
 A pass is a small program built into LLVM that sweeps over the entire IR once, performing one predetermined analysis or transformation. `-O1` is a clang option that runs a predefined list of passes in order; `opt` is the tool that runs a single pass of your choosing.
 
 The levels `-O0` through `-O3` nest: raising the level adds passes to the list.
