@@ -2,6 +2,7 @@
 title: "00 LLVM IR and the Compilation Pipeline: From C Code to Machine Code"
 date: 2026-08-25
 draft: false
+math: true
 tags: ["LLVM", "Compiler", "IR", "clang", "Assembly"]
 categories: ["Compiler"]
 series: ["LLVM"]
