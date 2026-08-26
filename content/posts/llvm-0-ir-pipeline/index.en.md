@@ -120,18 +120,23 @@ Both steps can be invoked through the clang command, which calls as and ld inter
 
 ## Passes and Optimization Levels
 
-A pass is a small program built into LLVM that sweeps over the entire IR once, performing one predetermined analysis or transformation. `-O1` is a clang option that runs a predefined list of passes in order; `opt` is the tool that runs a single pass of your choosing.
+A pass is a small program built into LLVM that sweeps over the entire IR once, performing one predetermined analysis or transformation. Each pass owns exactly one transformation.
 
-The levels `-O0` through `-O3` nest: raising the level adds passes to the list.
-
-| Option | Pass list it runs |
+| pass | The one thing it does |
 |---|---|
-| `-O0` | none (the default) |
-| `-O1` | the base list, 98 entries as of LLVM 22 |
-| `-O2` | the `-O1` list plus more, 115 entries. The de facto standard for release builds |
-| `-O3` | the `-O2` list plus more, 118 entries. Trades code size for speed |
+| mem2reg | replaces the memory round trip of local variables (alloca, store, load) with direct value flow |
+| instcombine | rewrites instruction combinations into shorter ones with the same result |
+| simplifycfg | deletes unreachable blocks and simplifies branches |
+| dce | deletes instructions that do not affect the result (dead code elimination) |
+| licm | moves computations whose value is the same on every iteration out of the loop (loop invariant code motion) |
 
-The following command prints the actual contents of a list. mem2reg (the pass that removes the memory round trip of local variables) is inside the `-O1` list.
+There are two ways to run them. `opt` runs a single pass of your choosing, while clang's `-O1` `-O2` `-O3` options run a predefined list of passes in order. The lists nest.
+
+$$ O_0(0) \subset O_1(98) \subset O_2(115) \subset O_3(118) $$
+
+The counts are as of LLVM 22. The price of a higher level is compile time, and the passes `-O3` adds trade code size for speed, which is why release builds usually stop at `-O2`.
+
+The following command prints the actual contents of a list. Every pass in the table above is inside it.
 
 ```bash
 opt -passes='default<O1>' -print-pipeline-passes Test.ll -S -o /dev/null
