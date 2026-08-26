@@ -1,5 +1,5 @@
 ---
-title: "00 LLVM IR와 컴파일 파이프라인: C 코드가 기계어가 되기까지"
+title: "00 LLVM IR and the Compilation Pipeline: From C Code to Machine Code"
 date: 2026-08-25
 draft: false
 tags: ["LLVM", "Compiler", "IR", "clang", "Assembly"]
