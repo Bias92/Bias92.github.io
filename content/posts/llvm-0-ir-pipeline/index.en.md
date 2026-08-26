@@ -122,13 +122,11 @@ The payoff of readable IR shows up when comparing before and after optimization.
 clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
 ```
 
-At `-O0` (the default), func1 is four lines: alloca → store → load → ret. At `-O1` it is one.
+Comparing `Test.ll` emitted at `-O0` (the default) with `Test_O1.ll` emitted at `-O1` in the VS Code diff editor gives the following.
 
-```llvm
-define noundef i32 @func1() local_unnamed_addr #0 {
-  ret i32 4
-}
-```
+![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png)
+
+On the left, at `-O0`, the body of func1 is four lines: alloca → store → load → ret. On the right, at `-O1`, it is the single line `ret i32 4`.
 
 The optimization passes proved that this function stores 4 to memory and immediately loads it back, so the answer is always 4, and erased the variable's existence. The C code did not change, the program went from four lines to one, and the whole event is captured in a text diff.
 

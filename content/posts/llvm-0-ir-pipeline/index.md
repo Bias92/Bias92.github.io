@@ -122,13 +122,11 @@ clang Test.o -o a.out       # link
 clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
 ```
 
-`-O0`(기본값)의 func1은 alloca → store → load → ret 네 줄이다. `-O1`은 한 줄이다.
+`-O0`(기본값)로 뽑은 `Test.ll`과 `-O1`로 뽑은 `Test_O1.ll`을 VS Code의 diff 편집기로 비교하면 다음과 같다.
 
-```llvm
-define noundef i32 @func1() local_unnamed_addr #0 {
-  ret i32 4
-}
-```
+![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png)
+
+왼쪽 `-O0`에서 func1의 본문은 alloca → store → load → ret 네 줄이고, 오른쪽 `-O1`에서는 `ret i32 4` 한 줄이다.
 
 최적화 pass가 이 함수는 4를 메모리에 넣었다가 곧바로 꺼내 반환하므로 답이 항상 4라는 것을 증명하고 변수의 존재 자체를 지웠다. C 코드는 그대로인데 프로그램이 네 줄에서 한 줄이 됐고, 그 과정이 텍스트 diff로 남는다.
 
