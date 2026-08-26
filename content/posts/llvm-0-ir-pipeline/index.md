@@ -124,7 +124,7 @@ clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
 
 `-O0`(기본값)로 뽑은 `Test.ll`과 `-O1`로 뽑은 `Test_O1.ll`을 VS Code의 diff 편집기로 비교하면 다음과 같다.
 
-![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png)
+![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=2)
 
 왼쪽 `-O0`에서 func1의 본문은 alloca → store → load → ret 네 줄이고, 오른쪽 `-O1`에서는 `ret i32 4` 한 줄이다.
 

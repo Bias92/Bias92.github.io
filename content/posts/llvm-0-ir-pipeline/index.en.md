@@ -124,7 +124,7 @@ clang -O1 -emit-llvm -S Test.c -o Test_O1.ll
 
 Comparing `Test.ll` emitted at `-O0` (the default) with `Test_O1.ll` emitted at `-O1` in the VS Code diff editor gives the following.
 
-![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png)
+![Test.ll and Test_O1.ll compared in the VS Code diff editor](images/opt-diff.png?v=2)
 
 On the left, at `-O0`, the body of func1 is four lines: alloca → store → load → ret. On the right, at `-O1`, it is the single line `ret i32 4`.
 
