@@ -134,10 +134,11 @@ pass는 LLVM에 내장된 작은 프로그램으로, IR 전체를 한 차례 훑
 실행 방법은 둘이다. `opt`는 pass를 낱개로 골라 실행하는 도구이고, clang의 `-O1` `-O2` `-O3` 옵션은 미리 정해둔 pass 목록을 순서대로 실행한다. 목록은 포함 관계다.
 
 $$ O_0(0) \subset O_1(98) \subset O_2(115) \subset O_3(118) $$
+[^1]
 
 레벨을 올리는 대가는 컴파일 시간이고, `-O3`의 추가분은 코드 크기를 늘려서라도 속도를 우선하는 pass들이라 배포 빌드는 보통 `-O2`에서 멈춘다.
 
-괄호 안 숫자는 다음 명령이 출력하는 목록의 항목 수를 센 것으로(LLVM 22 기준), 버전에 따라 달라진다. 위 표의 pass들이 전부 이 목록 안에 들어 있다.
+목록의 실제 내용은 다음 명령이 출력한다. 위 표의 pass들이 전부 이 목록 안에 들어 있다.
 
 ```bash
 opt -passes='default<O1>' -print-pipeline-passes Test.ll -S -o /dev/null
@@ -190,3 +191,5 @@ func1이 `ret i32 4` 한 줄로 접힌다. IR로 pass 실험을 할 때는 이 �
 - [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): What is LLVM? / The Pieces / Understanding LLVM IR 세 챕터.
 - [LLVM Language Reference](https://llvm.org/docs/LangRef.html): IR 문법의 공식 정의.
 - [The Architecture of Open Source Applications: LLVM](https://aosabook.org/en/v1/llvm.html): Chris Lattner가 쓴 LLVM 설계 배경.
+
+[^1]: 괄호 안은 LLVM 22의 목록 출력을 센 pass 수이며, 버전에 따라 달라진다.

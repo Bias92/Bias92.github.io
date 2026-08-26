@@ -134,10 +134,11 @@ A pass is a small program built into LLVM that sweeps over the entire IR once, p
 There are two ways to run them. `opt` runs a single pass of your choosing, while clang's `-O1` `-O2` `-O3` options run a predefined list of passes in order. The lists nest.
 
 $$ O_0(0) \subset O_1(98) \subset O_2(115) \subset O_3(118) $$
+[^1]
 
 The price of a higher level is compile time, and the passes `-O3` adds trade code size for speed, which is why release builds usually stop at `-O2`.
 
-The numbers in parentheses count the entries printed by the following command (as of LLVM 22) and vary by version. Every pass in the table above is inside the list.
+The following command prints the actual contents of a list. Every pass in the table above is inside it.
 
 ```bash
 opt -passes='default<O1>' -print-pipeline-passes Test.ll -S -o /dev/null
@@ -190,3 +191,5 @@ func1 folds to a single `ret i32 4`. This option is the standard way to emit IR 
 - [LLVM for Grad Students](https://www.cs.cornell.edu/~asampson/blog/llvm.html): the What is LLVM? / The Pieces / Understanding LLVM IR chapters.
 - [LLVM Language Reference](https://llvm.org/docs/LangRef.html): the official definition of IR syntax.
 - [The Architecture of Open Source Applications: LLVM](https://aosabook.org/en/v1/llvm.html): Chris Lattner on the design background of LLVM.
+
+[^1]: The numbers in parentheses count the passes in the printed pipeline of LLVM 22 and vary by version.
