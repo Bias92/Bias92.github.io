@@ -83,7 +83,7 @@ Four symbols are enough to read the body.
 | `@name` | global name. Functions live here |
 | `;` | comment |
 
-The `target triple` at the top and the `attributes` and `!` metadata at the bottom are environment configuration, not needed for decoding the body. Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`; opaque pointers unified this in LLVM 15. Different generation of syntax, same meaning.
+The `target triple` at the top, the attributes at the bottom (a list collecting the properties applied to a function — the `attributes #0 = {...}` line, which the `#0` on a function points to), and the `!` metadata are environment configuration, not needed for decoding the body. Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`; opaque pointers unified this in LLVM 15. Different generation of syntax, same meaning.
 
 ## From IR to Assembly
 
