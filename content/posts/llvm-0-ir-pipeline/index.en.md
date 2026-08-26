@@ -137,7 +137,7 @@ $$ O_0(0) \subset O_1(98) \subset O_2(115) \subset O_3(118) $$
 
 The price of a higher level is compile time, and the passes `-O3` adds trade code size for speed, which is why release builds usually stop at `-O2`.
 
-The following command prints the actual contents of a list. Every pass in the table above is inside it.
+The numbers in parentheses count the entries printed by the following command (as of LLVM 22) and vary by version. Every pass in the table above is inside the list.
 
 ```bash
 opt -passes='default<O1>' -print-pipeline-passes Test.ll -S -o /dev/null
