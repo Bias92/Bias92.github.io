@@ -39,7 +39,7 @@ The structure of stepping down through an intermediate language instead of trans
 - **Middle-end (opt)**: `Test.ll` → `Test.ll'`. Passes rewriting the IR, which is optimization.
 - **Backend (llc, as, ld)**: `Test.ll'` → `Test.s` → `Test.o` → `a.out`. Code generation and assembly.
 
-One IR (intermediate representation, the language between source and machine code) flows between the three stages. Other compilers keep their IR as an in-memory object structure that cannot be written down, while LLVM IR is a text format with a published grammar, so it can be saved, edited by hand, and fed back to the compiler.
+A single IR (intermediate representation, the language between source and machine code) travels through all three stages: frontend, middle-end, and backend. Other compilers hold their IR only as in-memory objects, so it cannot be pulled out into a file. LLVM IR is text with a published grammar, so you can save it to a file, edit it by hand, and feed it back to the compiler.
 
 ## From C to IR
 
@@ -74,7 +74,7 @@ define i32 @func1() #0 {
 | `%2 = load i32, ptr %1` | load from that address into `%2` | reading a in `return a` |
 | `ret i32 %2` | return `%2` | `return` |
 
-Four symbols are enough to read the body.
+These are the 4 symbols that appear in the body.
 
 | Symbol | Meaning |
 |---|---|
@@ -83,7 +83,7 @@ Four symbols are enough to read the body.
 | `@name` | global name. Functions live here |
 | `;` | comment |
 
-The `target triple` at the top, the attributes[^attr] at the bottom, and the `!` metadata are environment configuration, not needed for decoding the body. Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`; opaque pointers[^opaque] unified this in LLVM 15. Different generation of syntax, same meaning.
+The `target triple` at the top, the attributes[^attr] at the bottom, and the `!` metadata are environment configuration, not needed for decoding the body.[^ptr14]
 
 ## From IR to Assembly
 
@@ -209,7 +209,6 @@ func1 folds to a single `ret i32 4`. This option is the standard way to emit IR 
 [^label]: A label is a name attached to a position in the code; branches and calls refer to positions by these names.
 [^diffed]: A view showing the differences between two files side by side: deleted lines in red on the left, added lines in green on the right.
 [^xclang]: In the command, -Xclang makes clang pass the following option straight to its internal frontend, and -disable-O0-optnone is the option that suppresses the marker.
-[^opaque]: A pointer notation that does not spell out the pointed-to type.
 [^block]: A block (basic block) is a run of instructions executed strictly top to bottom with no branches inside.
 
 [^attr]: attributes is the list collecting the properties applied to a function: the `attributes #0 = {...}` line near the bottom of the IR file, which the `#0` on a function definition points to.
@@ -217,3 +216,5 @@ func1 folds to a single `ret i32 4`. This option is the standard way to emit IR 
 [^llvm]: LLVM began as an acronym for Low Level Virtual Machine, but the project has long outgrown virtual machines and the name now stands on its own.
 
 [^ptx]: Short for Parallel Thread Execution.
+
+[^ptr14]: Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`. LLVM 15 unified this as opaque pointers (a notation that does not spell out the pointed-to type); different generation of syntax, same meaning.
