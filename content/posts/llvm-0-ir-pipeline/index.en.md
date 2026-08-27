@@ -9,9 +9,9 @@ series: ["LLVM"]
 summary: "Starting from the difference between interpreters, JITs, and AOT compilers, emit LLVM IR from C with clang, decode it, and follow the compilation pipeline down through assembly to an executable. Observe how optimization passes rewrite the IR via an -O0 vs -O1 diff, and record the optnone attribute that makes opt silently do nothing."
 ---
 
-A compiler is a program that translates source code, which humans read and write, into the machine code a CPU executes. A CPU executes only machine code, so code written in a language like C goes through this translation before it runs.
+A compiler is a program that translates the source code humans read and write into machine code so the CPU can run it. A CPU can natively execute only machine code, so code written in a language like C must go through this translation once before it runs.
 
-Depending on when the translation happens, there are three ways to run a program.
+Depending on when the translation happens, the ways to run a program split broadly into three.
 
 | Method | When it translates | What persists between runs | Examples[^ex] |
 |---|---|---|---|
@@ -19,15 +19,15 @@ Depending on when the translation happens, there are three ways to run a program
 | JIT (just-in-time) | during execution, only for hot code | machine code kept in memory | Java JVM, V8 in browsers |
 | AOT (ahead-of-time) | everything, before the program runs | an executable file | clang, GCC |
 
-The difference shows up as time once the same function is called repeatedly. Below are per-call times for the same integer loop called twelve times as CPython (interpreter), numba[^numba] (JIT), and a C library compiled ahead of time with `clang -O2` (AOT). All three return the same value.
+The difference between the three methods shows up as time once the same function is called repeatedly. The graph below shows per-call times for the same integer loop, called twelve times each as CPython (interpreter), numba[^numba] (JIT), and a C library compiled ahead of time with `clang -O2` (AOT).
 
 ![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif?v=2#medium)
 
 The interpreter repeats the same interpretation on every call and pays the same cost each time. The JIT pays its compilation cost on the first call (warmup[^warmup]) and reuses the translated machine code afterwards, while the AOT build pays that cost before the program runs and is fast from the first call.
 
-LLVM is an AOT compiler for native languages (languages that compile to machine code the CPU executes directly, with no virtual machine[^vm]) like C and C++.
+LLVM[^llvm] is an AOT compiler for native languages (languages that compile to machine code the CPU executes directly, with no virtual machine[^vm]) like C and C++.
 
-The same structure appeared in [CUDA C Basics]({{< relref "/posts/cuda-c-basics" >}}#the-nvcc-compilation-pipeline). nvcc, NVIDIA's CUDA compiler, splits a `.cu` file into host code that runs on the CPU and device code that runs on the GPU, lowering the device code to PTX, an intermediate instruction set, and then to SASS, the GPU's machine code. CPU-side compilers step down through intermediate stages the same way, and LLVM is the representative one. In fact cicc, the device code compiler inside nvcc, is built on LLVM, so the two stacks correspond layer by layer.
+The structure of stepping down through an intermediate language instead of translating source straight to machine code already appeared with nvcc in [CUDA C Basics]({{< relref "/posts/cuda-c-basics" >}}#the-nvcc-compilation-pipeline). nvcc, NVIDIA's CUDA compiler, splits a `.cu` file into host code that runs on the CPU and device code that runs on the GPU, lowering the device code to PTX[^ptx], an intermediate instruction set, and then to SASS, the GPU's machine code. CPU-side compilers step down through intermediate stages the same way, and LLVM is the representative one. In fact cicc, the device code compiler inside nvcc, is built on LLVM, so the two stacks correspond layer by layer.
 
 ![The LLVM stack and the nvcc stack from the CUDA C post, layer by layer](images/cpu-gpu-stack.svg)
 
@@ -213,3 +213,7 @@ func1 folds to a single `ret i32 4`. This option is the standard way to emit IR 
 [^block]: A block (basic block) is a run of instructions executed strictly top to bottom with no branches inside.
 
 [^attr]: attributes is the list collecting the properties applied to a function: the `attributes #0 = {...}` line near the bottom of the IR file, which the `#0` on a function definition points to.
+
+[^llvm]: LLVM began as an acronym for Low Level Virtual Machine, but the project has long outgrown virtual machines and the name now stands on its own.
+
+[^ptx]: Short for Parallel Thread Execution.

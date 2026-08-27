@@ -9,9 +9,9 @@ series: ["LLVM"]
 summary: "인터프리터, JIT, AOT의 차이에서 시작해 clang으로 C 코드를 LLVM IR로 뽑아 해독하고, llc로 어셈블리를 거쳐 실행 파일까지 내려가는 컴파일 파이프라인 전체를 다룬다. 최적화 pass가 IR을 바꾸는 과정을 -O0와 -O1의 diff로 관찰하고, opt가 조용히 아무것도 안 하게 만드는 optnone을 기록한다."
 ---
 
-컴파일러는 사람이 읽고 쓰는 소스 코드를 CPU가 실행하는 기계어로 번역하는 프로그램이다. CPU는 기계어만 실행하므로, C처럼 기계어로 번역되는 언어로 쓴 코드는 실행 전에 이 번역을 거친다.
+컴파일러는 사람이 읽고 쓰는 소스 코드를 CPU가 실행할 수 있게끔 기계어로 번역하는 프로그램이다. CPU는 태생적으로 기계어만 실행할 수 있으므로, C 같은 언어로 짠 코드는 실행하기 전에 반드시 이 번역을 한 번 거쳐야 한다.
 
-번역을 언제 하느냐에 따라 프로그램을 실행하는 방식이 셋으로 갈린다.
+번역을 언제 하느냐에 따라, 프로그램을 실행하는 방식은 크게 셋으로 갈라진다.
 
 | 방식 | 번역 시점 | 실행 사이에 남는 것 | 예[^ex] |
 |---|---|---|---|
@@ -19,15 +19,15 @@ summary: "인터프리터, JIT, AOT의 차이에서 시작해 clang으로 C 코�
 | JIT(just-in-time) | 실행 중에, 자주 실행되는 부분만 | 메모리에 둔 기계어 | Java JVM, 브라우저의 V8 |
 | AOT(ahead-of-time) | 실행 전에 전부 | 실행 파일 | clang, GCC |
 
-이 차이는 같은 함수를 반복 호출하면 시간으로 드러난다. 아래는 동일한 정수 반복 계산을 CPython(인터프리터), numba[^numba](JIT), `clang -O2`로 미리 컴파일한 C 라이브러리(AOT)로 12번씩 호출해 기록한 호출별 시간이다. 반환값은 셋 다 같다.
+세 방식의 차이는 같은 함수를 반복해서 호출해 보면 시간으로 드러난다. 아래 그래프는 같은 정수 반복 계산을 CPython(인터프리터), numba[^numba](JIT), `clang -O2`로 미리 컴파일한 C 라이브러리(AOT) 세 가지로 각각 12번씩 호출해서 잰 호출별 시간이다.
 
 ![Per-call time of the same function under an interpreter, a JIT, and an AOT build](images/jit_aot_interp.gif?v=2#medium)
 
 인터프리터는 호출마다 같은 해석을 되풀이해 매번 같은 비용을 낸다. JIT는 첫 호출에 컴파일 비용을 몰아 내고(warmup[^warmup]) 그다음부터 번역된 기계어를 재사용하며, AOT는 그 비용을 실행 전에 내서 첫 호출부터 빠르다.
 
-LLVM은 C/C++ 같은 native 언어(가상 머신[^vm] 없이 CPU가 직접 실행하는 기계어로 번역되는 언어)를 위한 AOT 컴파일러다.
+LLVM[^llvm]은 C/C++ 같은 native 언어(가상 머신[^vm] 없이 CPU가 직접 실행하는 기계어로 번역되는 언어)를 위한 AOT 컴파일러다.
 
-같은 구조가 [CUDA C 기초]({{< relref "/posts/cuda-c-basics" >}}#nvcc-컴파일-파이프라인)에 이미 나왔다. NVIDIA의 CUDA 컴파일러인 nvcc는 `.cu` 파일을 CPU에서 실행할 host 코드와 GPU에서 실행할 device 코드로 나누어 처리하는데, device 코드를 PTX라는 중간 명령어로 바꾸고, PTX를 GPU 기계어인 SASS로 내린다. CPU 쪽 컴파일러도 같은 방식으로 중간 단계를 거쳐 내려가며, 그 대표가 LLVM이다. 실제로 nvcc의 device 코드 컴파일러인 cicc가 LLVM 위에서 만들어져 있어서, 두 스택은 층별로 그대로 대응한다.
+소스 코드를 곧바로 기계어로 바꾸지 않고 중간 언어를 거쳐 내려가는 구조는 [CUDA C 기초]({{< relref "/posts/cuda-c-basics" >}}#nvcc-컴파일-파이프라인)의 nvcc에서도 이미 나왔다. NVIDIA의 CUDA 컴파일러인 nvcc는 `.cu` 파일을 CPU에서 실행할 host 코드와 GPU에서 실행할 device 코드로 나누어 처리하는데, device 코드를 PTX[^ptx]라는 중간 명령어로 바꾸고, PTX를 GPU 기계어인 SASS로 내린다. CPU 쪽 컴파일러도 같은 방식으로 중간 단계를 거쳐 내려가며, 그 대표가 LLVM이다. 실제로 nvcc의 device 코드 컴파일러인 cicc가 LLVM 위에서 만들어져 있어서, 두 스택은 층별로 그대로 대응한다.
 
 ![The LLVM stack and the nvcc stack from the CUDA C post, layer by layer](images/cpu-gpu-stack.svg)
 
@@ -213,3 +213,7 @@ func1이 `ret i32 4` 한 줄로 접힌다. IR로 pass 실험을 할 때는 이 �
 [^block]: 블록(basic block)은 분기 없이 위에서 아래로만 실행되는 명령 묶음이다.
 
 [^attr]: attributes는 함수에 적용되는 속성들을 모아 둔 목록이다. IR 파일 아래쪽의 `attributes #0 = {...}` 줄이 그것이고, 함수 정의의 `#0`이 이 묶음을 가리킨다.
+
+[^llvm]: LLVM은 Low Level Virtual Machine의 약자로 출발했지만, 프로젝트가 가상 머신과 무관해진 지금은 약자가 아닌 이름 그 자체로 쓰인다.
+
+[^ptx]: Parallel Thread Execution의 약자.
