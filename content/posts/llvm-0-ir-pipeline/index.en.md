@@ -83,7 +83,7 @@ These are the 4 symbols that appear in the body.
 | `@name` | global name. Functions live here |
 | `;` | comment |
 
-The `target triple` at the top, the attributes[^attr] at the bottom, and the `!` metadata are environment configuration, not needed for decoding the body.[^ptr14]
+The target triple[^triple] at the top, the attributes[^attr] at the bottom, and the `!` metadata are environment configuration, not needed for decoding the body.[^ptr14]
 
 ## From IR to Assembly
 
@@ -91,7 +91,7 @@ The `target triple` at the top, the attributes[^attr] at the bottom, and the `!`
 llc Test.ll -o Test.s
 ```
 
-`llc` is the backend. llc lowers IR to the assembly[^asm] of the CPU named by the target triple (the CPU-and-OS specification written at the top of the IR file), so the output assembly differs per target CPU: targeting x86-64 produces x86-64 assembly, ARM64 produces ARM64 assembly, RISC-V produces RISC-V assembly, and an option such as `llc -mtriple=x86_64-pc-linux-gnu Test.ll` switches the target. One IR fanning out to per-target backends is exactly the role of IR described in the pipeline section.
+`llc` is the backend tool that lowers IR to the assembly[^asm] of the CPU named by the target triple[^triple], so the output assembly differs per target CPU: targeting x86-64 produces x86-64 assembly, ARM64 produces ARM64 assembly, RISC-V produces RISC-V assembly, and an option such as `llc -mtriple=x86_64-pc-linux-gnu Test.ll` switches the target. One IR fanning out to per-target backends is exactly the role of IR described in the pipeline section.
 
 The following table maps func1 in the ARM64-target output.[^armregs]
 
@@ -102,7 +102,13 @@ The following table maps func1 in the ARM64-target output.[^armregs]
 | `%2 = load i32, ptr %1` | `ldr w0, [sp, #12]` | load from the stack into w0; `%2` becomes w0 |
 | `ret i32 %2` | `add sp, sp, #16` → `ret` | release the frame and return; w0 carries the return value |
 
-Assigning virtual names (%N) to physical places (registers, stack slots) is the backend's job. An assembly file has three kinds of lines: lines starting with `.` are assembler directives[^directive] and can be skipped, `name:` lines are labels[^label], and only the indented lines are actual CPU instructions.
+The backend assigns virtual names (%N) to physical places (registers, stack slots). An assembly file has 3 kinds of lines.
+
+| Line shape | What it is | When reading |
+|---|---|---|
+| starts with `.` | assembler directive[^directive] | skip |
+| `name:` | label[^label] | position marker |
+| indented | CPU instruction | what to read |
 
 Change `store i32 4` to `store i32 9` in `Test.ll`, run `llc` again, and the output shows `mov w8, #9`. The IR text itself is the compiler input, so editing the IR alone changes the program without going through the frontend.
 
@@ -218,3 +224,5 @@ func1 folds to a single `ret i32 4`. This option is the standard way to emit IR 
 [^ptx]: Short for Parallel Thread Execution.
 
 [^ptr14]: Older LLVM (before 15) wrote typed pointers like `i32*` instead of `ptr`. LLVM 15 unified this as opaque pointers (a notation that does not spell out the pointed-to type); different generation of syntax, same meaning.
+
+[^triple]: The target triple is the target specification written at the top of the IR file, made of three parts as the name says (CPU-vendor-OS). Example: `arm64-apple-macosx15.0.0`.
