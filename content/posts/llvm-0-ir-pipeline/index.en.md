@@ -137,7 +137,7 @@ A pass is a small program built into LLVM that sweeps over the entire IR once, p
 | dce | deletes instructions that do not affect the result (dead code elimination) |
 | licm | moves computations whose value is the same on every iteration out of the loop (loop invariant code motion) |
 
-There are two ways to run them. `opt` runs a single pass of your choosing, while clang's `-O1` `-O2` `-O3` options run a predefined list of passes in order. The lists nest.[^1]
+Running passes splits into two ways. With `opt` you pick and run a single pass of your choosing, and with clang's `-O1` `-O2` `-O3` options a predefined list of passes runs in order. And the three options' lists nest inside one another.[^1]
 
 $$ O_0(0) \subset O_1(98) \subset O_2(115) \subset O_3(118) $$
 
