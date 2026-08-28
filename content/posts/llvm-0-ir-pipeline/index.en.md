@@ -114,9 +114,9 @@ Change `store i32 4` to `store i32 9` in `Test.ll`, run `llc` again, and the out
 
 ## From Assembly to an Executable
 
-`Test.s` is a text file: `mov w8, #4` is stored as the literal characters, and a CPU cannot execute characters. What a CPU executes is a fixed bit pattern per instruction, and the assembler (as) turns the text notation into those bit patterns, producing the object file `Test.o`.
+`Test.s` is a text file holding instructions like `mov w8, #4` as characters. A CPU, however, is a circuit that acts only when the fixed bit pattern of an instruction arrives, so it cannot execute character data like 'm', 'o', 'v' as instructions. The assembler (as) therefore turns the text notation into instruction bit patterns, and the result is the object file `Test.o`.
 
-A program is usually built from several source files, each becoming one object file, plus libraries (bundles of precompiled object files holding common functions such as printf). An object file is machine code but not runnable on its own, because the addresses of functions it calls in other object files or libraries are still unresolved. The linker (ld) collects those object files and libraries, fills in the missing addresses, and joins them into an executable.
+A program is usually built from several source files, each becoming one object file, plus libraries (bundles of precompiled object files holding common functions such as printf). An object file is machine code but not runnable on its own, because the addresses of functions it calls in other object files or libraries are still unresolved. The linker (ld) collects those object files and libraries, fills in the missing addresses, and joins them into an executable. This process is called linking.
 
 ```bash
 clang -c Test.s -o Test.o   # assemble
