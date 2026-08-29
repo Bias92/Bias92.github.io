@@ -174,7 +174,7 @@ Chunk 0의 H2D copy, kernel, D2H copy를 각각 H0, K0, D0이라고 하고 세 �
 
 위 그림의 두 행은 가로 축척이 같고, 직렬 막대 안의 점선은 그 막대를 chunk 4개 몫으로 나눈 자리다. 점선으로 나뉜 한 칸의 가로 길이가 아래 chunk 하나의 가로 길이와 같으므로 두 방식이 처리하는 작업량은 같다. 달라지는 것은 작업을 시간축 어디에 놓느냐뿐이다. 그림 오른쪽의 시간은 NVIDIA A100에서 잰 값이다.[^bench]
 
-이 구조를 코드로 옮길 때는 stream을 여러 개 만들어 chunk마다 돌려 쓴다. Device memory는 배열 전체 크기로 한 번만 할당하고, 각 chunk의 시작 위치만 `offset`으로 옮긴다. `offset`은 배열의 시작에서 몇 번째 원소부터가 이번 chunk인지를 나타내는 원소 번호이고, `d_x + offset`은 `d_x`가 가리키는 위치에서 `offset`개 뒤에 있는 원소의 주소다. 반복문이 `offset`을 `chunkElements`만큼씩 늘리므로 chunk마다 같은 배열의 다른 구간을 가리킨다.
+이 구조를 코드로 옮길 때는 stream을 여러 개 만들어 chunk마다 돌려 쓴다. Device memory는 배열 전체 크기로 한 번만 할당하고, 각 chunk의 시작 위치만 `offset`으로 옮긴다. `offset`은 배열의 시작에서 몇 번째 원소부터가 이번 chunk인지를 나타내는 원소 번호이고, `d_x + offset`은 `d_x`가 가리키는 위치에서 `offset`개 뒤에 있는 원소의 주소다. 반복문이 `offset`을 `chunkElements`만큼씩 늘리므로 chunk마다 같은 배열의 다른 구간을 가리킨다.[^chunkelements]
 
 ```cpp
 constexpr int streamCount = 4;
@@ -435,3 +435,5 @@ nsys profile --stats=true ./overlap
 7. [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 
 [^bench]: 장비는 NVIDIA A100-SXM4-80GB이고 환경은 RunPod 컨테이너, CUDA 12.4, driver 580.159.04이고 `nvcc -O3 -arch=sm_80`으로 빌드했다. 조건은 `N` 16,777,216개(64MB), chunk 16개, stream 4개이며 이 GPU의 `asyncEngineCount`는 3이다. `cudaEvent`로 warm-up 5회 뒤 30회를 재고 median을 썼다. 직렬은 5.230 ms(min 5.204, max 7.976), stream은 3.384 ms(min 3.340, max 3.681)였다. 측정 코드는 [overlap_bench.cu](/code/cuda-05/overlap_bench.cu)에 있다.
+
+[^chunkelements]: `chunkElements`는 chunk 하나에 넣을 원소 개수다. 아래 코드는 이 값을 `1 << 20`, 즉 1,048,576개로 두었고 `N`이 16,777,216개이므로 chunk가 16개 나온다. 값이 클수록 chunk 수가 줄어 겹칠 기회가 적어지고, 값이 작을수록 chunk 하나당 kernel launch와 copy 요청의 비중이 커진다.

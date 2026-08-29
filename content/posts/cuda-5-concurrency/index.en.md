@@ -172,7 +172,7 @@ The loop submits all three operations of one chunk before moving to the next, an
 
 Both rows above use the same horizontal scale, and the dashed lines inside each serial bar mark where that bar divides into four chunks. One dashed division has the same width as one chunk below it, so both arrangements perform the same amount of work. What changes is only where that work is placed on the time axis. The times on the right of the figure were measured on an NVIDIA A100.[^bench]
 
-To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`. `offset` is the element index at which the current chunk begins, and `d_x + offset` is the address of the element `offset` positions after the one `d_x` points to. The loop increases `offset` by `chunkElements` each time, so every chunk points at a different range of the same array.
+To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`. `offset` is the element index at which the current chunk begins, and `d_x + offset` is the address of the element `offset` positions after the one `d_x` points to. The loop increases `offset` by `chunkElements` each time, so every chunk points at a different range of the same array.[^chunkelements]
 
 ```cpp
 constexpr int streamCount = 4;
@@ -433,3 +433,5 @@ In the end, concurrency is not a technique for removing dependencies. The H2D co
 7. [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 
 [^bench]: The device was an NVIDIA A100-SXM4-80GB in a RunPod container with CUDA 12.4 and driver 580.159.04, built with `nvcc -O3 -arch=sm_80`. The run used `N` of 16,777,216 elements (64MB), 16 chunks, and 4 streams, on a GPU whose `asyncEngineCount` is 3. Timing came from `cudaEvent` over 30 repetitions after 5 warm-up runs, reported as the median: 5.230 ms serial (min 5.204, max 7.976) and 3.384 ms streamed (min 3.340, max 3.681). The measurement code is in [overlap_bench.cu](/code/cuda-05/overlap_bench.cu).
+
+[^chunkelements]: `chunkElements` is the number of elements placed in one chunk. The code below sets it to `1 << 20`, that is 1,048,576 elements, and with `N` at 16,777,216 elements that yields 16 chunks. A larger value produces fewer chunks and therefore fewer opportunities to overlap, while a smaller value raises the share of kernel launch and copy requests per chunk.
