@@ -95,6 +95,9 @@ const size_t bytes = N * sizeof(float);
 
 float *h_x = nullptr;
 float *h_y = nullptr;
+// pageable version from the earlier section
+// float *h_x = (float *)malloc(bytes);
+// float *h_y = (float *)malloc(bytes);
 cudaHostAlloc(&h_x, bytes, cudaHostAllocDefault);   // pinned input
 cudaHostAlloc(&h_y, bytes, cudaHostAllocDefault);   // pinned output
 
@@ -105,6 +108,9 @@ cudaMalloc(&d_y, bytes);                            // device output
 
 // ... H2D copy, kernel, D2H copy ...
 
+// pageable version from the earlier section
+// free(h_x);
+// free(h_y);
 cudaFreeHost(h_x);
 cudaFreeHost(h_y);
 cudaFree(d_x);
@@ -185,9 +191,12 @@ float *h_y = nullptr;
 float *d_x = nullptr;
 float *d_y = nullptr;
 
+// pageable version from before pinned memory
+// float *h_x = (float *)malloc(bytes);
+// float *h_y = (float *)malloc(bytes);
 cudaHostAlloc(&h_x, bytes, cudaHostAllocDefault);
 cudaHostAlloc(&h_y, bytes, cudaHostAllocDefault);
-cudaMalloc(&d_x, bytes);
+cudaMalloc(&d_x, bytes);   // device memory is the same in both versions
 cudaMalloc(&d_y, bytes);
 
 for (size_t i = 0; i < N; ++i) {
@@ -206,6 +215,9 @@ for (size_t chunk = 0, offset = 0; offset < N;
     const size_t chunkBytes = count * sizeof(float);
     cudaStream_t stream = streams[chunk % streamCount];
 
+    // the synchronous version has no stream argument
+    // cudaMemcpy(d_x + offset, h_x + offset, chunkBytes,
+    //            cudaMemcpyHostToDevice);
     cudaMemcpyAsync(d_x + offset, h_x + offset, chunkBytes,
                     cudaMemcpyHostToDevice, stream);
 
@@ -224,6 +236,9 @@ for (int i = 0; i < streamCount; ++i) {
     cudaStreamDestroy(streams[i]);
 }
 
+// pageable version from before pinned memory
+// free(h_x);
+// free(h_y);
 cudaFreeHost(h_x);
 cudaFreeHost(h_y);
 cudaFree(d_x);
