@@ -139,7 +139,7 @@ None of the three calls holds the CPU, but because they enter the same stream, t
 
 When a large array is processed in one piece, the kernel starts only after the entire input has been copied from host to device, and the result is copied back only after the entire kernel has finished. The array is divided into several ranges to reduce this waiting. One such piece of data is called a chunk.
 
-For example, consider `y[i] = x[i] * 2`. The range from `x[0]` through `x[3]` can be chunk 0, and the range from `x[4]` through `x[7]` can be chunk 1. Computing `y[0]` through `y[3]` does not require any value from chunk 1, so the two chunks can be processed without waiting for each other.
+For example, consider `y[i] = x[i] * 2` on an array of 8 elements, where `i` runs from 0 to 7. Dividing that array into two chunks of 4 elements makes `x[0]` through `x[3]` chunk 0 and `x[4]` through `x[7]` chunk 1. Each of `y[0]` through `y[3]` needs only the `x` value at the same index, so it can be computed without any value from chunk 1. The two chunks are therefore processed without waiting for each other.
 
 Call the H2D copy, kernel, and D2H copy for chunk 0 H0, K0, and D0, and place all three in stream 0. Place H1, K1, and D1 for chunk 1 in stream 1. Each stream preserves H0 → K0 → D0 and H1 → K1 → D1. There is no prescribed order between the two streams, so when the GPU can run a copy and a kernel at the same time, H1 can be copied while K0 runs and D0 can be copied while K1 runs.
 
