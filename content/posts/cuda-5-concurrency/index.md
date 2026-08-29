@@ -282,23 +282,23 @@ cudaEventDestroy(stop);
 
 `cudaEventSynchronize(stop)`은 stop event가 완료될 때까지 CPU를 기다린다. 그 뒤 `cudaEventElapsedTime`이 start와 stop 사이의 GPU 시간을 `milliseconds`에 기록한다.
 
-두 stream 사이에 순서를 만들 때도 event를 쓴다. 아래 예제에서 `produce`는 `data`를 쓰고 `consume`은 그 값을 읽는다. 두 kernel이 서로 다른 stream에 있으므로, 아무 조건을 넣지 않으면 `consume`이 먼저 시작할 수도 있다. 그래서 stream 0의 `produce` 뒤에 ready event를 기록하고, stream 1의 `consume` 앞에서 그 event를 기다린다.
+두 stream 사이에 순서를 만들 때도 event를 쓴다. 아래 예제에서 stream 0의 `transform`은 결과를 `d_y`에 쓰고, stream 1의 `transform`은 그 `d_y`를 입력으로 읽어 `d_z`에 쓴다. 두 kernel이 서로 다른 stream에 있어 규칙 2에 따라 순서가 정해지지 않으므로, stream 1의 kernel이 먼저 시작할 수도 있다. 그래서 stream 0의 kernel 뒤에 `ready` event를 기록하고, stream 1의 kernel 앞에서 그 event를 기다리게 한다.
 
 ```cpp
 cudaEvent_t ready;
 cudaEventCreate(&ready);
 
-produce<<<grid, block, 0, stream0>>>(data);
+transform<<<grid, block, 0, stream0>>>(d_x, d_y, N);
 cudaEventRecord(ready, stream0);
 
 cudaStreamWaitEvent(stream1, ready, 0);
-consume<<<grid, block, 0, stream1>>>(data);
+transform<<<grid, block, 0, stream1>>>(d_y, d_z, N);
 
 cudaStreamSynchronize(stream1);
 cudaEventDestroy(ready);
 ```
 
-위 코드에서 `cudaStreamWaitEvent`는 stream 1의 이후 작업만 기다리게 하며 CPU는 기다리지 않는다. 마지막 인자 `0`은 별도 동작을 지정하지 않는다는 뜻이다. 그 결과 device 전체를 멈추지 않고도 `produce` → `consume` 순서만 만들 수 있다.
+위 코드에서 `cudaStreamWaitEvent`는 stream 1의 이후 작업만 기다리게 하며 CPU는 기다리지 않는다. 마지막 인자 `0`은 별도 동작을 지정하지 않는다는 뜻이다. 그 결과 device 전체를 멈추지 않고도 두 kernel 사이의 순서만 만들 수 있다.
 
 ![CUDA event](images/event-wait-chart.svg)
 

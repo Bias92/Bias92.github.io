@@ -282,23 +282,23 @@ cudaEventDestroy(stop);
 
 `cudaEventSynchronize(stop)` makes the CPU wait until the stop event completes. After that, `cudaEventElapsedTime` writes the GPU time between start and stop into `milliseconds`.
 
-Events are also used to create an order between two streams. In the example below, `produce` writes `data` and `consume` reads that value. Because the two kernels are in different streams, `consume` could start first if no condition were added. A ready event is therefore recorded after `produce` in stream 0, and stream 1 waits for that event before `consume`.
+Events are also used to create an order between two streams. In the example below, the `transform` in stream 0 writes its result into `d_y`, and the `transform` in stream 1 reads that `d_y` as input and writes `d_z`. Because the two kernels are in different streams, rule 2 leaves their order undefined, so the kernel in stream 1 could start first. A `ready` event is therefore recorded after the kernel in stream 0, and stream 1 waits for that event before its kernel.
 
 ```cpp
 cudaEvent_t ready;
 cudaEventCreate(&ready);
 
-produce<<<grid, block, 0, stream0>>>(data);
+transform<<<grid, block, 0, stream0>>>(d_x, d_y, N);
 cudaEventRecord(ready, stream0);
 
 cudaStreamWaitEvent(stream1, ready, 0);
-consume<<<grid, block, 0, stream1>>>(data);
+transform<<<grid, block, 0, stream1>>>(d_y, d_z, N);
 
 cudaStreamSynchronize(stream1);
 cudaEventDestroy(ready);
 ```
 
-In the code above, `cudaStreamWaitEvent` makes only the later work in stream 1 wait; it does not make the CPU wait. The final argument `0` specifies no additional behavior. This creates only the `produce` → `consume` order without stopping the whole device.
+In the code above, `cudaStreamWaitEvent` makes only the later work in stream 1 wait; it does not make the CPU wait. The final argument `0` specifies no additional behavior. This creates only the order between the two kernels without stopping the whole device.
 
 ![CUDA event](images/event-wait-chart.svg)
 
