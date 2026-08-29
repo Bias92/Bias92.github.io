@@ -15,22 +15,45 @@ CUDA 프로그램은 CPU와 GPU를 함께 사용한다. 이때 CPU 쪽을 host, 
 
 ## Host Memory와 Device Memory
 
-할당(allocation)은 프로그램이 사용할 memory 영역을 확보하고 그 시작 주소를 pointer로 돌려받는 일이다. Pointer는 memory 주소를 담는 변수다. Host memory는 `malloc`으로 할당하고 `free`로 해제한다. 그다음 device memory는 `cudaMalloc`으로 할당하고 `cudaFree`로 해제하며, 돌려받은 pointer는 GPU가 접근하는 영역을 가리킨다. 두 pointer가 서로 다른 memory를 가리키기 때문에 CPU가 `malloc` 영역에 써 둔 값을 GPU가 읽으려면 복사가 필요하다. 아래 코드에서 `N`은 `float` 원소의 개수이고, `bytes`는 그 원소들이 차지하는 전체 byte 수다. `size_t`는 memory 크기를 담는 정수 타입이다.
+할당(allocation)은 프로그램이 사용할 memory 영역을 확보하고 그 시작 주소를 pointer로 돌려받는 일이다. Pointer는 memory 주소를 담는 변수다. Host memory는 `malloc`으로 할당하고 `free`로 해제한다. 그다음 device memory는 `cudaMalloc`으로 할당하고 `cudaFree`로 해제하며, 돌려받은 pointer는 GPU가 접근하는 영역을 가리킨다. 두 pointer가 서로 다른 memory를 가리키기 때문에 CPU가 `malloc` 영역에 써 둔 값을 GPU가 읽으려면 복사가 필요하다.
+
+아래 코드에서 `N`은 `float` 원소의 개수이고, `bytes`는 그 원소들이 차지하는 전체 byte 수다. `size_t`는 memory 크기를 담는 정수 타입이다. `h_x`는 CPU가 채울 입력이고 `h_y`는 결과를 받을 host memory이며, `d_x`와 `d_y`는 같은 크기의 device memory다. 이 네 pointer는 이 글 끝까지 같은 뜻으로 쓴다.
 
 ```cpp
-const int N = 1000;
+const size_t N = 1000;
 const size_t bytes = N * sizeof(float);
 
-float *h_x = (float *)malloc(bytes);   // host memory
+float *h_x = (float *)malloc(bytes);   // host memory 입력
+float *h_y = (float *)malloc(bytes);   // host memory 출력
 float *d_x = nullptr;
-cudaMalloc(&d_x, bytes);               // device memory
+float *d_y = nullptr;
+cudaMalloc(&d_x, bytes);               // device memory 입력
+cudaMalloc(&d_y, bytes);               // device memory 출력
 ```
 
 ## H2D Copy, Kernel Launch, D2H Copy
 
-Host memory에서 device memory로 옮기는 복사를 H2D(Host to Device) copy라고 하고, 반대 방향을 D2H(Device to Host) copy라고 한다. `cudaMemcpy`는 이 복사를 수행하는 함수로, 마지막 인자에 복사 방향을 적는다. 그다음 GPU에서 실행할 함수인 kernel을 `<<<grid, block>>>` 구문으로 실행하는데, 이 호출을 kernel launch라고 한다. 여기서 thread는 kernel을 실행하는 GPU의 작업 단위이고, block은 함께 배치되는 thread의 묶음이며, grid는 block의 개수다. Kernel이 결과를 device memory에 쓰고 나면 D2H copy로 결과를 host memory로 가져온다.
+Host memory에서 device memory로 옮기는 복사를 H2D(Host to Device) copy라고 하고, 반대 방향을 D2H(Device to Host) copy라고 한다. `cudaMemcpy`는 이 복사를 수행하는 함수로, 마지막 인자에 복사 방향을 적는다. 그다음 GPU에서 실행할 함수인 kernel을 `<<<grid, block>>>` 구문으로 실행하는데, 이 호출을 kernel launch라고 한다. 여기서 thread는 kernel을 실행하는 GPU의 작업 단위이고, block은 함께 배치되는 thread의 묶음이며, grid는 block의 개수다.
+
+이 글은 아래 kernel 하나를 끝까지 사용한다. `transform`은 입력 `x`의 각 원소에 2를 곱해 출력 `y`의 같은 번호 자리에 쓴다.
 
 ```cpp
+__global__ void transform(const float *x, float *y, size_t count) {
+    const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < count) {
+        y[i] = x[i] * 2.0f;
+    }
+}
+```
+
+`__global__`은 이 함수가 GPU에서 실행되는 kernel이라는 표시다. `blockIdx.x`는 grid 안에서 이 block의 번호, `blockDim.x`는 block 하나에 든 thread 수, `threadIdx.x`는 block 안에서 이 thread의 번호다. 세 값을 조합한 `i`가 이 thread가 맡을 원소 번호이고, `count`보다 크거나 같은 번호는 처리하지 않는다.
+
+Kernel launch에 넘기는 `block`은 block 하나의 thread 수이고 `grid`는 그런 block이 몇 개 필요한지다. Block당 thread 수는 GPU가 thread를 32개 단위로 실행하므로 32의 배수로 정하며, 이 글은 256을 쓴다. Thread 하나가 원소 하나를 맡으므로 원소 `N`개를 처리하려면 block이 `N / 256`개 필요하고, 나누어떨어지지 않는 경우를 위해 올림한다. Kernel이 결과를 device memory에 쓰고 나면 D2H copy로 결과를 host memory로 가져온다.
+
+```cpp
+const int block = 256;
+const int grid = (N + block - 1) / block;
+
 cudaMemcpy(d_x, h_x, bytes, cudaMemcpyHostToDevice);   // H2D copy
 transform<<<grid, block>>>(d_x, d_y, N);                // kernel launch
 cudaMemcpy(h_y, d_y, bytes, cudaMemcpyDeviceToHost);   // D2H copy
@@ -148,16 +171,9 @@ Chunk 0의 H2D copy, kernel, D2H copy를 각각 H0, K0, D0이라고 하고 세 �
 이 구조를 코드로 옮길 때는 stream을 여러 개 만들어 chunk마다 돌려 쓴다. Device memory는 배열 전체 크기로 한 번만 할당하고, 각 chunk의 시작 위치만 `offset`으로 옮긴다.
 
 ```cpp
-__global__ void transform(const float *x, float *y, size_t count) {
-    const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < count) {
-        y[i] = x[i] * 2.0f;
-    }
-}
-
 constexpr int streamCount = 4;
-constexpr size_t N = 1ULL << 24;
-constexpr size_t chunkElements = 1 << 20;
+constexpr size_t N = 1ULL << 24;          // 16,777,216개
+constexpr size_t chunkElements = 1 << 20; // 1,048,576개
 constexpr size_t bytes = N * sizeof(float);
 
 float *h_x = nullptr;
@@ -210,7 +226,7 @@ cudaFree(d_x);
 cudaFree(d_y);
 ```
 
-`transform`은 앞에서 사용한 `y[i] = x[i] * 2`를 계산한다. `h_x`와 `h_y`는 비동기 H2D와 D2H copy에 쓰이므로 둘 다 pinned memory이고, `d_x`와 `d_y`는 device memory다. 반복문 한 바퀴가 chunk 하나를 맡아 세 작업을 같은 stream에 제출한다. 모든 stream을 다 쓴 뒤에는 `cudaDeviceSynchronize`로 device의 전체 작업을 기다리고 나서 stream과 memory를 해제한다.
+`N`은 원소 16,777,216개이고 `chunkElements`는 1,048,576개이므로 chunk는 16개가 나온다. Stream은 4개를 만들었으므로 `chunk % streamCount`에 따라 chunk 0, 4, 8, 12가 stream 0에 들어가고 chunk 1, 5, 9, 13이 stream 1에 들어간다. `h_x`와 `h_y`는 비동기 H2D와 D2H copy에 쓰이므로 둘 다 pinned memory이고, `d_x`와 `d_y`는 device memory다. 반복문 한 바퀴가 chunk 하나를 맡아 세 작업을 같은 stream에 제출한다. 마지막 chunk까지 제출한 뒤에는 `cudaDeviceSynchronize`로 device의 전체 작업을 기다리고 나서 stream과 memory를 해제한다.
 
 Chunk가 둘일 때 위 반복문의 제출 순서와 작업 종류별로 모아 제출하는 순서를 나란히 쓰면 차이가 보인다.
 
@@ -221,7 +237,7 @@ breadth-first: H0 → H1 → K0 → K1 → D0 → D1
 
 두 방식 모두 stream 0에서는 H0 → K0 → D0, stream 1에서는 H1 → K1 → D1 순서를 지킨다. 여기서는 한 chunk의 세 작업을 먼저 제출하는 depth-first를 사용한다.
 
-같은 stream을 다시 쓰면 새 작업은 그 stream의 앞 작업 뒤에 붙는다. 그래서 `streams[0]`을 다시 쓰는 chunk 4는 chunk 0의 D2H copy가 끝난 뒤 실행된다. Memory 할당과 stream 생성은 chunk마다 반복할 일이 아닌 준비 작업이므로 반복문 전에 한 번만 마친다. 반복문 안에는 H2D copy, kernel launch, D2H copy만 두고 미리 만든 memory와 stream을 계속 사용한다.
+같은 stream을 다시 쓰면 새 작업은 그 stream의 앞 작업 뒤에 붙는다. Stream이 4개이므로 chunk 4가 stream 0을 다시 쓰고, 규칙 1에 따라 chunk 4의 H2D copy는 chunk 0의 D2H copy가 끝난 뒤 시작한다. Memory 할당과 stream 생성은 chunk마다 반복할 일이 아닌 준비 작업이므로 반복문 전에 한 번만 마친다. 반복문 안에는 H2D copy, kernel launch, D2H copy만 두고 미리 만든 memory와 stream을 계속 사용한다.
 
 실제 겹침의 모양은 chunk마다 복사하는 데이터 양과 kernel 실행 시간에 따라 달라진다. Kernel이 아주 짧다면 copy와 kernel이 겹쳐도 줄어드는 시간은 작다. GPU가 H2D와 D2H를 동시에 처리할 수 있는 copy engine 구성을 가졌을 때는 다음 chunk의 H2D와 이전 chunk의 D2H가 겹치는 구간이 더 큰 이득이 될 수 있다.
 
@@ -229,13 +245,17 @@ breadth-first: H0 → H1 → K0 → K1 → D0 → D1
 
 Stream을 지정하지 않은 kernel launch와 `cudaMemcpy`는 default stream에 들어간다. 기본 설정의 default stream을 legacy default stream이라고 한다. 위에서 `cudaStreamCreate`로 만든 stream과 함께 쓸 때는 앞에서 제출된 모든 작업이 끝난 뒤 default stream 작업이 시작하고, 그 작업이 끝난 뒤에야 다음 작업이 시작한다.
 
+아래는 앞 절의 chunk 세 개를 제출하되 가운데 한 줄에만 stream 인자를 빠뜨린 경우다. `c`는 chunk 하나의 원소 수이고, 세 launch는 각각 chunk 0, 1, 2를 처리한다.
+
 ```cpp
-workA<<<grid, block, 0, stream0>>>();   // A
-workB<<<grid, block>>>();               // B: legacy default stream
-workC<<<grid, block, 0, stream1>>>();   // C
+const size_t c = chunkElements;
+
+transform<<<grid, block, 0, streams[0]>>>(d_x,         d_y,         c);  // A: chunk 0
+transform<<<grid, block>>>               (d_x + c,     d_y + c,     c);  // B: stream 인자 누락
+transform<<<grid, block, 0, streams[1]>>>(d_x + 2 * c, d_y + 2 * c, c);  // C: chunk 2
 ```
 
-가운데 B 한 줄 때문에 A와 C가 겹칠 가능성이 사라진다. 그래서 겹침을 만드는 구간에서는 모든 copy와 kernel launch에 직접 만든 stream을 적는다.
+B는 stream 인자가 없어 legacy default stream에 들어간다. 그래서 B는 A가 끝난 뒤에 시작하고 C는 B가 끝난 뒤에 시작하므로, 원래 서로 다른 stream에 있어 겹칠 수 있었던 A와 C가 겹치지 못한다. 이 때문에 겹침을 만드는 구간에서는 모든 copy와 kernel launch에 직접 만든 stream을 적는다.
 
 컴파일 옵션 `nvcc --default-stream per-thread`를 주면 CPU thread마다 default stream이 따로 생기고, 위의 B가 A와 C 사이를 자동으로 막지 않는다. 이 옵션은 default stream을 쓰도록 이미 작성된 코드를 직접 만든 stream과 함께 사용할 때 쓴다.
 
@@ -243,7 +263,7 @@ workC<<<grid, block, 0, stream1>>>();   // C
 
 ## Host 함수를 Stream에 넣기
 
-`cudaLaunchHostFunc`는 CPU에서 실행할 함수를 stream의 한 작업으로 넣는다. 예를 들어 `transform`의 결과를 CPU 함수 `process`가 읽어야 한다면 같은 stream에 kernel, D2H copy, host 함수를 이 순서로 넣는다. `CUDART_CB`는 CUDA가 이 CPU 함수를 호출할 때 필요한 함수 형태를 표시한다.
+`cudaLaunchHostFunc`는 CPU에서 실행할 함수를 stream의 한 작업으로 넣는다. 아래 `stream`은 `cudaStreamCreate`로 만든 stream이다. `transform`의 결과를 CPU 함수 `process`가 읽어야 한다면 같은 stream에 kernel, D2H copy, host 함수를 이 순서로 넣는다. `CUDART_CB`는 CUDA가 이 CPU 함수를 호출할 때 필요한 함수 형태를 표시한다.
 
 ```cpp
 void CUDART_CB process(void *data) {
@@ -282,7 +302,7 @@ cudaEventDestroy(stop);
 
 `cudaEventSynchronize(stop)`은 stop event가 완료될 때까지 CPU를 기다린다. 그 뒤 `cudaEventElapsedTime`이 start와 stop 사이의 GPU 시간을 `milliseconds`에 기록한다.
 
-두 stream 사이에 순서를 만들 때도 event를 쓴다. 아래 예제에서 stream 0의 `transform`은 결과를 `d_y`에 쓰고, stream 1의 `transform`은 그 `d_y`를 입력으로 읽어 `d_z`에 쓴다. 두 kernel이 서로 다른 stream에 있어 규칙 2에 따라 순서가 정해지지 않으므로, stream 1의 kernel이 먼저 시작할 수도 있다. 그래서 stream 0의 kernel 뒤에 `ready` event를 기록하고, stream 1의 kernel 앞에서 그 event를 기다리게 한다.
+두 stream 사이에 순서를 만들 때도 event를 쓴다. 아래 `d_z`는 `d_x`, `d_y`와 같은 크기로 `cudaMalloc`한 device memory이고, `stream0`과 `stream1`은 `cudaStreamCreate`로 만든 stream이다. Stream 0의 `transform`은 결과를 `d_y`에 쓰고, stream 1의 `transform`은 그 `d_y`를 입력으로 읽어 `d_z`에 쓴다. 두 kernel이 서로 다른 stream에 있어 규칙 2에 따라 순서가 정해지지 않으므로, stream 1의 kernel이 먼저 시작할 수도 있다. 그래서 stream 0의 kernel 뒤에 `ready` event를 기록하고, stream 1의 kernel 앞에서 그 event를 기다리게 한다.
 
 ```cpp
 cudaEvent_t ready;
@@ -304,7 +324,7 @@ cudaEventDestroy(ready);
 
 ## 여러 Kernel의 동시 실행
 
-서로 다른 배열을 처리하는 두 kernel은 한쪽 결과를 다른 쪽이 기다리지 않는다. 아래에서 `d_x0`과 `d_y0`은 첫 번째 device 배열이고, `d_x1`과 `d_y1`은 두 번째 device 배열이다. 두 kernel을 서로 다른 stream에 넣으면 같은 GPU에서 동시에 실행될 가능성이 생긴다.
+서로 다른 배열을 처리하는 두 kernel은 한쪽 결과를 다른 쪽이 기다리지 않는다. 아래 네 pointer는 모두 `cudaMalloc`으로 `bytes` 크기씩 할당한 device memory다. `d_x0`과 `d_y0`은 첫 번째 계산의 입력과 출력이고, `d_x1`과 `d_y1`은 두 번째 계산의 입력과 출력이다. 두 kernel을 서로 다른 stream에 넣으면 같은 GPU에서 동시에 실행될 가능성이 생긴다.
 
 ```cpp
 transform<<<grid, block, 0, stream0>>>(d_x0, d_y0, N);
@@ -319,67 +339,76 @@ Stream priority는 GPU가 다음 block을 어느 stream의 kernel에서 가져�
 
 ## 여러 GPU의 Stream
 
-같은 stream 규칙은 GPU가 여러 개일 때도 이어진다. `cudaGetDeviceCount`로 GPU 개수를 읽고, `cudaSetDevice`로 이후 CUDA 호출의 대상이 될 GPU를 고른다. 이렇게 고른 GPU를 current device라고 한다. Device memory와 stream은 만들어질 때의 current device에 묶인다. 아래의 `d0`과 `stream0`은 GPU 0의 것이고, `d1`과 `stream1`은 GPU 1의 것이다. `work`는 선택된 GPU의 배열을 처리하는 kernel이다.
+같은 stream 규칙은 GPU가 여러 개일 때도 이어진다. `cudaGetDeviceCount`로 GPU 개수를 읽고, `cudaSetDevice`로 이후 CUDA 호출의 대상이 될 GPU를 고른다. 이렇게 고른 GPU를 current device라고 한다. Device memory와 stream은 만들어질 때의 current device에 묶인다. 아래에서 `d0_x`, `d0_y`, `stream0`은 GPU 0의 것이고 `d1_x`, `d1_y`, `stream1`은 GPU 1의 것이며, 두 GPU가 앞에서 정의한 `transform`을 각자의 배열에 실행한다.
 
 ```cpp
-float *d0 = nullptr;
-float *d1 = nullptr;
+float *d0_x = nullptr, *d0_y = nullptr;
+float *d1_x = nullptr, *d1_y = nullptr;
 cudaStream_t stream0;
 cudaStream_t stream1;
 
 cudaSetDevice(0);
-cudaMalloc(&d0, bytes);
+cudaMalloc(&d0_x, bytes);
+cudaMalloc(&d0_y, bytes);
 cudaStreamCreate(&stream0);   // GPU 0에 묶인 stream
-work<<<grid, block, 0, stream0>>>(d0);
+transform<<<grid, block, 0, stream0>>>(d0_x, d0_y, N);
 
 cudaSetDevice(1);
-cudaMalloc(&d1, bytes);
+cudaMalloc(&d1_x, bytes);
+cudaMalloc(&d1_y, bytes);
 cudaStreamCreate(&stream1);   // GPU 1에 묶인 stream
-work<<<grid, block, 0, stream1>>>(d1);
+transform<<<grid, block, 0, stream1>>>(d1_x, d1_y, N);
 
 cudaSetDevice(0);
 cudaStreamSynchronize(stream0);
 cudaStreamDestroy(stream0);
-cudaFree(d0);
+cudaFree(d0_x);
+cudaFree(d0_y);
 
 cudaSetDevice(1);
 cudaStreamSynchronize(stream1);
 cudaStreamDestroy(stream1);
-cudaFree(d1);
+cudaFree(d1_x);
+cudaFree(d1_y);
 ```
 
-Kernel launch는 CPU를 기다리게 하지 않으므로 CPU는 GPU 0에 `work`를 제출한 뒤 GPU 1에도 바로 제출할 수 있다. 마지막에는 GPU를 다시 선택해 각 stream이 끝날 때까지 기다린다. 또한 GPU 사이에 데이터를 옮길 때는 peer access를 쓸 수 있다. Peer access는 한 GPU가 다른 GPU의 memory를 직접 읽고 쓰는 기능으로, 두 GPU가 PCIe나 NVLink 같은 같은 연결 통로에 있어야 한다. `cudaDeviceCanAccessPeer`로 지원 여부를 확인하고, 두 방향 모두 복사한다면 `cudaDeviceEnablePeerAccess`를 양쪽에서 호출한 뒤 `cudaMemcpyPeerAsync`로 복사한다. 이렇게 하면 데이터가 host memory를 거치지 않고 한 GPU의 memory에서 다른 GPU의 memory로 바로 이동한다.
+Kernel launch는 CPU를 기다리게 하지 않으므로 CPU는 GPU 0에 `transform`을 제출한 뒤 GPU 1에도 바로 제출할 수 있다. 마지막에는 GPU를 다시 선택해 각 stream이 끝날 때까지 기다린다. 또한 GPU 사이에 데이터를 옮길 때는 peer access를 쓸 수 있다. Peer access는 한 GPU가 다른 GPU의 memory를 직접 읽고 쓰는 기능으로, 두 GPU가 PCIe나 NVLink 같은 같은 연결 통로에 있어야 한다. `cudaDeviceCanAccessPeer`로 지원 여부를 확인하고, 두 방향 모두 복사한다면 `cudaDeviceEnablePeerAccess`를 양쪽에서 호출한 뒤 `cudaMemcpyPeerAsync`로 복사한다. 이렇게 하면 데이터가 host memory를 거치지 않고 한 GPU의 memory에서 다른 GPU의 memory로 바로 이동한다.
 
 ![Multi GPU](images/multi-gpu-chart.svg)
 
 ## Unified Memory와 Prefetch
 
-[Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory와-managed-allocation)를 쓸 때도 stream 규칙은 같다. `cudaMemPrefetchAsync`는 Unified Memory로 만든 영역을 CPU나 GPU 쪽으로 미리 옮기는 함수다. 아래에서 `x`는 `cudaMallocManaged`로 할당한 Unified Memory pointer이고, `device`는 kernel을 실행할 GPU 번호이며, `work`는 `x`를 처리하는 kernel이다.
+[Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory와-managed-allocation)를 쓸 때도 stream 규칙은 같다. `cudaMemPrefetchAsync`는 Unified Memory로 만든 영역을 CPU나 GPU 쪽으로 미리 옮기는 함수다. 아래에서 `x`와 `y`는 `cudaMallocManaged`로 할당한 Unified Memory pointer로 CPU와 GPU가 같은 pointer로 접근하며, `device`는 kernel을 실행할 GPU 번호다. `cudaCpuDeviceId`는 목적지가 CPU 쪽임을 나타내는 CUDA 상수다.
 
 ```cpp
 const int device = 0;
 cudaSetDevice(device);
 
 float *x = nullptr;
+float *y = nullptr;
 cudaMallocManaged(&x, bytes);
+cudaMallocManaged(&y, bytes);
 
 cudaStream_t stream;
 cudaStreamCreate(&stream);
 
-cudaMemPrefetchAsync(x, bytes, device, stream);          // GPU로 이동
-work<<<grid, block, 0, stream>>>(x);
-cudaMemPrefetchAsync(x, bytes, cudaCpuDeviceId, stream); // CPU로 이동
+cudaMemPrefetchAsync(x, bytes, device, stream);          // 입력을 GPU로 이동
+transform<<<grid, block, 0, stream>>>(x, y, N);
+cudaMemPrefetchAsync(y, bytes, cudaCpuDeviceId, stream); // 결과를 CPU로 이동
 cudaStreamSynchronize(stream);
 
 cudaStreamDestroy(stream);
 cudaFree(x);
+cudaFree(y);
 ```
 
-같은 stream에 넣었으므로 GPU 방향 prefetch가 끝난 뒤 kernel이 시작하고, kernel이 끝난 뒤 CPU 방향 prefetch가 시작한다. 마지막 대기가 끝나면 CPU가 `x`를 읽을 수 있다. 이 이동은 page 단위로 일어나고 CPU와 GPU 양쪽의 page 기록도 고쳐야 하므로, 실행 시간축에 빈 구간이 생길 수 있다.
+같은 stream에 넣었으므로 GPU 방향 prefetch가 끝난 뒤 kernel이 시작하고, kernel이 끝난 뒤 CPU 방향 prefetch가 시작한다. 마지막 대기가 끝나면 CPU가 `y`를 읽을 수 있다. 이 이동은 page 단위로 일어나고 CPU와 GPU 양쪽의 page 기록도 고쳐야 하므로, 실행 시간축에 빈 구간이 생길 수 있다.
 
 ## Nsight Systems에서 확인하기
 
 동시 실행이 실제로 일어났는지는 GPU 실행 시간축에서 확인한다. Nsight Systems는 프로그램이 실행되는 동안 CPU의 CUDA 호출과 GPU의 copy, kernel 실행을 같은 시간축에 기록해 보여 주는 도구다.
+
+앞의 chunk 코드를 `nvcc`로 컴파일해 만든 실행 파일을 `overlap`이라고 하면 다음과 같이 실행한다.
 
 ```bash
 nsys profile --stats=true ./overlap

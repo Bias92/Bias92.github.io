@@ -1,0 +1,48 @@
+<svg width="720" height="368" viewBox="0 0 720 368" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>CUDA stream ordering rules</title>
+  <desc>Operations in one stream execute in issue order. Operations in different streams have no CUDA ordering relationship and may overlap when resources are available.</desc>
+  <defs>
+    <marker id="arrow-c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9Z" fill="#33c0e4"/>
+    </marker>
+    <pattern id="overlap" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="#15242a"/>
+      <rect width="2" height="8" fill="#e46fd6" opacity="0.48"/>
+    </pattern>
+  </defs>
+
+  <rect width="720" height="368" rx="12" fill="#0d0e10" stroke="#22323a"/>
+
+  <text x="28" y="34" font-size="16" font-weight="700" fill="#9fdcec">Same stream</text>
+  <text x="692" y="34" font-size="12" text-anchor="end" fill="#8fb2bd">issue order is preserved</text>
+  <rect x="28" y="52" width="664" height="90" rx="10" fill="#0f1319" stroke="#22323a"/>
+  <text x="48" y="92" font-size="13" font-weight="700" fill="#9fdcec">Stream 0</text>
+
+  <rect x="145" y="72" width="128" height="54" rx="7" fill="#10333d" stroke="#33c0e4"/>
+  <text x="209" y="104" font-size="13" text-anchor="middle" fill="#e6f6fb">H2D copy</text>
+  <line x1="279" y1="99" x2="314" y2="99" stroke="#33c0e4" stroke-width="1.7" marker-end="url(#arrow-c)"/>
+
+  <rect x="326" y="72" width="128" height="54" rx="7" fill="#2b1229" stroke="#e46fd6"/>
+  <text x="390" y="104" font-size="13" text-anchor="middle" fill="#f1caeb">Kernel</text>
+  <line x1="460" y1="99" x2="495" y2="99" stroke="#33c0e4" stroke-width="1.7" marker-end="url(#arrow-c)"/>
+
+  <rect x="507" y="72" width="128" height="54" rx="7" fill="#10333d" stroke="#33c0e4"/>
+  <text x="571" y="104" font-size="13" text-anchor="middle" fill="#e6f6fb">D2H copy</text>
+  <line x1="28" y1="167" x2="692" y2="167" stroke="#22323a"/>
+
+  <text x="28" y="200" font-size="16" font-weight="700" fill="#9fdcec">Different streams</text>
+  <text x="692" y="200" font-size="12" text-anchor="end" fill="#8fb2bd">ordering is not defined</text>
+  <rect x="28" y="218" width="664" height="120" rx="10" fill="#0f1319" stroke="#22323a"/>
+  <rect x="300" y="234" width="115" height="93" fill="url(#overlap)" opacity="0.72"/>
+
+  <text x="48" y="256" font-size="13" font-weight="700" fill="#9fdcec">Stream 0</text>
+  <rect x="145" y="234" width="270" height="38" rx="7" fill="#10333d" stroke="#33c0e4"/>
+  <text x="280" y="258" font-size="13" text-anchor="middle" fill="#e6f6fb">Kernel A</text>
+
+  <text x="48" y="311" font-size="13" font-weight="700" fill="#9fdcec">Stream 1</text>
+  <rect x="300" y="289" width="270" height="38" rx="7" fill="#2b1229" stroke="#e46fd6"/>
+  <text x="435" y="313" font-size="13" text-anchor="middle" fill="#f1caeb">Kernel B</text>
+
+  <path d="M357 230V213" stroke="#e46fd6" stroke-width="1.4"/>
+  <text x="357" y="206" font-size="11.5" text-anchor="middle" fill="#e46fd6">possible overlap</text>
+</svg>

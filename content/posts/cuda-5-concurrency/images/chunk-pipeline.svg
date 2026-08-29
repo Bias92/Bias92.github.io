@@ -1,0 +1,63 @@
+<svg width="720" height="424" viewBox="0 0 720 424" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>Chunked copy and kernel pipeline</title>
+  <desc>A serial H2D copy, kernel, and D2H copy are compared with four chunks pipelined across copy and compute resources using four streams.</desc>
+  <defs>
+    <marker id="time-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9Z" fill="#8fb2bd"/>
+    </marker>
+  </defs>
+
+  <rect width="720" height="424" rx="12" fill="#0d0e10" stroke="#22323a"/>
+
+  <text x="28" y="34" font-size="16" font-weight="700" fill="#9fdcec">One large input</text>
+  <text x="692" y="34" font-size="12" text-anchor="end" fill="#8fb2bd">serialized</text>
+  <rect x="28" y="52" width="664" height="100" rx="10" fill="#0f1319" stroke="#22323a"/>
+  <text x="52" y="87" font-size="12" fill="#8fb2bd">GPU timeline</text>
+  <rect x="145" y="72" width="132" height="46" rx="7" fill="#10333d" stroke="#33c0e4"/>
+  <text x="211" y="100" font-size="13" text-anchor="middle" fill="#e6f6fb">H2D copy</text>
+  <rect x="277" y="72" width="166" height="46" rx="7" fill="#2b1229" stroke="#e46fd6"/>
+  <text x="360" y="100" font-size="13" text-anchor="middle" fill="#f1caeb">Kernel</text>
+  <rect x="443" y="72" width="132" height="46" rx="7" fill="#10333d" stroke="#33c0e4"/>
+  <text x="509" y="100" font-size="13" text-anchor="middle" fill="#e6f6fb">D2H copy</text>
+  <line x1="145" y1="134" x2="575" y2="134" stroke="#8fb2bd" stroke-width="1.2" marker-end="url(#time-arrow)"/>
+
+  <line x1="28" y1="178" x2="692" y2="178" stroke="#22323a"/>
+
+  <text x="28" y="211" font-size="16" font-weight="700" fill="#9fdcec">Four chunks</text>
+  <text x="692" y="211" font-size="12" text-anchor="end" fill="#8fb2bd">four streams, three stages</text>
+
+  <rect x="28" y="228" width="664" height="184" rx="10" fill="#0f1319" stroke="#22323a"/>
+  <g stroke="#22323a" stroke-width="1">
+    <line x1="128" y1="228" x2="128" y2="412"/>
+    <line x1="214" y1="228" x2="214" y2="412"/>
+    <line x1="300" y1="228" x2="300" y2="412"/>
+    <line x1="386" y1="228" x2="386" y2="412"/>
+    <line x1="472" y1="228" x2="472" y2="412"/>
+    <line x1="558" y1="228" x2="558" y2="412"/>
+    <line x1="644" y1="228" x2="644" y2="412"/>
+  </g>
+
+  <g font-size="12" fill="#8fb2bd">
+    <text x="46" y="267">H2D engine</text>
+    <text x="46" y="325">Compute</text>
+    <text x="46" y="383">D2H engine</text>
+  </g>
+
+  <g font-size="11.5" text-anchor="middle">
+    <rect x="129" y="244" width="84" height="36" rx="6" fill="#10333d" stroke="#33c0e4"/><text x="171" y="267" fill="#e6f6fb">H0 · S0</text>
+    <rect x="215" y="244" width="84" height="36" rx="6" fill="#10333d" stroke="#33c0e4"/><text x="257" y="267" fill="#e6f6fb">H1 · S1</text>
+    <rect x="301" y="244" width="84" height="36" rx="6" fill="#10333d" stroke="#33c0e4"/><text x="343" y="267" fill="#e6f6fb">H2 · S2</text>
+    <rect x="387" y="244" width="84" height="36" rx="6" fill="#10333d" stroke="#33c0e4"/><text x="429" y="267" fill="#e6f6fb">H3 · S3</text>
+
+    <rect x="215" y="302" width="84" height="36" rx="6" fill="#2b1229" stroke="#e46fd6"/><text x="257" y="325" fill="#f1caeb">K0 · S0</text>
+    <rect x="301" y="302" width="84" height="36" rx="6" fill="#2b1229" stroke="#e46fd6"/><text x="343" y="325" fill="#f1caeb">K1 · S1</text>
+    <rect x="387" y="302" width="84" height="36" rx="6" fill="#2b1229" stroke="#e46fd6"/><text x="429" y="325" fill="#f1caeb">K2 · S2</text>
+    <rect x="473" y="302" width="84" height="36" rx="6" fill="#2b1229" stroke="#e46fd6"/><text x="515" y="325" fill="#f1caeb">K3 · S3</text>
+
+    <rect x="301" y="360" width="84" height="36" rx="6" fill="#10333d" stroke="#33c0e4"/><text x="343" y="383" fill="#e6f6fb">D0 · S0</text>
+    <rect x="387" y="360" width="84" height="36" rx="6" fill="#10333d" stroke="#33c0e4"/><text x="429" y="383" fill="#e6f6fb">D1 · S1</text>
+    <rect x="473" y="360" width="84" height="36" rx="6" fill="#10333d" stroke="#33c0e4"/><text x="515" y="383" fill="#e6f6fb">D2 · S2</text>
+    <rect x="559" y="360" width="84" height="36" rx="6" fill="#10333d" stroke="#33c0e4"/><text x="601" y="383" fill="#e6f6fb">D3 · S3</text>
+  </g>
+
+</svg>
