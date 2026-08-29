@@ -199,7 +199,9 @@ cudaHostAlloc(&h_y, bytes, cudaHostAllocDefault);
 cudaMalloc(&d_x, bytes);   // device memory is the same in both versions
 cudaMalloc(&d_y, bytes);
 
-// ... the host fills h_x with input values ...
+for (size_t i = 0; i < N; ++i) {   // the host fills in the input values
+    h_x[i] = static_cast<float>(i);
+}
 
 cudaStream_t streams[streamCount];
 for (int i = 0; i < streamCount; ++i) {
