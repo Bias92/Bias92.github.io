@@ -168,7 +168,7 @@ The loop submits all three operations of one chunk before moving to the next, an
 
 ![Submission order of chunk operations and their stream assignment](images/chunk-submission-chart.svg)
 
-![Serial processing of the whole array compared with chunked stream execution](images/stream-concurrency.gif?v=4)
+![Serial processing of the whole array compared with chunked stream execution](images/stream-concurrency.gif?v=5)
 
 Both rows above use the same horizontal scale, and the dashed lines inside each serial bar mark where that bar divides into four chunks. One dashed division has the same width as one chunk below it, so both arrangements perform the same amount of work. What changes is only where that work is placed on the time axis.
 
