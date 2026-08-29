@@ -166,7 +166,9 @@ cudaStreamDestroy(stream);
 
 Chunk 0의 H2D copy, kernel, D2H copy를 각각 H0, K0, D0이라고 하고 세 작업을 stream 0에 넣는다. Chunk 1의 H1, K1, D1은 stream 1에 넣는다. 각 stream 안에서는 H0 → K0 → D0와 H1 → K1 → D1 순서가 유지된다. 두 stream 사이에는 정해진 순서가 없으므로, GPU가 copy와 kernel을 동시에 실행할 수 있으면 K0이 실행되는 동안 H1을 복사하고 K1이 실행되는 동안 D0을 복사할 수 있다.
 
-![전체 배열의 직렬 처리와 chunk별 stream 실행 비교](images/stream-concurrency.gif?v=1)
+![전체 배열의 직렬 처리와 chunk별 stream 실행 비교](images/stream-concurrency.gif?v=2)
+
+위 그림의 두 행은 가로 축척이 같고, 직렬 막대 안의 점선은 그 막대를 chunk 4개 몫으로 나눈 자리다. 점선으로 나뉜 한 칸의 가로 길이가 아래 chunk 하나의 가로 길이와 같으므로 두 방식이 처리하는 작업량은 같다. 달라지는 것은 작업을 시간축 어디에 놓느냐뿐이다.
 
 이 구조를 코드로 옮길 때는 stream을 여러 개 만들어 chunk마다 돌려 쓴다. Device memory는 배열 전체 크기로 한 번만 할당하고, 각 chunk의 시작 위치만 `offset`으로 옮긴다.
 
