@@ -168,15 +168,11 @@ The loop submits all three operations of one chunk before moving to the next, an
 
 ![Submission order of chunk operations and their stream assignment](images/chunk-submission-chart.svg)
 
-Once submission is finished, the GPU executes those operations as shown below.
-
-![Serial processing of the whole array compared with chunked stream execution](images/stream-concurrency.gif?v=2)
+![Serial processing of the whole array compared with chunked stream execution](images/stream-concurrency.gif?v=3)
 
 Both rows above use the same horizontal scale, and the dashed lines inside each serial bar mark where that bar divides into four chunks. One dashed division has the same width as one chunk below it, so both arrangements perform the same amount of work. What changes is only where that work is placed on the time axis.
 
 To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`. `offset` is the element index at which the current chunk begins, and `d_x + offset` is the address of the element `offset` positions after the one `d_x` points to. The loop increases `offset` by `chunkElements` each time, so every chunk points at a different range of the same array.
-
-![Chunk ranges of the device array selected by offset](images/chunk-offset-chart.svg)
 
 ```cpp
 constexpr int streamCount = 4;

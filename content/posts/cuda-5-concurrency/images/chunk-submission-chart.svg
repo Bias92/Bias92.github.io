@@ -1,21 +1,21 @@
-<svg width="720" height="320" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+<svg width="720" height="372" viewBox="0 0 720 372" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
   <title>Depth-first submission of chunk operations into four streams</title>
-  <desc>The loop submits the H2D copy, kernel, and D2H copy of one chunk before moving to the next chunk, and chunk 0 through chunk 3 go into stream 0 through stream 3.</desc>
+  <desc>The loop submits the H2D copy, kernel, and D2H copy of one chunk before moving to the next chunk, chunk 0 through chunk 3 go into stream 0 through stream 3, and offset is the element index at which each chunk begins in the device array.</desc>
   <defs>
     <linearGradient id="cs-copy" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
     <linearGradient id="cs-kernel" x1="0" x2="1"><stop offset="0" stop-color="#35142f"/><stop offset="1" stop-color="#a84498"/></linearGradient>
-    <filter id="cs-cyan-wide" x="-60" y="-60" width="840" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
-    <filter id="cs-cyan-near" x="-60" y="-60" width="840" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
-    <filter id="cs-mag-wide" x="-60" y="-60" width="840" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
-    <filter id="cs-mag-near" x="-60" y="-60" width="840" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="cs-cyan-wide" x="-60" y="-60" width="840" height="492" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="cs-cyan-near" x="-60" y="-60" width="840" height="492" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="cs-mag-wide" x="-60" y="-60" width="840" height="492" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="cs-mag-near" x="-60" y="-60" width="840" height="492" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
   </defs>
 
-  <rect width="720" height="320" fill="#0d0e10"/>
+  <rect width="720" height="372" fill="#0d0e10"/>
 
   <g stroke="#1e252b" stroke-width="1">
-    <line x1="211" y1="24" x2="211" y2="306"/>
-    <line x1="363" y1="24" x2="363" y2="306"/>
-    <line x1="515" y1="24" x2="515" y2="306"/>
+    <line x1="211" y1="24" x2="211" y2="358"/>
+    <line x1="363" y1="24" x2="363" y2="358"/>
+    <line x1="515" y1="24" x2="515" y2="358"/>
     <line x1="28" y1="96" x2="692" y2="96"/>
   </g>
 
@@ -91,5 +91,17 @@
     <text x="240" y="208">H1</text><text x="287" y="208">K1</text><text x="334" y="208">D1</text>
     <text x="392" y="250">H2</text><text x="439" y="250">K2</text><text x="486" y="250">D2</text>
     <text x="544" y="292">H3</text><text x="591" y="292">K3</text><text x="638" y="292">D3</text>
+  </g>
+
+  <line x1="28" y1="312" x2="692" y2="312" stroke="#1e252b" stroke-width="1"/>
+  <text x="28" y="336" fill="#8c949d" font-size="13" font-weight="600">offset</text>
+  <g fill="#d5d8dc" font-size="13" font-weight="650" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <text x="138" y="336">0</text><text x="290" y="336">1048576</text>
+    <text x="442" y="336">2097152</text><text x="594" y="336">3145728</text>
+  </g>
+  <text x="28" y="360" fill="#8c949d" font-size="13" font-weight="600">start</text>
+  <g fill="#9fdcec" font-size="13" font-weight="650" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <text x="138" y="360">d_x + 0</text><text x="290" y="360">d_x + 1048576</text>
+    <text x="442" y="360">d_x + 2097152</text><text x="594" y="360">d_x + 3145728</text>
   </g>
 </svg>
