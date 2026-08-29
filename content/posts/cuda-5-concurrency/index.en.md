@@ -174,7 +174,13 @@ Once submission is finished, the GPU executes those operations as shown below.
 
 Both rows above use the same horizontal scale, and the dashed lines inside each serial bar mark where that bar divides into four chunks. One dashed division has the same width as one chunk below it, so both arrangements perform the same amount of work. What changes is only where that work is placed on the time axis.
 
-To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`.
+To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`. `offset` is the element index at which the current chunk begins, and `d_x + offset` is the address of the element `offset` positions after the one `d_x` points to. The loop increases `offset` by `chunkElements` each time, so every chunk points at a different range of the same array.
+
+```text
+d_x + 0          d_x + 1048576    d_x + 2097152    d_x + 3145728
+|                |                |                |
+[--- chunk 0 ---][--- chunk 1 ---][--- chunk 2 ---][--- chunk 3 ---]
+```
 
 ```cpp
 constexpr int streamCount = 4;
