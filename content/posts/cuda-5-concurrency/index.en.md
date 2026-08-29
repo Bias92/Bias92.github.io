@@ -168,9 +168,9 @@ The loop submits all three operations of one chunk before moving to the next, an
 
 ![Submission order of chunk operations and their stream assignment](images/chunk-submission-chart.svg)
 
-![Serial processing of the whole array compared with chunked stream execution](images/stream-concurrency.gif?v=9)[^bench]
+![Serial processing of the whole array compared with chunked stream execution](images/stream-concurrency.gif?v=9)
 
-Both rows above use the same horizontal scale, and the dashed lines inside each serial bar mark where that bar divides into four chunks. One dashed division has the same width as one chunk below it, so both arrangements perform the same amount of work. What changes is only where that work is placed on the time axis.
+Both rows above use the same horizontal scale, and the dashed lines inside each serial bar mark where that bar divides into four chunks. One dashed division has the same width as one chunk below it, so both arrangements perform the same amount of work. What changes is only where that work is placed on the time axis. The times on the right of the figure were measured on an NVIDIA A100.[^bench]
 
 To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`. `offset` is the element index at which the current chunk begins, and `d_x + offset` is the address of the element `offset` positions after the one `d_x` points to. The loop increases `offset` by `chunkElements` each time, so every chunk points at a different range of the same array.
 
@@ -432,4 +432,4 @@ In the end, concurrency is not a technique for removing dependencies. The H2D co
 6. [CUDA Runtime API: API Synchronization Behavior](https://docs.nvidia.com/cuda/cuda-runtime-api/api-sync-behavior.html)
 7. [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 
-[^bench]: The times on the right of the figure were measured on an NVIDIA A100-SXM4-80GB in a RunPod container with CUDA 12.4 and driver 580.159.04, built with `nvcc -O3 -arch=sm_80`. The run used `N` of 16,777,216 elements (64MB), 16 chunks, and 4 streams, on a GPU whose `asyncEngineCount` is 3. Timing came from `cudaEvent` over 30 repetitions after 5 warm-up runs, reported as the median: 5.230 ms serial (min 5.204, max 7.976) and 3.384 ms streamed (min 3.340, max 3.681). The measurement code is in [overlap_bench.cu](/code/cuda-05/overlap_bench.cu).
+[^bench]: The device was an NVIDIA A100-SXM4-80GB in a RunPod container with CUDA 12.4 and driver 580.159.04, built with `nvcc -O3 -arch=sm_80`. The run used `N` of 16,777,216 elements (64MB), 16 chunks, and 4 streams, on a GPU whose `asyncEngineCount` is 3. Timing came from `cudaEvent` over 30 repetitions after 5 warm-up runs, reported as the median: 5.230 ms serial (min 5.204, max 7.976) and 3.384 ms streamed (min 3.340, max 3.681). The measurement code is in [overlap_bench.cu](/code/cuda-05/overlap_bench.cu).
