@@ -235,7 +235,7 @@ workB<<<grid, block>>>();               // B: legacy default stream
 workC<<<grid, block, 0, stream1>>>();   // C
 ```
 
-이 예에서는 B가 A를 기다리고 C가 B를 기다리므로 A → B → C 순서가 된다. 가운데 B 한 줄 때문에 A와 C가 겹칠 가능성이 사라진다. 그래서 겹침을 만드는 구간에서는 모든 copy와 kernel launch에 직접 만든 stream을 적는다.
+가운데 B 한 줄 때문에 A와 C가 겹칠 가능성이 사라진다. 그래서 겹침을 만드는 구간에서는 모든 copy와 kernel launch에 직접 만든 stream을 적는다.
 
 컴파일 옵션 `nvcc --default-stream per-thread`를 주면 CPU thread마다 default stream이 따로 생기고, 위의 B가 A와 C 사이를 자동으로 막지 않는다. 이 옵션은 default stream을 쓰도록 이미 작성된 코드를 직접 만든 stream과 함께 사용할 때 쓴다.
 

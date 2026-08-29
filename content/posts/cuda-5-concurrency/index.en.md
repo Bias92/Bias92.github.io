@@ -235,7 +235,7 @@ workB<<<grid, block>>>();               // B: legacy default stream
 workC<<<grid, block, 0, stream1>>>();   // C
 ```
 
-In this example, B waits for A and C waits for B, producing the order A → B → C. The single line B in the middle removes the possibility that A and C overlap. For this reason, every copy and kernel launch in a region intended to overlap names a stream explicitly.
+The single line B in the middle removes the possibility that A and C overlap. For this reason, every copy and kernel launch in a region intended to overlap names a stream explicitly.
 
 With the compiler option `nvcc --default-stream per-thread`, each CPU thread gets its own default stream, and B above does not automatically block between A and C. This option is used when code written to use the default stream is run together with explicitly created streams.
 
