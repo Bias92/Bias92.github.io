@@ -201,9 +201,7 @@ cudaHostAlloc(&h_y, bytes, cudaHostAllocDefault);
 cudaMalloc(&d_x, bytes);   // device memory는 두 버전이 같다
 cudaMalloc(&d_y, bytes);
 
-for (size_t i = 0; i < N; ++i) {
-    h_x[i] = static_cast<float>(i);
-}
+// ... host에서 h_x에 입력 값을 채운다 ...
 
 cudaStream_t streams[streamCount];
 for (int i = 0; i < streamCount; ++i) {
