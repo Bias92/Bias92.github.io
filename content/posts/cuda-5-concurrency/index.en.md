@@ -176,6 +176,8 @@ Both rows above use the same horizontal scale, and the dashed lines inside each 
 
 To put this structure in code, several streams are created and rotated across chunks. Device memory is allocated once at the full array size, and only the start of each chunk is moved with `offset`. `offset` is the element index at which the current chunk begins, and `d_x + offset` is the address of the element `offset` positions after the one `d_x` points to. The loop increases `offset` by `chunkElements` each time, so every chunk points at a different range of the same array.
 
+![Chunk ranges of the device array selected by offset](images/chunk-offset-chart.svg)
+
 ```cpp
 constexpr int streamCount = 4;
 constexpr size_t N = 1ULL << 24;          // 16,777,216 elements

@@ -178,6 +178,8 @@ Chunk 0의 H2D copy, kernel, D2H copy를 각각 H0, K0, D0이라고 하고 세 �
 
 이 구조를 코드로 옮길 때는 stream을 여러 개 만들어 chunk마다 돌려 쓴다. Device memory는 배열 전체 크기로 한 번만 할당하고, 각 chunk의 시작 위치만 `offset`으로 옮긴다. `offset`은 배열의 시작에서 몇 번째 원소부터가 이번 chunk인지를 나타내는 원소 번호이고, `d_x + offset`은 `d_x`가 가리키는 위치에서 `offset`개 뒤에 있는 원소의 주소다. 반복문이 `offset`을 `chunkElements`만큼씩 늘리므로 chunk마다 같은 배열의 다른 구간을 가리킨다.
 
+![offset이 정하는 device 배열의 chunk 구간](images/chunk-offset-chart.svg)
+
 ```cpp
 constexpr int streamCount = 4;
 constexpr size_t N = 1ULL << 24;          // 16,777,216개
