@@ -1,0 +1,95 @@
+<svg width="720" height="320" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <title>Depth-first submission of chunk operations into four streams</title>
+  <desc>The loop submits the H2D copy, kernel, and D2H copy of one chunk before moving to the next chunk, and chunk 0 through chunk 3 go into stream 0 through stream 3.</desc>
+  <defs>
+    <linearGradient id="cs-copy" x1="0" x2="1"><stop offset="0" stop-color="#173a45"/><stop offset="1" stop-color="#31badb"/></linearGradient>
+    <linearGradient id="cs-kernel" x1="0" x2="1"><stop offset="0" stop-color="#35142f"/><stop offset="1" stop-color="#a84498"/></linearGradient>
+    <filter id="cs-cyan-wide" x="-60" y="-60" width="840" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="cs-cyan-near" x="-60" y="-60" width="840" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="cs-mag-wide" x="-60" y="-60" width="840" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="cs-mag-near" x="-60" y="-60" width="840" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+
+  <rect width="720" height="320" fill="#0d0e10"/>
+
+  <g stroke="#1e252b" stroke-width="1">
+    <line x1="211" y1="24" x2="211" y2="306"/>
+    <line x1="363" y1="24" x2="363" y2="306"/>
+    <line x1="515" y1="24" x2="515" y2="306"/>
+    <line x1="28" y1="96" x2="692" y2="96"/>
+  </g>
+
+  <g fill="#d5d8dc" font-size="15" font-weight="650" letter-spacing="0.7">
+    <text x="28" y="38">SUBMISSION ORDER</text>
+    <text x="28" y="122">STREAMS</text>
+  </g>
+  <g fill="#8c949d" font-size="13" font-weight="600">
+    <text x="692" y="38" text-anchor="end">DEPTH-FIRST</text>
+    <text x="28" y="163">S0</text>
+    <text x="28" y="205">S1</text>
+    <text x="28" y="247">S2</text>
+    <text x="28" y="289">S3</text>
+  </g>
+
+  <g fill="#46d9ff" opacity="0.16" filter="url(#cs-cyan-wide)">
+    <rect x="66" y="52" width="44" height="30" rx="15"/><rect x="160" y="52" width="44" height="30" rx="15"/>
+    <rect x="218" y="52" width="44" height="30" rx="15"/><rect x="312" y="52" width="44" height="30" rx="15"/>
+    <rect x="370" y="52" width="44" height="30" rx="15"/><rect x="464" y="52" width="44" height="30" rx="15"/>
+    <rect x="522" y="52" width="44" height="30" rx="15"/><rect x="616" y="52" width="44" height="30" rx="15"/>
+    <rect x="66" y="146" width="44" height="30" rx="15"/><rect x="160" y="146" width="44" height="30" rx="15"/>
+    <rect x="218" y="188" width="44" height="30" rx="15"/><rect x="312" y="188" width="44" height="30" rx="15"/>
+    <rect x="370" y="230" width="44" height="30" rx="15"/><rect x="464" y="230" width="44" height="30" rx="15"/>
+    <rect x="522" y="272" width="44" height="30" rx="15"/><rect x="616" y="272" width="44" height="30" rx="15"/>
+  </g>
+  <g fill="none" stroke="#46d9ff" stroke-width="3" opacity="0.8" filter="url(#cs-cyan-near)">
+    <rect x="66" y="52" width="44" height="30" rx="15"/><rect x="160" y="52" width="44" height="30" rx="15"/>
+    <rect x="218" y="52" width="44" height="30" rx="15"/><rect x="312" y="52" width="44" height="30" rx="15"/>
+    <rect x="370" y="52" width="44" height="30" rx="15"/><rect x="464" y="52" width="44" height="30" rx="15"/>
+    <rect x="522" y="52" width="44" height="30" rx="15"/><rect x="616" y="52" width="44" height="30" rx="15"/>
+    <rect x="66" y="146" width="44" height="30" rx="15"/><rect x="160" y="146" width="44" height="30" rx="15"/>
+    <rect x="218" y="188" width="44" height="30" rx="15"/><rect x="312" y="188" width="44" height="30" rx="15"/>
+    <rect x="370" y="230" width="44" height="30" rx="15"/><rect x="464" y="230" width="44" height="30" rx="15"/>
+    <rect x="522" y="272" width="44" height="30" rx="15"/><rect x="616" y="272" width="44" height="30" rx="15"/>
+  </g>
+  <g fill="url(#cs-copy)" stroke="#46d9ff" stroke-width="1.4">
+    <rect x="66" y="52" width="44" height="30" rx="15"/><rect x="160" y="52" width="44" height="30" rx="15"/>
+    <rect x="218" y="52" width="44" height="30" rx="15"/><rect x="312" y="52" width="44" height="30" rx="15"/>
+    <rect x="370" y="52" width="44" height="30" rx="15"/><rect x="464" y="52" width="44" height="30" rx="15"/>
+    <rect x="522" y="52" width="44" height="30" rx="15"/><rect x="616" y="52" width="44" height="30" rx="15"/>
+    <rect x="66" y="146" width="44" height="30" rx="15"/><rect x="160" y="146" width="44" height="30" rx="15"/>
+    <rect x="218" y="188" width="44" height="30" rx="15"/><rect x="312" y="188" width="44" height="30" rx="15"/>
+    <rect x="370" y="230" width="44" height="30" rx="15"/><rect x="464" y="230" width="44" height="30" rx="15"/>
+    <rect x="522" y="272" width="44" height="30" rx="15"/><rect x="616" y="272" width="44" height="30" rx="15"/>
+  </g>
+
+  <g fill="#d95cc5" opacity="0.15" filter="url(#cs-mag-wide)">
+    <rect x="113" y="52" width="44" height="30" rx="15"/><rect x="265" y="52" width="44" height="30" rx="15"/>
+    <rect x="417" y="52" width="44" height="30" rx="15"/><rect x="569" y="52" width="44" height="30" rx="15"/>
+    <rect x="113" y="146" width="44" height="30" rx="15"/><rect x="265" y="188" width="44" height="30" rx="15"/>
+    <rect x="417" y="230" width="44" height="30" rx="15"/><rect x="569" y="272" width="44" height="30" rx="15"/>
+  </g>
+  <g fill="none" stroke="#ed72d9" stroke-width="3" opacity="0.72" filter="url(#cs-mag-near)">
+    <rect x="113" y="52" width="44" height="30" rx="15"/><rect x="265" y="52" width="44" height="30" rx="15"/>
+    <rect x="417" y="52" width="44" height="30" rx="15"/><rect x="569" y="52" width="44" height="30" rx="15"/>
+    <rect x="113" y="146" width="44" height="30" rx="15"/><rect x="265" y="188" width="44" height="30" rx="15"/>
+    <rect x="417" y="230" width="44" height="30" rx="15"/><rect x="569" y="272" width="44" height="30" rx="15"/>
+  </g>
+  <g fill="url(#cs-kernel)" stroke="#ed72d9" stroke-width="1.4">
+    <rect x="113" y="52" width="44" height="30" rx="15"/><rect x="265" y="52" width="44" height="30" rx="15"/>
+    <rect x="417" y="52" width="44" height="30" rx="15"/><rect x="569" y="52" width="44" height="30" rx="15"/>
+    <rect x="113" y="146" width="44" height="30" rx="15"/><rect x="265" y="188" width="44" height="30" rx="15"/>
+    <rect x="417" y="230" width="44" height="30" rx="15"/><rect x="569" y="272" width="44" height="30" rx="15"/>
+  </g>
+
+  <g fill="#edf4f7" font-size="13" font-weight="650" text-anchor="middle">
+    <text x="88" y="72">H0</text><text x="135" y="72">K0</text><text x="182" y="72">D0</text>
+    <text x="240" y="72">H1</text><text x="287" y="72">K1</text><text x="334" y="72">D1</text>
+    <text x="392" y="72">H2</text><text x="439" y="72">K2</text><text x="486" y="72">D2</text>
+    <text x="544" y="72">H3</text><text x="591" y="72">K3</text><text x="638" y="72">D3</text>
+
+    <text x="88" y="166">H0</text><text x="135" y="166">K0</text><text x="182" y="166">D0</text>
+    <text x="240" y="208">H1</text><text x="287" y="208">K1</text><text x="334" y="208">D1</text>
+    <text x="392" y="250">H2</text><text x="439" y="250">K2</text><text x="486" y="250">D2</text>
+    <text x="544" y="292">H3</text><text x="591" y="292">K3</text><text x="638" y="292">D3</text>
+  </g>
+</svg>

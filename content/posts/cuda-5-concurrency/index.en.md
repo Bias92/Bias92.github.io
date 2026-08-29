@@ -164,6 +164,12 @@ For example, consider `y[i] = x[i] * 2` on an array of 8 elements, where `i` run
 
 Call the H2D copy, kernel, and D2H copy for chunk 0 H0, K0, and D0, and place all three in stream 0. Place H1, K1, and D1 for chunk 1 in stream 1. Each stream preserves H0 → K0 → D0 and H1 → K1 → D1. There is no prescribed order between the two streams, so when the GPU can run a copy and a kernel at the same time, H1 can be copied while K0 runs and D0 can be copied while K1 runs.
 
+The loop submits all three operations of one chunk before moving to the next, and `chunk % streamCount` sends chunk 0 to stream 0, chunk 1 to stream 1, chunk 2 to stream 2, and chunk 3 to stream 3. The top row of the figure below is the order in which the CPU submits, and the four rows beneath it are the streams each operation went into.
+
+![Submission order of chunk operations and their stream assignment](images/chunk-submission-chart.svg)
+
+Once submission is finished, the GPU executes those operations as shown below.
+
 ![Serial processing of the whole array compared with chunked stream execution](images/stream-concurrency.gif?v=2)
 
 Both rows above use the same horizontal scale, and the dashed lines inside each serial bar mark where that bar divides into four chunks. One dashed division has the same width as one chunk below it, so both arrangements perform the same amount of work. What changes is only where that work is placed on the time axis.

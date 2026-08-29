@@ -166,6 +166,12 @@ cudaStreamDestroy(stream);
 
 Chunk 0의 H2D copy, kernel, D2H copy를 각각 H0, K0, D0이라고 하고 세 작업을 stream 0에 넣는다. Chunk 1의 H1, K1, D1은 stream 1에 넣는다. 각 stream 안에서는 H0 → K0 → D0와 H1 → K1 → D1 순서가 유지된다. 두 stream 사이에는 정해진 순서가 없으므로, GPU가 copy와 kernel을 동시에 실행할 수 있으면 K0이 실행되는 동안 H1을 복사하고 K1이 실행되는 동안 D0을 복사할 수 있다.
 
+반복문은 chunk 하나의 세 작업을 모두 제출한 뒤 다음 chunk로 넘어가고, `chunk % streamCount`에 따라 chunk 0은 stream 0, chunk 1은 stream 1, chunk 2는 stream 2, chunk 3은 stream 3에 들어간다. 아래 그림의 위쪽 줄이 CPU가 제출하는 순서이고, 아래쪽 네 줄이 각 작업이 들어간 stream이다.
+
+![chunk별 작업의 제출 순서와 stream 배정](images/chunk-submission-chart.svg)
+
+제출이 끝난 뒤 GPU가 이 작업들을 실행하는 모습은 아래와 같다.
+
 ![전체 배열의 직렬 처리와 chunk별 stream 실행 비교](images/stream-concurrency.gif?v=2)
 
 위 그림의 두 행은 가로 축척이 같고, 직렬 막대 안의 점선은 그 막대를 chunk 4개 몫으로 나눈 자리다. 점선으로 나뉜 한 칸의 가로 길이가 아래 chunk 하나의 가로 길이와 같으므로 두 방식이 처리하는 작업량은 같다. 달라지는 것은 작업을 시간축 어디에 놓느냐뿐이다.
