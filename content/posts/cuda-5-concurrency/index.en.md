@@ -443,7 +443,7 @@ In the end, concurrency is not a technique for removing dependencies. The H2D co
 
 [^sync]: When the loop ends the CPU has only submitted the work and the GPU is still running it. Without this line the CPU goes straight on to `cudaFreeHost` and `cudaFree`, releasing memory that the GPU is still copying from or reading. For the same reason any code that reads the results out of `h_y` has to come after this line. The synchronous version that uses `cudaMemcpy` does not need it, because the copy is already complete when that function returns.
 
-[^depthfirst]: The opposite order submits the same kind of operation for every chunk first, and is called breadth-first. The difference is one loop versus three.
+[^depthfirst]: The opposite order submits the same kind of operation for every chunk first, and is called breadth-first.
 
     ```cpp
     // depth-first

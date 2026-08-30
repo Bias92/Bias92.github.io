@@ -445,7 +445,7 @@ nsys profile --stats=true ./overlap
 
 [^sync]: 반복문이 끝난 시점에 CPU는 작업을 제출만 했고 GPU는 아직 실행 중이다. 이 줄이 없으면 CPU가 곧바로 `cudaFreeHost`와 `cudaFree`로 넘어가서, GPU가 복사하거나 읽는 중인 memory를 해제한다. 같은 이유로 `h_y`의 결과를 읽는 코드도 이 줄 뒤에 와야 한다. `cudaMemcpy`를 쓰는 동기 버전에서는 그 함수가 끝날 때 복사도 끝나 있으므로 이 줄이 필요 없다.
 
-[^depthfirst]: 반대쪽 순서는 같은 종류의 작업을 chunk 전체에 걸쳐 먼저 제출하는 breadth-first다. 반복문이 하나냐 셋이냐의 차이다.
+[^depthfirst]: 반대쪽 순서는 같은 종류의 작업을 chunk 전체에 걸쳐 먼저 제출하는 breadth-first다.
 
     ```cpp
     // depth-first
