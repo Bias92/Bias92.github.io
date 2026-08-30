@@ -210,11 +210,12 @@ for (int i = 0; i < streamCount; ++i) {
     cudaStreamCreate(&streams[i]);
 }
 
+constexpr size_t chunkBytes = chunkElements * sizeof(float);
+constexpr int block = 256;
+constexpr int grid = chunkElements / block;   // 4096
+
 for (size_t chunk = 0, offset = 0; offset < N;
      ++chunk, offset += chunkElements) {
-    const size_t count = (N - offset < chunkElements)
-                       ? N - offset : chunkElements;
-    const size_t chunkBytes = count * sizeof(float);
     cudaStream_t stream = streams[chunk % streamCount];
 
     // 동기 버전에는 stream 인자가 없다
@@ -223,10 +224,8 @@ for (size_t chunk = 0, offset = 0; offset < N;
     cudaMemcpyAsync(d_x + offset, h_x + offset, chunkBytes,
                     cudaMemcpyHostToDevice, stream);
 
-    const int block = 256;
-    const int grid = static_cast<int>((count + block - 1) / block);
     transform<<<grid, block, 0, stream>>>(
-        d_x + offset, d_y + offset, count);
+        d_x + offset, d_y + offset, chunkElements);
 
     cudaMemcpyAsync(h_y + offset, d_y + offset, chunkBytes,
                     cudaMemcpyDeviceToHost, stream);
