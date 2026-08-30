@@ -146,7 +146,7 @@ Stream은 GPU에 보낸 작업의 순서를 묶어 두는 단위다.
 
 규칙 1) 같은 stream 안에서는 제출 순서가 지켜진다. H2D copy, kernel, D2H copy를 한 stream에 넣으면 H2D copy가 끝난 뒤 kernel이 실행되고, kernel이 끝난 뒤 D2H copy가 시작된다.
 
-규칙 2) 서로 다른 stream 사이에는 정해진 순서가 없다. CUDA는 어느 작업을 먼저 시작할지 보장하지 않으므로 먼저, 동시에, 또는 나중에 실행될 수 있다. 동시에 실행하려면 서로 다른 stream에 넣어야 한다. 그래도 GPU가 copy와 계산을 함께 실행할 여유가 없으면 그 copy와 계산은 차례로 실행된다.
+규칙 2) 서로 다른 stream 사이에는 정해진 순서가 없다. CUDA는 어느 작업을 먼저 시작할지 보장하지 않으므로 먼저, 동시에, 또는 나중에 실행될 수 있다. 동시에 실행하려면 서로 다른 stream에 넣어야 한다. 그래도 GPU가 copy와 계산을 함께 실행할 여유가 없으면 copy와 계산은 차례로 실행된다.
 
 Stream은 `cudaStream_t` 타입의 변수로 선언하고 `cudaStreamCreate`로 만든다. 만든 stream은 `cudaMemcpyAsync`의 마지막 인자와 kernel launch의 `<<<>>>` 네 번째 인자에 넣는다. `<<<grid, block, 0, stream>>>`에서 세 번째 값은 block 안의 thread들이 함께 쓰는 GPU 안의 작은 memory인 [shared memory]({{< relref "/posts/cuda-3-shared-memory" >}})를 실행 중에 추가로 확보할 byte 수이고, `0`이면 추가 공간을 쓰지 않는다.
 

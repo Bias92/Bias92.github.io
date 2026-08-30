@@ -144,7 +144,7 @@ A stream groups GPU operations whose submission order must be preserved.
 
 Rule 1) Operations in the same stream keep their submission order. If an H2D copy, kernel, and D2H copy are placed in one stream, the kernel runs after the H2D copy finishes, and the D2H copy starts after the kernel finishes.
 
-Rule 2) There is no prescribed order between different streams. CUDA does not guarantee which operation starts first, so either one may run first, at the same time, or later. Operations must be placed in different streams to run in the same time window. Even then, if the GPU cannot run the copy and computation together, that copy and that computation run one after another.
+Rule 2) There is no prescribed order between different streams. CUDA does not guarantee which operation starts first, so either one may run first, at the same time, or later. Operations must be placed in different streams to run in the same time window. Even then, if the GPU cannot run the copy and computation together, the copy and the computation run one after another.
 
 A stream is declared as a variable of type `cudaStream_t` and created with `cudaStreamCreate`. The created stream goes into the last argument of `cudaMemcpyAsync` and the fourth argument of the kernel launch's `<<<>>>`. In `<<<grid, block, 0, stream>>>`, the third value is the number of bytes of [shared memory]({{< relref "/posts/cuda-3-shared-memory" >}}), the small memory inside the GPU that the threads of a block use together, to reserve additionally at run time, and `0` means no extra space.
 
