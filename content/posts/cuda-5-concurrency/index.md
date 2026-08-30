@@ -250,7 +250,7 @@ cudaFree(d_y);
 
 이렇게 한 chunk의 세 작업을 먼저 제출하고 다음 chunk로 넘어가는 순서를 depth-first[^depthfirst] 제출 순서라고 한다.
 
-같은 stream을 다시 쓰면 새 작업은 그 stream의 앞 작업 뒤에 붙는다. Stream이 4개이므로 chunk 4가 stream 0을 다시 쓰고, 규칙 1에 따라 chunk 4의 H2D copy는 chunk 0의 D2H copy가 끝난 뒤 시작한다. Memory 할당과 stream 생성은 chunk마다 반복할 일이 아닌 준비 작업이므로 반복문 전에 한 번만 마친다. 반복문 안에는 H2D copy, kernel launch, D2H copy만 두고 미리 만든 memory와 stream을 계속 사용한다.
+Stream이 4개이므로 chunk 4는 chunk 0이 쓴 stream 0에 다시 들어간다. 규칙 1에 따라 stream 0에서는 chunk 0의 D2H copy가 끝난 뒤에 chunk 4의 H2D copy가 시작한다. Memory 할당과 stream 생성은 chunk마다 반복할 일이 아닌 준비 작업이므로 반복문 전에 한 번만 마친다. 반복문 안에는 H2D copy, kernel launch, D2H copy만 두고 미리 만든 memory와 stream을 계속 사용한다.
 
 실제 겹침의 모양은 chunk마다 복사하는 데이터 양과 kernel 실행 시간에 따라 달라진다. Kernel이 아주 짧다면 copy와 kernel이 겹쳐도 줄어드는 시간은 작다. GPU가 H2D와 D2H를 동시에 처리할 수 있는 copy engine 구성을 가졌을 때는 다음 chunk의 H2D와 이전 chunk의 D2H가 겹치는 구간이 더 큰 이득이 될 수 있다.
 

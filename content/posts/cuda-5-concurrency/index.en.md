@@ -248,7 +248,7 @@ cudaFree(d_y);
 
 Submitting all three operations for one chunk before moving on to the next chunk is called depth-first[^depthfirst] submission order.
 
-When a stream is reused, the new work attaches behind the earlier work in that stream. So chunk 4, which reuses `streams[0]`, runs after the D2H copy of chunk 0 has finished. Memory allocation and stream creation are setup steps that do not need to be repeated for every chunk, so they are completed once before the loop. The loop contains only the H2D copy, kernel launch, and D2H copy, and keeps using the memory and streams created in advance.
+With four streams, chunk 4 goes back into `streams[0]`, the stream chunk 0 used. By rule 1, the H2D copy of chunk 4 starts in `streams[0]` only after the D2H copy of chunk 0 has finished. Memory allocation and stream creation are setup steps that do not need to be repeated for every chunk, so they are completed once before the loop. The loop contains only the H2D copy, kernel launch, and D2H copy, and keeps using the memory and streams created in advance.
 
 The actual shape of the overlap depends on how much data each chunk copies and how long the kernel runs. If the kernel is very short, overlapping a copy with the kernel saves little time. On a GPU whose copy-engine configuration can handle H2D and D2H at the same time, the overlap between the next chunk's H2D copy and the previous chunk's D2H copy can provide a larger gain.
 
