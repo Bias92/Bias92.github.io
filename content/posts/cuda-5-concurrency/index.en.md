@@ -459,6 +459,6 @@ In the end, concurrency is not a technique for removing dependencies. The H2D co
     for (chunk 0..15) { D2H; }
     ```
 
-    Both orders execute H → K → D within a stream. Only the order in which the CPU submits the work changes.
+    Both orders execute H → K → D within a stream.
 
 [^chunkelements]: `chunkElements` is the number of elements placed in one chunk. The code below sets it to `1 << 20`, that is 1,048,576 elements, and with `N` at 16,777,216 elements that yields 16 chunks. A larger value produces fewer chunks and therefore fewer opportunities to overlap, while a smaller value raises the share of kernel launch and copy requests per chunk.

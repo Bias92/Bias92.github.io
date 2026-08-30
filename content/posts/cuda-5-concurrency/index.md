@@ -461,6 +461,6 @@ nsys profile --stats=true ./overlap
     for (chunk 0..15) { D2H; }
     ```
 
-    두 순서 모두 stream 안의 실행 순서는 H → K → D로 같다. 달라지는 것은 CPU가 제출하는 차례뿐이다.
+    두 순서 모두 stream 안의 실행 순서는 H → K → D로 같다.
 
 [^chunkelements]: `chunkElements`는 chunk 하나에 넣을 원소 개수다. 아래 코드는 이 값을 `1 << 20`, 즉 1,048,576개로 두었고 `N`이 16,777,216개이므로 chunk가 16개 나온다. 값이 클수록 chunk 수가 줄어 겹칠 기회가 적어지고, 값이 작을수록 chunk 하나당 kernel launch와 copy 요청의 비중이 커진다.
