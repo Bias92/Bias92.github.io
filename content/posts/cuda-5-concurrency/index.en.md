@@ -246,14 +246,7 @@ cudaFree(d_y);
 
 `transform` computes the `y[i] = x[i] * 2` operation used above. Both `h_x` and `h_y` are pinned memory because they are used for asynchronous H2D and D2H copies, while `d_x` and `d_y` are device memory. Each trip through the loop handles one chunk and submits its three operations to the same stream. After all chunks have been submitted, `cudaDeviceSynchronize`[^sync] waits for all work on the device before the streams and memory are released.
 
-For two chunks, compare the submission order of the loop above with an order that groups operations by kind:
-
-```text
-depth-first:   H0 → K0 → D0 → H1 → K1 → D1
-breadth-first: H0 → H1 → K0 → K1 → D0 → D1
-```
-
-Both forms preserve H0 → K0 → D0 in stream 0 and H1 → K1 → D1 in stream 1. The code here uses depth-first order, submitting all three operations for one chunk first.
+Submitting all three operations for one chunk before moving on to the next chunk is called depth-first submission order.
 
 When a stream is reused, the new work attaches behind the earlier work in that stream. So chunk 4, which reuses `streams[0]`, runs after the D2H copy of chunk 0 has finished. Memory allocation and stream creation are setup steps that do not need to be repeated for every chunk, so they are completed once before the loop. The loop contains only the H2D copy, kernel launch, and D2H copy, and keeps using the memory and streams created in advance.
 

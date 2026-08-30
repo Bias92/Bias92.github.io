@@ -248,14 +248,7 @@ cudaFree(d_y);
 
 `N`은 원소 16,777,216개이고 `chunkElements`는 1,048,576개이므로 chunk는 16개가 나온다. Stream은 4개를 만들었으므로 `chunk % streamCount`에 따라 chunk 0, 4, 8, 12가 stream 0에 들어가고 chunk 1, 5, 9, 13이 stream 1에 들어간다. `h_x`와 `h_y`는 비동기 H2D와 D2H copy에 쓰이므로 둘 다 pinned memory이고, `d_x`와 `d_y`는 device memory다. 반복문 한 바퀴가 chunk 하나를 맡아 세 작업을 같은 stream에 제출한다. 마지막 chunk까지 제출한 뒤에는 `cudaDeviceSynchronize`[^sync]로 device의 전체 작업을 기다리고 나서 stream과 memory를 해제한다.
 
-Chunk가 둘일 때 위 반복문의 제출 순서와 작업 종류별로 모아 제출하는 순서를 나란히 쓰면 차이가 보인다.
-
-```text
-depth-first:   H0 → K0 → D0 → H1 → K1 → D1
-breadth-first: H0 → H1 → K0 → K1 → D0 → D1
-```
-
-두 방식 모두 stream 0에서는 H0 → K0 → D0, stream 1에서는 H1 → K1 → D1 순서를 지킨다. 여기서는 한 chunk의 세 작업을 먼저 제출하는 depth-first를 사용한다.
+이렇게 한 chunk의 세 작업을 먼저 제출하고 다음 chunk로 넘어가는 순서를 depth-first 제출 순서라고 한다.
 
 같은 stream을 다시 쓰면 새 작업은 그 stream의 앞 작업 뒤에 붙는다. Stream이 4개이므로 chunk 4가 stream 0을 다시 쓰고, 규칙 1에 따라 chunk 4의 H2D copy는 chunk 0의 D2H copy가 끝난 뒤 시작한다. Memory 할당과 stream 생성은 chunk마다 반복할 일이 아닌 준비 작업이므로 반복문 전에 한 번만 마친다. 반복문 안에는 H2D copy, kernel launch, D2H copy만 두고 미리 만든 memory와 stream을 계속 사용한다.
 
