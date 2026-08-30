@@ -244,7 +244,7 @@ cudaFree(d_x);
 cudaFree(d_y);
 ```
 
-`transform` computes the `y[i] = x[i] * 2` operation used above. Both `h_x` and `h_y` are pinned memory because they are used for asynchronous H2D and D2H copies, while `d_x` and `d_y` are device memory. Each trip through the loop handles one chunk and submits its three operations to the same stream. After all chunks have been submitted, `cudaDeviceSynchronize` waits for all work on the device before the streams and memory are released.
+`transform` computes the `y[i] = x[i] * 2` operation used above. Both `h_x` and `h_y` are pinned memory because they are used for asynchronous H2D and D2H copies, while `d_x` and `d_y` are device memory. Each trip through the loop handles one chunk and submits its three operations to the same stream. After all chunks have been submitted, `cudaDeviceSynchronize`[^sync] waits for all work on the device before the streams and memory are released.
 
 For two chunks, compare the submission order of the loop above with an order that groups operations by kind:
 
@@ -447,5 +447,7 @@ In the end, concurrency is not a technique for removing dependencies. The H2D co
 7. [Nsight Systems User Guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 
 [^bench]: The device was an NVIDIA A100-SXM4-80GB in a RunPod container with CUDA 12.4 and driver 580.159.04, built with `nvcc -O3 -arch=sm_80`. The run used `N` of 16,777,216 elements (64MB), 16 chunks, and 4 streams, on a GPU whose `asyncEngineCount` is 3. Timing came from `cudaEvent` over 30 repetitions after 5 warm-up runs, reported as the median: 5.230 ms serial (min 5.204, max 7.976) and 3.384 ms streamed (min 3.340, max 3.681). The measurement code is in [overlap_bench.cu](/code/cuda-05/overlap_bench.cu).
+
+[^sync]: When the loop ends the CPU has only submitted the work and the GPU is still running it. Without this line the CPU goes straight on to `cudaFreeHost` and `cudaFree`, releasing memory that the GPU is still copying from or reading. For the same reason any code that reads the results out of `h_y` has to come after this line. The synchronous version that uses `cudaMemcpy` does not need it, because the copy is already complete when that function returns.
 
 [^chunkelements]: `chunkElements` is the number of elements placed in one chunk. The code below sets it to `1 << 20`, that is 1,048,576 elements, and with `N` at 16,777,216 elements that yields 16 chunks. A larger value produces fewer chunks and therefore fewer opportunities to overlap, while a smaller value raises the share of kernel launch and copy requests per chunk.
