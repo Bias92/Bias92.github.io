@@ -146,7 +146,7 @@ Stream은 GPU에 보낸 작업의 순서를 묶어 두는 단위다.
 
 규칙 1) 같은 stream 안에서는 제출 순서가 지켜진다. H2D copy, kernel, D2H copy를 한 stream에 넣으면 H2D copy가 끝난 뒤 kernel이 실행되고, kernel이 끝난 뒤 D2H copy가 시작된다.
 
-규칙 2) 서로 다른 stream 사이에는 정해진 순서가 없다. CUDA는 어느 작업을 먼저 시작할지 보장하지 않으므로 먼저, 동시에, 또는 나중에 실행될 수 있다. 동시에 실행하려면 서로 다른 stream에 넣어야 한다. 그래도 GPU가 copy와 계산을 함께 실행할 여유가 없으면 두 작업은 차례로 실행된다.
+규칙 2) 서로 다른 stream 사이에는 정해진 순서가 없다. CUDA는 어느 작업을 먼저 시작할지 보장하지 않으므로 먼저, 동시에, 또는 나중에 실행될 수 있다. 동시에 실행하려면 서로 다른 stream에 넣어야 한다. 그래도 GPU가 copy와 계산을 함께 실행할 여유가 없으면 그 copy와 계산은 차례로 실행된다.
 
 Stream은 `cudaStream_t` 타입의 변수로 선언하고 `cudaStreamCreate`로 만든다. 만든 stream은 `cudaMemcpyAsync`의 마지막 인자와 kernel launch의 `<<<>>>` 네 번째 인자에 넣는다. `<<<grid, block, 0, stream>>>`에서 세 번째 값은 block 안의 thread들이 함께 쓰는 GPU 안의 작은 memory인 [shared memory]({{< relref "/posts/cuda-3-shared-memory" >}})를 실행 중에 추가로 확보할 byte 수이고, `0`이면 추가 공간을 쓰지 않는다.
 
@@ -256,7 +256,7 @@ Stream이 4개이므로 chunk 4는 chunk 0이 쓴 stream 0에 다시 들어간�
 
 ## Default Stream
 
-Stream을 지정하지 않은 kernel launch와 `cudaMemcpy`는 default stream에 들어간다. 기본 설정의 default stream을 legacy default stream이라고 한다. 위에서 `cudaStreamCreate`로 만든 stream과 함께 쓸 때는 앞에서 제출된 모든 작업이 끝난 뒤 default stream 작업이 시작하고, 그 작업이 끝난 뒤에야 다음 작업이 시작한다.
+Stream을 지정하지 않은 kernel launch와 `cudaMemcpy`는 default stream에 들어간다. 기본 설정의 default stream을 legacy default stream이라고 한다. 위에서 `cudaStreamCreate`로 만든 stream과 함께 쓸 때는, 다른 stream에 먼저 제출된 작업이 전부 끝나야 default stream 작업이 시작하고, default stream 작업이 끝나야 다른 stream에 그 뒤로 제출된 작업이 시작한다.
 
 아래는 앞 절의 chunk 세 개를 제출하되 가운데 한 줄에만 stream 인자를 빠뜨린 경우다. `c`는 chunk 하나의 원소 수이고, 세 launch는 각각 chunk 0, 1, 2를 처리한다.
 
@@ -331,7 +331,7 @@ cudaStreamSynchronize(stream1);
 cudaEventDestroy(ready);
 ```
 
-위 코드에서 `cudaStreamWaitEvent`는 stream 1의 이후 작업만 기다리게 하며 CPU는 기다리지 않는다. 마지막 인자 `0`은 별도 동작을 지정하지 않는다는 뜻이다. 그 결과 device 전체를 멈추지 않고도 두 kernel 사이의 순서만 만들 수 있다.
+위 코드에서 `cudaStreamWaitEvent`는 stream 1의 이후 작업만 기다리게 하며 CPU는 기다리지 않는다. 마지막 인자 `0`은 별도 동작을 지정하지 않는다는 뜻이다. `cudaStreamWaitEvent`는 device 전체를 멈추지 않고 stream 0과 stream 1의 kernel 사이에만 순서를 만든다.
 
 ![CUDA event](images/event-wait-chart.svg)
 

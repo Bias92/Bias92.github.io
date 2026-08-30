@@ -144,7 +144,7 @@ A stream groups GPU operations whose submission order must be preserved.
 
 Rule 1) Operations in the same stream keep their submission order. If an H2D copy, kernel, and D2H copy are placed in one stream, the kernel runs after the H2D copy finishes, and the D2H copy starts after the kernel finishes.
 
-Rule 2) There is no prescribed order between different streams. CUDA does not guarantee which operation starts first, so either one may run first, at the same time, or later. Operations must be placed in different streams to run in the same time window. Even then, if the GPU cannot run the copy and computation together, the two operations run one after another.
+Rule 2) There is no prescribed order between different streams. CUDA does not guarantee which operation starts first, so either one may run first, at the same time, or later. Operations must be placed in different streams to run in the same time window. Even then, if the GPU cannot run the copy and computation together, that copy and that computation run one after another.
 
 A stream is declared as a variable of type `cudaStream_t` and created with `cudaStreamCreate`. The created stream goes into the last argument of `cudaMemcpyAsync` and the fourth argument of the kernel launch's `<<<>>>`. In `<<<grid, block, 0, stream>>>`, the third value is the number of bytes of [shared memory]({{< relref "/posts/cuda-3-shared-memory" >}}), the small memory inside the GPU that the threads of a block use together, to reserve additionally at run time, and `0` means no extra space.
 
@@ -254,7 +254,7 @@ The actual shape of the overlap depends on how much data each chunk copies and h
 
 ## Default Stream
 
-A kernel launch or `cudaMemcpy` with no stream specified goes into the default stream. The default stream in the standard configuration is called the legacy default stream. When it is used together with streams created by `cudaStreamCreate` above, a default-stream operation starts after all previously submitted work has finished, and the next operation starts only after the default-stream operation has finished.
+A kernel launch or `cudaMemcpy` with no stream specified goes into the default stream. The default stream in the standard configuration is called the legacy default stream. When it is used together with streams created by `cudaStreamCreate` above, a default-stream operation starts only after every operation submitted earlier to the other streams has finished, and an operation submitted to those streams afterwards starts only once the default-stream operation has finished.
 
 Below, three chunks from the previous section are submitted, but the middle line is missing its stream argument. `c` is the number of elements in one chunk, and the three launches handle chunks 0, 1, and 2.
 
@@ -329,7 +329,7 @@ cudaStreamSynchronize(stream1);
 cudaEventDestroy(ready);
 ```
 
-In the code above, `cudaStreamWaitEvent` makes only the later work in stream 1 wait; it does not make the CPU wait. The final argument `0` specifies no additional behavior. This creates only the order between the two kernels without stopping the whole device.
+In the code above, `cudaStreamWaitEvent` makes only the later work in stream 1 wait; it does not make the CPU wait. The final argument `0` specifies no additional behavior. `cudaStreamWaitEvent` creates an order only between the kernel in stream 0 and the kernel in stream 1, without stopping the whole device.
 
 ![CUDA event](images/event-wait-chart.svg)
 
