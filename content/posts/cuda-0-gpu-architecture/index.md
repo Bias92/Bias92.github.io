@@ -25,7 +25,7 @@ Tesla 이전 GPU는 특화된 프로세서들이 고정된 파이프라인으로
 
 Tesla는 이걸 갈아엎었다. 별개의 shader 단계들을, 모든 shader 타입이 시분할로 나눠 쓰는 동일한 프로그래머블 프로세서 하나의 배열로 바꿨다. vertex, geometry, pixel이 전부 같은 코어에서 돌고, 하드웨어는 그저 일이 있는 단계로 배열을 다시 겨눈다. NVIDIA는 이 배열을 SPA(Streaming Processor Array)라 부른다.
 
-이 결정 하나가 GPGPU를 만들었다. 자기 메모리 시스템을 가진 범용 프로그래머블 프로세서 배열이 생기면, 그걸 비(非)그래픽 연산에 겨누는 건 노출하기 나름이고, 그게 바로 CUDA가 하는 일이다. CUDA C는 그래픽 칩에 덧붙인 게 아니라, 같은 통합 배열에 대한 두 번째 프런트엔드다.
+이 결정 하나가 GPGPU를 만들었다. 자기 메모리 시스템을 가진 범용 프로그래머블 프로세서 배열이 생기면, 그걸 비(非)그래픽 연산에 겨누는 건 노출하기 나름이고, 그게 바로 CUDA가 하는 일이다. CUDA C는 그래픽 칩에 덧붙인 게 아니라, 같은 통합 배열에 대한 두 번째 프론트엔드다.
 
 ![NVIDIA Tesla (G80) unified architecture](./images/tesla1.svg?v=2)
 *G80 기준: 8 TPC × 2 SM × 8 SP = 128 SP, DRAM 파티션 6개. SPA는 이 8개 TPC 배열이고, compute work distribution(마젠타)이 CUDA가 모는 경로다.*
@@ -84,7 +84,7 @@ thread도 공짜로 떠다니지 않는다. SM마다 register file과 16KB share
 
 Tesla GPU는 한 주파수로 안 돈다. 별개의 clock domain들이 있고, 이걸 헷갈리면 어떤 성능 추정도 어긋난다.
 
-- core(graphics) clock은 프런트엔드, setup, raster, ROP를 돌린다.
+- core(graphics) clock은 프론트엔드, setup, raster, ROP를 돌린다.
 - shader clock은 SP를 돌리고, core clock보다 훨씬 빠르다. 8800 GTX는 core가 575MHz인데 shader는 1.35GHz로, 약 2.35배다.
 - memory clock은 또 별개로 GDDR3 인터페이스를 돌린다.
 

@@ -34,7 +34,7 @@ operand(피연산자)는 명령이 입력으로 받는 값이다. `scale`과 `of
 
 ## LICM 직전의 IR
 
-`clang`은 [C를 LLVM IR로 바꾸는]({{< relref "/posts/llvm-0-ir-pipeline" >}}#c에서-ir로) 프런트엔드이고, `opt`는 IR에 pass를 실행하는 도구다. 두 도구는 Homebrew LLVM 22.1.8[^version]을 사용한다. 명령의 `LLVM_BIN`은 해당 LLVM 실행 파일이 든 디렉터리 경로다. `-fno-discard-value-names`는 C 식별자를 IR 이름에 남기고, `-Xclang`은 뒤따르는 옵션을 clang 내부 프런트엔드에 전달한다. `-disable-O0-optnone`은 [optnone]({{< relref "/posts/llvm-0-ir-pipeline" >}}#optnone)을 붙이지 않는다.
+`clang`은 [C를 LLVM IR로 바꾸는]({{< relref "/posts/llvm-0-ir-pipeline" >}}#c에서-ir로) 프론트엔드이고, `opt`는 IR에 pass를 실행하는 도구다. 두 도구는 Homebrew LLVM 22.1.8[^version]을 사용한다. 명령의 `LLVM_BIN`은 해당 LLVM 실행 파일이 든 디렉터리 경로다. `-fno-discard-value-names`는 C 식별자를 IR 이름에 남기고, `-Xclang`은 뒤따르는 옵션을 clang 내부 프론트엔드에 전달한다. `-disable-O0-optnone`은 [optnone]({{< relref "/posts/llvm-0-ir-pipeline" >}}#optnone)을 붙이지 않는다.
 
 LLVM IR의 지역 이름은 SSA(static single assignment) 형식을 따른다. SSA에서는 가상 레지스터 하나를 한 번만 정의한다. `phi`는 여러 제어 흐름이 합쳐질 때 어느 이전 basic block의 값을 받을지 고르는 명령이다. basic block은 중간에 분기하지 않고 위에서 아래로 실행되는 IR 명령 묶음이다.
 
