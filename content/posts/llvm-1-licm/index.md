@@ -1,7 +1,7 @@
 ---
 title: "01 Loop-Invariant Code Motion: From Loop Body to Preheader"
 date: 2026-08-31
-draft: true
+draft: false
 math: false
 tags: ["LLVM", "Compiler", "IR", "Optimization", "LICM"]
 categories: ["Compiler"]
