@@ -30,11 +30,6 @@ constexpr int    block         = 256;
 constexpr int    WARMUP        = 5;
 constexpr int    REPEAT        = 30;
 
-static_assert(N % chunkElements == 0,
-              "N must be divisible by chunkElements");
-static_assert(chunkElements % block == 0,
-              "chunkElements must be divisible by block");
-
 static float median(std::vector<float> v) {
     std::sort(v.begin(), v.end());
     const size_t n = v.size();
@@ -66,18 +61,18 @@ static float run_streamed(float *h_x, float *h_y, float *d_x, float *d_y,
     cudaEvent_t start, stop;
     CK(cudaEventCreate(&start));
     CK(cudaEventCreate(&stop));
-    constexpr size_t chunkBytes = chunkElements * sizeof(float);
-    constexpr int grid = static_cast<int>(chunkElements / block);
 
     CK(cudaEventRecord(start));
     for (size_t chunk = 0, offset = 0; offset < N;
          ++chunk, offset += chunkElements) {
+        const size_t count = std::min(chunkElements, N - offset);
+        const size_t chunkBytes = count * sizeof(float);
         cudaStream_t stream = streams[chunk % streamCount];
 
         CK(cudaMemcpyAsync(d_x + offset, h_x + offset, chunkBytes,
                            cudaMemcpyHostToDevice, stream));
-        transform<<<grid, block, 0, stream>>>(
-            d_x + offset, d_y + offset, chunkElements);
+        const int grid = static_cast<int>((count + block - 1) / block);
+        transform<<<grid, block, 0, stream>>>(d_x + offset, d_y + offset, count);
         CK(cudaMemcpyAsync(h_y + offset, d_y + offset, chunkBytes,
                            cudaMemcpyDeviceToHost, stream));
     }
