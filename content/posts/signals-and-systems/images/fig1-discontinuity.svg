@@ -1,0 +1,49 @@
+<svg width="680" height="270" viewBox="0 0 680 270" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow-ax" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9Z" fill="#3f7f90"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="680" height="270" rx="12" fill="#0d0e10" stroke="#22323a"/>
+
+  <!-- Panel A: general discontinuity -->
+  <text x="60" y="44" font-size="14.5" fill="#9fdcec" font-weight="600">일반 불연속점 t₁</text>
+  <line x1="60" y1="200" x2="310" y2="200" stroke="#3f7f90" stroke-width="1" marker-end="url(#arrow-ax)"/>
+  <line x1="80" y1="215" x2="80" y2="60" stroke="#3f7f90" stroke-width="1" marker-end="url(#arrow-ax)"/>
+  <text x="302" y="220" font-size="11.5" fill="#8fb2bd">t</text>
+  <text x="66" y="66" font-size="11.5" fill="#8fb2bd">x(t)</text>
+  <path d="M85 165 Q140 160 190 150" fill="none" stroke="#33c0e4" stroke-width="1.8"/>
+  <path d="M190 100 Q240 95 300 90" fill="none" stroke="#33c0e4" stroke-width="1.8"/>
+  <line x1="80" y1="150" x2="190" y2="150" stroke="#3f7f90" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <line x1="80" y1="100" x2="190" y2="100" stroke="#3f7f90" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <line x1="190" y1="200" x2="190" y2="205" stroke="#3f7f90" stroke-width="1"/>
+  <circle cx="190" cy="150" r="4.5" fill="#0f1319" stroke="#33c0e4" stroke-width="1.6"/>
+  <circle cx="190" cy="100" r="4.5" fill="#0f1319" stroke="#33c0e4" stroke-width="1.6"/>
+  <circle cx="190" cy="125" r="4.5" fill="#e46fd6"/>
+  <text x="184" y="220" font-size="11.5" fill="#8fb2bd">t₁</text>
+  <text x="62" y="154" font-size="11.5" fill="#8fb2bd">a</text>
+  <text x="62" y="104" font-size="11.5" fill="#8fb2bd">b</text>
+  <text x="200" y="154" font-size="11.5" fill="#9fdcec">x(t₁⁻) = a</text>
+  <text x="200" y="104" font-size="11.5" fill="#9fdcec">x(t₁⁺) = b</text>
+  <text x="200" y="129" font-size="11.5" fill="#e46fd6">x(t₁) = (a + b)/2</text>
+
+  <!-- Panel B: unit step -->
+  <text x="380" y="44" font-size="14.5" fill="#9fdcec" font-weight="600">단위계단함수 u(t)</text>
+  <line x1="380" y1="200" x2="640" y2="200" stroke="#3f7f90" stroke-width="1" marker-end="url(#arrow-ax)"/>
+  <line x1="490" y1="215" x2="490" y2="60" stroke="#3f7f90" stroke-width="1" marker-end="url(#arrow-ax)"/>
+  <text x="632" y="220" font-size="11.5" fill="#8fb2bd">t</text>
+  <text x="496" y="66" font-size="11.5" fill="#8fb2bd">u(t)</text>
+  <line x1="390" y1="200" x2="490" y2="200" stroke="#33c0e4" stroke-width="2.2"/>
+  <line x1="490" y1="100" x2="630" y2="100" stroke="#33c0e4" stroke-width="2.2"/>
+  <line x1="490" y1="100" x2="490" y2="200" stroke="#3f7f90" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <circle cx="490" cy="200" r="4.5" fill="#0f1319" stroke="#33c0e4" stroke-width="1.6"/>
+  <circle cx="490" cy="100" r="4.5" fill="#0f1319" stroke="#33c0e4" stroke-width="1.6"/>
+  <circle cx="490" cy="150" r="4.5" fill="#e46fd6"/>
+  <text x="472" y="104" font-size="11.5" fill="#8fb2bd">1</text>
+  <text x="472" y="154" font-size="11.5" fill="#8fb2bd">½</text>
+  <text x="480" y="220" font-size="11.5" fill="#8fb2bd">0</text>
+  <text x="500" y="154" font-size="11.5" fill="#e46fd6">u(0) = ½</text>
+  <text x="400" y="190" font-size="11.5" fill="#8fb2bd">t &lt; 0: 0</text>
+  <text x="560" y="90" font-size="11.5" fill="#8fb2bd">t &gt; 0: 1</text>
+</svg>
