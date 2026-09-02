@@ -1,0 +1,30 @@
+<svg width="720" height="270" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="system-ui, -apple-system, sans-serif">
+<title>Logic level voltage ranges</title>
+<desc>A vertical voltage axis with a HIGH range at the top, a LOW range at the bottom, and an unacceptable region between them.</desc>
+<defs>
+<filter id="lvl-cyan-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/><feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/><feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer><feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge></filter>
+<filter id="lvl-magenta-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/><feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/><feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer><feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge></filter>
+<marker id="lvl-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#8c949d"/></marker>
+</defs>
+<rect x="0" y="0" width="720" height="270" rx="12" fill="#0d0e10" stroke="#22323a"/>
+<line x1="200" y1="245" x2="200" y2="40" stroke="#8c949d" stroke-width="1" marker-end="url(#lvl-arrow)" />
+<text x="206" y="50" font-size="12" fill="#8c949d" text-anchor="start" >V</text>
+<rect x="260" y="60" width="170" height="60" fill="#46d9ff" opacity="0.16"/>
+<rect x="260" y="60" width="170" height="60" fill="none" stroke="#46d9ff" stroke-width="1.4"/>
+<text x="345" y="95.0" font-size="13" fill="#46d9ff" text-anchor="middle" >HIGH (1)</text>
+<rect x="260" y="120" width="170" height="50" fill="#ed72d9" opacity="0.14"/>
+<rect x="260" y="120" width="170" height="50" fill="none" stroke="#ed72d9" stroke-width="1.4"/>
+<text x="345" y="150.0" font-size="13" fill="#ed72d9" text-anchor="middle" >unacceptable</text>
+<rect x="260" y="170" width="170" height="60" fill="#46d9ff" opacity="0.16"/>
+<rect x="260" y="170" width="170" height="60" fill="none" stroke="#46d9ff" stroke-width="1.4"/>
+<text x="345" y="205.0" font-size="13" fill="#46d9ff" text-anchor="middle" >LOW (0)</text>
+<line x1="200" y1="60" x2="260" y2="60" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" />
+<text x="192" y="64" font-size="12" fill="#8c949d" text-anchor="end" >V_H(max)</text>
+<line x1="200" y1="120" x2="260" y2="120" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" />
+<text x="192" y="124" font-size="12" fill="#8c949d" text-anchor="end" >V_H(min)</text>
+<line x1="200" y1="170" x2="260" y2="170" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" />
+<text x="192" y="174" font-size="12" fill="#8c949d" text-anchor="end" >V_L(max)</text>
+<line x1="200" y1="230" x2="260" y2="230" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" />
+<text x="192" y="234" font-size="12" fill="#8c949d" text-anchor="end" >V_L(min)</text>
+<text x="450" y="64" font-size="12" fill="#8c949d" text-anchor="start" >supply 5 V</text>
+</svg>

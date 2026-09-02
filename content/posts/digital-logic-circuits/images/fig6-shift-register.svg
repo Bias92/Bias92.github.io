@@ -1,0 +1,70 @@
+<svg width="720" height="340" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="system-ui, -apple-system, sans-serif">
+<title>Four-bit serial shift register receiving 0101</title>
+<desc>Five rows, one per clock pulse. The serial input bits enter the first cell one at a time and the stored bits move one cell to the right until all four cells hold 0101.</desc>
+<defs>
+<filter id="shr-cyan-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/><feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/><feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer><feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge></filter>
+<filter id="shr-magenta-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/><feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/><feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer><feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge></filter>
+<marker id="shr-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#8c949d"/></marker>
+</defs>
+<rect x="0" y="0" width="720" height="340" rx="12" fill="#0d0e10" stroke="#22323a"/>
+<text x="40" y="62" font-size="12" fill="#8c949d" text-anchor="start" >clock 0</text>
+<text x="196" y="62" font-size="15" fill="#ed72d9" text-anchor="end" >0101</text>
+<line x1="204" y1="57" x2="226" y2="57" stroke="#ed72d9" stroke-width="1.4" marker-end="url(#shr-arrow)" />
+<rect x="232" y="40" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="257" y="63" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<rect x="294" y="40" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="319" y="63" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<rect x="356" y="40" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="381" y="63" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<rect x="418" y="40" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="443" y="63" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<text x="500" y="62" font-size="12" fill="#8c949d" text-anchor="start" >empty</text>
+<text x="40" y="122" font-size="12" fill="#8c949d" text-anchor="start" >clock 1</text>
+<text x="196" y="122" font-size="15" fill="#ed72d9" text-anchor="end" >010</text>
+<line x1="204" y1="117" x2="226" y2="117" stroke="#ed72d9" stroke-width="1.4" marker-end="url(#shr-arrow)" />
+<rect x="232" y="100" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="257" y="123" font-size="15" fill="#46d9ff" text-anchor="middle" >1</text>
+<rect x="294" y="100" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="319" y="123" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<rect x="356" y="100" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="381" y="123" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<rect x="418" y="100" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="443" y="123" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<text x="500" y="122" font-size="12" fill="#8c949d" text-anchor="start" >first bit in</text>
+<text x="40" y="182" font-size="12" fill="#8c949d" text-anchor="start" >clock 2</text>
+<text x="196" y="182" font-size="15" fill="#ed72d9" text-anchor="end" >01</text>
+<line x1="204" y1="177" x2="226" y2="177" stroke="#ed72d9" stroke-width="1.4" marker-end="url(#shr-arrow)" />
+<rect x="232" y="160" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="257" y="183" font-size="15" fill="#46d9ff" text-anchor="middle" >0</text>
+<rect x="294" y="160" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="319" y="183" font-size="15" fill="#46d9ff" text-anchor="middle" >1</text>
+<rect x="356" y="160" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="381" y="183" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<rect x="418" y="160" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="443" y="183" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<text x="500" y="182" font-size="12" fill="#8c949d" text-anchor="start" >shift right</text>
+<text x="40" y="242" font-size="12" fill="#8c949d" text-anchor="start" >clock 3</text>
+<text x="196" y="242" font-size="15" fill="#ed72d9" text-anchor="end" >0</text>
+<line x1="204" y1="237" x2="226" y2="237" stroke="#ed72d9" stroke-width="1.4" marker-end="url(#shr-arrow)" />
+<rect x="232" y="220" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="257" y="243" font-size="15" fill="#46d9ff" text-anchor="middle" >1</text>
+<rect x="294" y="220" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="319" y="243" font-size="15" fill="#46d9ff" text-anchor="middle" >0</text>
+<rect x="356" y="220" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="381" y="243" font-size="15" fill="#46d9ff" text-anchor="middle" >1</text>
+<rect x="418" y="220" width="50" height="34" rx="5" fill="none" stroke="#8c949d" stroke-width="1.4" opacity="0.6"/>
+<text x="443" y="243" font-size="15" fill="#8c949d" text-anchor="middle" >0</text>
+<text x="500" y="242" font-size="12" fill="#8c949d" text-anchor="start" >shift right</text>
+<text x="40" y="302" font-size="12" fill="#8c949d" text-anchor="start" >clock 4</text>
+<text x="196" y="302" font-size="15" fill="#ed72d9" text-anchor="end" ></text>
+<line x1="204" y1="297" x2="226" y2="297" stroke="#ed72d9" stroke-width="1.4" marker-end="url(#shr-arrow)" />
+<rect x="232" y="280" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="257" y="303" font-size="15" fill="#46d9ff" text-anchor="middle" >0</text>
+<rect x="294" y="280" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="319" y="303" font-size="15" fill="#46d9ff" text-anchor="middle" >1</text>
+<rect x="356" y="280" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="381" y="303" font-size="15" fill="#46d9ff" text-anchor="middle" >0</text>
+<rect x="418" y="280" width="50" height="34" rx="5" fill="none" stroke="#46d9ff" stroke-width="1.4" opacity="1"/>
+<text x="443" y="303" font-size="15" fill="#46d9ff" text-anchor="middle" >1</text>
+<text x="500" y="302" font-size="12" fill="#8c949d" text-anchor="start" >0101 stored</text>
+</svg>

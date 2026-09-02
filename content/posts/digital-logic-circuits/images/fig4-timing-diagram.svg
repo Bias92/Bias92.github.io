@@ -1,0 +1,49 @@
+<svg width="720" height="310" viewBox="0 0 720 310" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="system-ui, -apple-system, sans-serif">
+<title>Timing diagram of a clock and three inputs</title>
+<desc>A clock waveform and three data waveforms A, B and C drawn on one time axis across eight clock periods. Period 7, where all three inputs are HIGH, is shaded.</desc>
+<defs>
+<filter id="tmg-cyan-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/><feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/><feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer><feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge></filter>
+<filter id="tmg-magenta-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/><feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/><feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer><feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge></filter>
+<marker id="tmg-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#8c949d"/></marker>
+</defs>
+<rect x="0" y="0" width="720" height="310" rx="12" fill="#0d0e10" stroke="#22323a"/>
+<rect x="460" y="44" width="60" height="232" fill="#ed72d9" opacity="0.12"/>
+<line x1="100" y1="44" x2="100" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<line x1="160" y1="44" x2="160" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<line x1="220" y1="44" x2="220" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<line x1="280" y1="44" x2="280" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<line x1="340" y1="44" x2="340" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<line x1="400" y1="44" x2="400" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<line x1="460" y1="44" x2="460" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<line x1="520" y1="44" x2="520" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<line x1="580" y1="44" x2="580" y2="276" stroke="#8c949d" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
+<text x="130.0" y="38" font-size="12" fill="#8c949d" text-anchor="middle" >1</text>
+<text x="190.0" y="38" font-size="12" fill="#8c949d" text-anchor="middle" >2</text>
+<text x="250.0" y="38" font-size="12" fill="#8c949d" text-anchor="middle" >3</text>
+<text x="310.0" y="38" font-size="12" fill="#8c949d" text-anchor="middle" >4</text>
+<text x="370.0" y="38" font-size="12" fill="#8c949d" text-anchor="middle" >5</text>
+<text x="430.0" y="38" font-size="12" fill="#8c949d" text-anchor="middle" >6</text>
+<text x="490.0" y="38" font-size="12" fill="#8c949d" text-anchor="middle" >7</text>
+<text x="550.0" y="38" font-size="12" fill="#8c949d" text-anchor="middle" >8</text>
+<text x="50" y="74" font-size="12" fill="#8c949d" text-anchor="start" >Clock</text>
+<g filter="url(#tmg-magenta-glow)"><polyline fill="none" stroke="#ed72d9" stroke-width="2" stroke-linejoin="round" points="70,80 100,80 100,54 130.0,54 130.0,80 160,80 160,54 190.0,54 190.0,80 220,80 220,54 250.0,54 250.0,80 280,80 280,54 310.0,54 310.0,80 340,80 340,54 370.0,54 370.0,80 400,80 400,54 430.0,54 430.0,80 460,80 460,54 490.0,54 490.0,80 520,80 520,54 550.0,54 550.0,80 580,80 600,80"/>
+</g>
+<polyline fill="none" stroke="#ed72d9" stroke-width="2" stroke-linejoin="round" points="70,80 100,80 100,54 130.0,54 130.0,80 160,80 160,54 190.0,54 190.0,80 220,80 220,54 250.0,54 250.0,80 280,80 280,54 310.0,54 310.0,80 340,80 340,54 370.0,54 370.0,80 400,80 400,54 430.0,54 430.0,80 460,80 460,54 490.0,54 490.0,80 520,80 520,54 550.0,54 550.0,80 580,80 600,80"/>
+
+<text x="50" y="134" font-size="12" fill="#8c949d" text-anchor="start" >A</text>
+<g filter="url(#tmg-cyan-glow)"><polyline fill="none" stroke="#46d9ff" stroke-width="2" stroke-linejoin="round" points="70,140 100,140 100,114 160,114 160,140 220,140 220,114 280,114 280,140 340,140 340,114 400,114 400,140 460,140 460,114 520,114 520,140 580,140 600,140"/>
+</g>
+<polyline fill="none" stroke="#46d9ff" stroke-width="2" stroke-linejoin="round" points="70,140 100,140 100,114 160,114 160,140 220,140 220,114 280,114 280,140 340,140 340,114 400,114 400,140 460,140 460,114 520,114 520,140 580,140 600,140"/>
+
+<text x="50" y="194" font-size="12" fill="#8c949d" text-anchor="start" >B</text>
+<g filter="url(#tmg-cyan-glow)"><polyline fill="none" stroke="#46d9ff" stroke-width="2" stroke-linejoin="round" points="70,200 100,200 100,200 160,200 160,174 220,174 220,174 280,174 280,200 340,200 340,200 400,200 400,174 460,174 460,174 520,174 520,200 580,200 600,200"/>
+</g>
+<polyline fill="none" stroke="#46d9ff" stroke-width="2" stroke-linejoin="round" points="70,200 100,200 100,200 160,200 160,174 220,174 220,174 280,174 280,200 340,200 340,200 400,200 400,174 460,174 460,174 520,174 520,200 580,200 600,200"/>
+
+<text x="50" y="254" font-size="12" fill="#8c949d" text-anchor="start" >C</text>
+<g filter="url(#tmg-cyan-glow)"><polyline fill="none" stroke="#46d9ff" stroke-width="2" stroke-linejoin="round" points="70,260 100,260 100,260 160,260 160,260 220,260 220,260 280,260 280,234 340,234 340,234 400,234 400,234 460,234 460,234 520,234 520,260 580,260 600,260"/>
+</g>
+<polyline fill="none" stroke="#46d9ff" stroke-width="2" stroke-linejoin="round" points="70,260 100,260 100,260 160,260 160,260 220,260 220,260 280,260 280,234 340,234 340,234 400,234 400,234 460,234 460,234 520,234 520,260 580,260 600,260"/>
+
+<text x="490.0" y="296" font-size="11" fill="#ed72d9" text-anchor="middle" >A, B, C all HIGH</text>
+</svg>

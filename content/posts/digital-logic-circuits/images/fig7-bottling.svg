@@ -1,0 +1,55 @@
+<svg width="720" height="440" viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="system-ui, -apple-system, sans-serif">
+<title>Block diagram of the tablet bottling system</title>
+<desc>Keypad, encoder and register A supply the preset count to a comparator. A sensor drives a counter whose value goes to the comparator and to an adder. The A = B output closes the valve, advances the conveyor and stores the new total in register B, whose value feeds back to the adder and goes to a display.</desc>
+<defs>
+<filter id="btl-cyan-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/><feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/><feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer><feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge></filter>
+<filter id="btl-magenta-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/><feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer><feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/><feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer><feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge></filter>
+<marker id="btl-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#8c949d"/></marker>
+</defs>
+<rect x="0" y="0" width="720" height="440" rx="12" fill="#0d0e10" stroke="#22323a"/>
+<rect x="40" y="40" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="100" y="64" font-size="13" fill="#46d9ff" text-anchor="middle" >Keypad</text>
+<text x="100" y="83" font-size="11" fill="#8c949d" text-anchor="middle" >preset count</text>
+<rect x="210" y="40" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="270" y="64" font-size="13" fill="#46d9ff" text-anchor="middle" >Encoder</text>
+<text x="270" y="83" font-size="11" fill="#8c949d" text-anchor="middle" >key to code</text>
+<rect x="380" y="40" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="440" y="64" font-size="13" fill="#46d9ff" text-anchor="middle" >Register A</text>
+<text x="440" y="83" font-size="11" fill="#8c949d" text-anchor="middle" >preset stored</text>
+<rect x="40" y="150" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="100" y="174" font-size="13" fill="#46d9ff" text-anchor="middle" >Sensor</text>
+<text x="100" y="193" font-size="11" fill="#8c949d" text-anchor="middle" >one pulse per tablet</text>
+<rect x="210" y="150" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="270" y="174" font-size="13" fill="#46d9ff" text-anchor="middle" >Counter</text>
+<text x="270" y="193" font-size="11" fill="#8c949d" text-anchor="middle" >tablets in bottle</text>
+<rect x="550" y="150" width="120" height="56" rx="8" fill="#12181c" stroke="#ed72d9" stroke-width="1.4"/>
+<text x="610" y="174" font-size="13" fill="#ed72d9" text-anchor="middle" >Comparator</text>
+<text x="610" y="193" font-size="11" fill="#8c949d" text-anchor="middle" >A = B ?</text>
+<rect x="210" y="260" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="270" y="284" font-size="13" fill="#46d9ff" text-anchor="middle" >Adder</text>
+<text x="270" y="303" font-size="11" fill="#8c949d" text-anchor="middle" >count + total</text>
+<rect x="380" y="260" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="440" y="284" font-size="13" fill="#46d9ff" text-anchor="middle" >Register B</text>
+<text x="440" y="303" font-size="11" fill="#8c949d" text-anchor="middle" >total stored</text>
+<rect x="550" y="260" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="610" y="284" font-size="13" fill="#46d9ff" text-anchor="middle" >Valve, conveyor</text>
+<text x="610" y="303" font-size="11" fill="#8c949d" text-anchor="middle" >close and advance</text>
+<rect x="380" y="370" width="120" height="56" rx="8" fill="#12181c" stroke="#8c949d" stroke-width="1.4"/>
+<text x="440" y="394" font-size="13" fill="#46d9ff" text-anchor="middle" >Decoder, display</text>
+<text x="440" y="413" font-size="11" fill="#8c949d" text-anchor="middle" >total shown</text>
+<path d="M160 68 L210 68" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M330 68 L380 68" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M500 68 L610 68 L610 150" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M160 178 L210 178" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M330 178 L550 178" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M610 206 L610 260" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M590 228 L440 228 L440 260" fill="none" stroke="#ed72d9" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M270 206 L270 260" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M330 288 L380 288" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M440 316 L440 370" fill="none" stroke="#8c949d" stroke-width="1.6" marker-end="url(#btl-arrow)"/>
+<path d="M400 316 L400 340 L300 340 L300 316" fill="none" stroke="#ed72d9" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#btl-arrow)"/>
+<text x="350" y="356" font-size="11" fill="#ed72d9" text-anchor="middle" >total fed back</text>
+<text x="520" y="222" font-size="11" fill="#ed72d9" text-anchor="middle" >store</text>
+<text x="500" y="106" font-size="11" fill="#8c949d" text-anchor="middle" >preset</text>
+<text x="440" y="194" font-size="11" fill="#8c949d" text-anchor="middle" >count</text>
+</svg>
