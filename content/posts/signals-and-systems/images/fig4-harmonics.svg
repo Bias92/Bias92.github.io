@@ -1,4 +1,4 @@
-<svg width="720" height="300" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="system-ui, -apple-system, sans-serif">
+<svg width="720" height="300" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="'Chalkboard SE','Comic Sans MS','Segoe Print','Bradley Hand',cursive">
   <defs>
     <filter id="har-cyan-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
@@ -20,28 +20,28 @@
     <path id="har-3" d="M90,218.0 L93,218.4 L96,219.5 L99,221.4 L102,224.0 L105,227.1 L108,230.6 L111,234.5 L114,238.6 L117,242.8 L120,246.8 L123,250.6 L126,254.0 L129,257.0 L132,259.3 L135,260.9 L138,261.8 L141,262.0 L144,261.3 L147,259.9 L150,257.8 L153,255.1 L156,251.8 L159,248.1 L162,244.1 L165,240.0 L168,235.9 L171,231.9 L174,228.2 L177,224.9 L180,222.2 L183,220.1 L186,218.7 L189,218.0 L192,218.2 L195,219.1 L198,220.7 L201,223.0 L204,226.0 L207,229.4 L210,233.2 L213,237.2 L216,241.4 L219,245.5 L222,249.4 L225,252.9 L228,256.0 L231,258.6 L234,260.5 L237,261.6 L240,262.0 L243,261.6 L246,260.5 L249,258.6 L252,256.0 L255,252.9 L258,249.4 L261,245.5 L264,241.4 L267,237.2 L270,233.2 L273,229.4 L276,226.0 L279,223.0 L282,220.7 L285,219.1 L288,218.2 L291,218.0 L294,218.7 L297,220.1 L300,222.2 L303,224.9 L306,228.2 L309,231.9 L312,235.9 L315,240.0 L318,244.1 L321,248.1 L324,251.8 L327,255.1 L330,257.8 L333,259.9 L336,261.3 L339,262.0 L342,261.8 L345,260.9 L348,259.3 L351,257.0 L354,254.0 L357,250.6 L360,246.8 L363,242.8 L366,238.6 L369,234.5 L372,230.6 L375,227.1 L378,224.0 L381,221.4 L384,219.5 L387,218.4 L390,218.0 L393,218.4 L396,219.5 L399,221.4 L402,224.0 L405,227.1 L408,230.6 L411,234.5 L414,238.6 L417,242.8 L420,246.8 L423,250.6 L426,254.0 L429,257.0 L432,259.3 L435,260.9 L438,261.8 L441,262.0 L444,261.3 L447,259.9 L450,257.8 L453,255.1 L456,251.8 L459,248.1 L462,244.1 L465,240.0 L468,235.9 L471,231.9 L474,228.2 L477,224.9 L480,222.2 L483,220.1 L486,218.7 L489,218.0 L492,218.2 L495,219.1 L498,220.7 L501,223.0 L504,226.0 L507,229.4 L510,233.2 L513,237.2 L516,241.4 L519,245.5 L522,249.4 L525,252.9 L528,256.0 L531,258.6 L534,260.5 L537,261.6 L540,262.0 L543,261.6 L546,260.5 L549,258.6 L552,256.0 L555,252.9 L558,249.4 L561,245.5 L564,241.4 L567,237.2 L570,233.2 L573,229.4 L576,226.0 L579,223.0 L582,220.7 L585,219.1 L588,218.2 L591,218.0 L594,218.7 L597,220.1 L600,222.2 L603,224.9 L606,228.2 L609,231.9 L612,235.9 L615,240.0 L618,244.1 L621,248.1 L624,251.8 L627,255.1 L630,257.8 L633,259.9 L636,261.3 L639,262.0 L642,261.8 L645,260.9 L648,259.3 L651,257.0 L654,254.0 L657,250.6 L660,246.8 L663,242.8 L666,238.6 L669,234.5 L672,230.6 L675,227.1 L678,224.0 L681,221.4 L684,219.5 L687,218.4 L690,218.0" fill="none" stroke="#46d9ff" stroke-width="1.6"/>
   </defs>
   <rect x="0" y="0" width="720" height="300" rx="12" fill="#0d0e10" stroke="#22323a"/>
-  <text x="90" y="40" font-size="14" fill="#dbeef4" font-weight="600">ω<tspan font-size="10" dy="4">k</tspan><tspan dy="-4"> = kω₀</tspan></text>
+  <text x="90" y="40" font-size="14" fill="#dbeef4" font-weight="600" transform="rotate(-0.3 90 40)">ω<tspan font-size="10" dy="4">k</tspan><tspan dy="-4"> = kω<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">​</tspan></tspan></text>
   <line x1="90" y1="80" x2="690" y2="80" stroke="#8c949d" stroke-width="0.8"/>
   <use xlink:href="#har-1" filter="url(#har-cyan-glow)"/>
   <use xlink:href="#har-1"/>
-  <text x="82.0" y="84.0" font-size="12" fill="#8c949d" text-anchor="end" font-weight="400">k = 1</text>
+  <text x="82.0" y="84.0" font-size="13" fill="#8c949d" text-anchor="end" font-weight="400" transform="rotate(0.5 82.0 84.0)">k = 1</text>
   <line x1="90" y1="160" x2="690" y2="160" stroke="#8c949d" stroke-width="0.8"/>
   <use xlink:href="#har-2" filter="url(#har-cyan-glow)"/>
   <use xlink:href="#har-2"/>
-  <text x="82.0" y="164.0" font-size="12" fill="#8c949d" text-anchor="end" font-weight="400">k = 2</text>
+  <text x="82.0" y="164.0" font-size="13" fill="#8c949d" text-anchor="end" font-weight="400" transform="rotate(0.8 82.0 164.0)">k = 2</text>
   <line x1="90" y1="240" x2="690" y2="240" stroke="#8c949d" stroke-width="0.8"/>
   <use xlink:href="#har-3" filter="url(#har-cyan-glow)"/>
   <use xlink:href="#har-3"/>
-  <text x="82.0" y="244.0" font-size="12" fill="#8c949d" text-anchor="end" font-weight="400">k = 3</text>
+  <text x="82.0" y="244.0" font-size="13" fill="#8c949d" text-anchor="end" font-weight="400" transform="rotate(-0.5 82.0 244.0)">k = 3</text>
   <line x1="390" y1="52" x2="390" y2="272" stroke="#ed72d9" stroke-width="0.8" stroke-dasharray="3 3"/>
-  <text x="390.0" y="288.0" font-size="12" fill="#ed72d9" text-anchor="middle" font-weight="400">T₀</text>
+  <text x="390.0" y="288.0" font-size="13" fill="#ed72d9" text-anchor="middle" font-weight="400" transform="rotate(-0.8 390.0 288.0)">T<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">​</tspan></text>
   <line x1="690" y1="52" x2="690" y2="272" stroke="#ed72d9" stroke-width="0.8" stroke-dasharray="3 3"/>
-  <text x="690.0" y="288.0" font-size="12" fill="#ed72d9" text-anchor="middle" font-weight="400">2T₀</text>
-  <text x="90.0" y="288.0" font-size="12" fill="#8c949d" text-anchor="middle" font-weight="400">0</text>
+  <text x="690.0" y="288.0" font-size="13" fill="#ed72d9" text-anchor="middle" font-weight="400" transform="rotate(0.5 690.0 288.0)">2T<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">​</tspan></text>
+  <text x="90.0" y="288.0" font-size="13" fill="#8c949d" text-anchor="middle" font-weight="400" transform="rotate(0.5 90.0 288.0)">0</text>
   <line x1="90" y1="110" x2="390" y2="110" stroke="#ed72d9" stroke-width="1"/>
-  <text x="240.0" y="124.0" font-size="11" fill="#ed72d9" text-anchor="middle" font-weight="400">T₁ = T₀</text>
+  <text x="240.0" y="124.0" font-size="12" fill="#ed72d9" text-anchor="middle" font-weight="400" transform="rotate(0.8 240.0 124.0)">T<tspan font-size="0.72em" dy="0.32em">1</tspan><tspan dy="-0.32em"> = T</tspan><tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">​</tspan></text>
   <line x1="90" y1="190" x2="240.0" y2="190" stroke="#ed72d9" stroke-width="1"/>
-  <text x="165.0" y="204.0" font-size="11" fill="#ed72d9" text-anchor="middle" font-weight="400">T₂ = ½T₀</text>
+  <text x="165.0" y="204.0" font-size="12" fill="#ed72d9" text-anchor="middle" font-weight="400" transform="rotate(-0.5 165.0 204.0)">T<tspan font-size="0.72em" dy="0.32em">2</tspan><tspan dy="-0.32em"> = ½T</tspan><tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">​</tspan></text>
   <line x1="90" y1="270" x2="190.0" y2="270" stroke="#ed72d9" stroke-width="1"/>
-  <text x="140.0" y="284.0" font-size="11" fill="#ed72d9" text-anchor="middle" font-weight="400">T₃ = ⅓T₀</text>
+  <text x="140.0" y="284.0" font-size="12" fill="#ed72d9" text-anchor="middle" font-weight="400" transform="rotate(-0.3 140.0 284.0)">T<tspan font-size="0.72em" dy="0.32em">3</tspan><tspan dy="-0.32em"> = ⅓T</tspan><tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">​</tspan></text>
 </svg>

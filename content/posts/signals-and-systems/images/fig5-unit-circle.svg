@@ -1,4 +1,4 @@
-<svg width="720" height="320" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="system-ui, -apple-system, sans-serif">
+<svg width="720" height="320" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="'Chalkboard SE','Comic Sans MS','Segoe Print','Bradley Hand',cursive">
   <defs>
     <filter id="uc-cyan-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
@@ -19,25 +19,25 @@
     <circle id="uc-dot" cx="430.7" cy="85.7" r="5" fill="#ed72d9"/>
   </defs>
   <rect x="0" y="0" width="720" height="320" rx="12" fill="#0d0e10" stroke="#22323a"/>
-  <text x="60" y="40" font-size="14" fill="#dbeef4" font-weight="600">e<tspan font-size="10" dy="-6">jω₀t</tspan><tspan dy="6"> = cos ω₀t + j sin ω₀t</tspan></text>
+  <text x="60" y="40" font-size="14" fill="#dbeef4" font-weight="600" transform="rotate(-0.8 60 40)">e<tspan font-size="10" dy="-6">jω<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">t</tspan></tspan><tspan dy="6"> = cos ω<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">t + j sin ω</tspan><tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">t</tspan></tspan></text>
   <line x1="210" y1="170" x2="520" y2="170" stroke="#8c949d" stroke-width="1" marker-end="url(#uc-grey-arrow)"/>
   <line x1="360" y1="310" x2="360" y2="20" stroke="#8c949d" stroke-width="1" marker-end="url(#uc-grey-arrow)"/>
-  <text x="510.0" y="186.0" font-size="12" fill="#8c949d" text-anchor="start" font-weight="400">Re</text>
-  <text x="368.0" y="32.0" font-size="12" fill="#8c949d" text-anchor="start" font-weight="400">Im</text>
+  <text x="510.0" y="186.0" font-size="13" fill="#8c949d" text-anchor="start" font-weight="400" transform="rotate(0.5 510.0 186.0)">Re</text>
+  <text x="368.0" y="32.0" font-size="13" fill="#8c949d" text-anchor="start" font-weight="400" transform="rotate(0.8 368.0 32.0)">Im</text>
   <use xlink:href="#uc-circle" filter="url(#uc-cyan-glow)"/>
   <use xlink:href="#uc-circle"/>
   <line x1="360" y1="170" x2="430.7" y2="85.7" stroke="#ed72d9" stroke-width="1.5"/>
   <line x1="430.7" y1="85.7" x2="430.7" y2="170" stroke="#8c949d" stroke-width="0.8" stroke-dasharray="3 3"/>
   <line x1="360" y1="85.7" x2="430.7" y2="85.7" stroke="#8c949d" stroke-width="0.8" stroke-dasharray="3 3"/>
   <path d="M394 170 A34 34 0 0 0 381.9 144.0" fill="none" stroke="#ed72d9" stroke-width="1"/>
-  <text x="400.0" y="160.0" font-size="12" fill="#ed72d9" text-anchor="start" font-weight="400">ω₀t</text>
+  <text x="400.0" y="160.0" font-size="13" fill="#ed72d9" text-anchor="start" font-weight="400" transform="rotate(-0.8 400.0 160.0)">ω<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">t</tspan></text>
   <use xlink:href="#uc-dot" filter="url(#uc-magenta-glow)"/>
   <use xlink:href="#uc-dot"/>
-  <text x="438.7" y="79.7" font-size="12" fill="#ed72d9" text-anchor="start" font-weight="400">(cos ω₀t, sin ω₀t)</text>
-  <text x="395.4" y="186.0" font-size="12" fill="#8c949d" text-anchor="middle" font-weight="400">cos ω₀t</text>
-  <text x="352.0" y="89.7" font-size="12" fill="#8c949d" text-anchor="end" font-weight="400">sin ω₀t</text>
+  <text x="438.7" y="79.7" font-size="13" fill="#ed72d9" text-anchor="start" font-weight="400" transform="rotate(0.5 438.7 79.7)">(cos ω<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">t, sin ω</tspan><tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">t)</tspan></text>
+  <text x="395.4" y="186.0" font-size="13" fill="#8c949d" text-anchor="middle" font-weight="400" transform="rotate(-0.8 395.4 186.0)">cos ω<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">t</tspan></text>
+  <text x="352.0" y="89.7" font-size="13" fill="#8c949d" text-anchor="end" font-weight="400" transform="rotate(0.5 352.0 89.7)">sin ω<tspan font-size="0.72em" dy="0.32em">0</tspan><tspan dy="-0.32em">t</tspan></text>
   <circle cx="470" cy="170" r="3" fill="#46d9ff"/>
-  <text x="476.0" y="186.0" font-size="12" fill="#46d9ff" text-anchor="start" font-weight="400">1</text>
+  <text x="476.0" y="186.0" font-size="13" fill="#46d9ff" text-anchor="start" font-weight="400" transform="rotate(-0.5 476.0 186.0)">1</text>
   <circle cx="360" cy="60" r="3" fill="#46d9ff"/>
-  <text x="368.0" y="54.0" font-size="12" fill="#46d9ff" text-anchor="start" font-weight="400">j</text>
+  <text x="368.0" y="54.0" font-size="13" fill="#46d9ff" text-anchor="start" font-weight="400" transform="rotate(0.3 368.0 54.0)">j</text>
   </svg>
