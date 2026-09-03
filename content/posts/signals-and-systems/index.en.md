@@ -1,18 +1,18 @@
 ---
 title: "Signals and Systems"
 date: 2026-09-02
-lastmod: 2026-09-02
+lastmod: 2026-09-03
 tags: ["EE", "Signals and Systems"]
 categories: ["EE"]
 series: ["EE"]
 math: true
-summary: "Lecture notes for Signals and Systems based on Soliman & Srinath: the definition of a signal, continuity of a function, the value at a discontinuity, the rectangular pulse and pulse train, and the distinction between continuous-time and discrete-time."
+summary: "Lecture notes for Signals and Systems based on Soliman & Srinath: the definition of a signal, continuity and the value at a discontinuity, the rectangular pulse, continuous-time versus discrete-time, periodic signals and sinusoids, harmonics, and harmonically related complex exponentials."
 draft: false
 ---
 
 > Reference: Samir S. Soliman, Mandyam D. Srinath, *Continuous and Discrete Signals and Systems*, 2nd ed., Prentice Hall, 1998. Chapter 1, Representing Signals.
 
-This course covers continuous-time signals with a single independent variable, time, and leaves discrete-time signals to the DSP[^dsp] course. The material below corresponds to Sections 1.1 and 1.2 of the textbook and to lecture slides[^slides] 2 through 6.
+This course covers continuous-time signals with a single independent variable, time, and leaves discrete-time signals to the DSP[^dsp] course. The material below corresponds to Sections 1.1 through 1.3 of the textbook and to lecture slides[^slides] 2 through 9.
 
 ## Definition of a signal
 
@@ -75,15 +75,15 @@ $$
 \end{cases}
 $$
 
-The height is fixed at 1, and the parameter $\tau$[^tau] sets the width of the base. With $\tau = 10^8$ the pulse is $10^8$ wide, with $\tau = 10^{-7}$ it is $10^{-7}$ wide, and the height is 1 in both cases. The discontinuities are the two points $t = \pm\tau/2$, so the pulse is piecewise continuous, and since $t$ is defined over the whole real line it is a continuous-time signal.
+The height is fixed at 1, and the parameter $\tau$[^tau] sets the width of the base. The discontinuities are the two points $t = \pm\tau/2$, so the pulse is piecewise continuous, and since $t$ is defined over the whole real line it is a continuous-time signal.
 
-Shifting $\mathrm{rect}(t/\tau)$ in time by a fixed spacing and adding the copies gives a pulse train. A train of pulses of width 1 repeated every 2 units is written as follows, with $n$ ranging over all integers.
+Shifting $\mathrm{rect}(t/\tau)$ in time by a fixed spacing and adding the copies gives a pulse train[^train]. A train of pulses of width 1 repeated every 2 units is written as follows, with $n$ ranging over all integers.
 
 $$
 x(t) = \sum_{n=-\infty}^{\infty} \mathrm{rect}(t - 2n)
 $$
 
-The discontinuities at $t = 2n \pm 1/2$ are infinite in number[^train], so the train is neither continuous nor piecewise continuous. Since $t$ is defined over the whole real line, it is a continuous-time signal. Cutting the train to a finite number of pulses leaves a finite number of discontinuities, which makes it piecewise continuous.
+The discontinuities at $t = 2n \pm 1/2$ are infinite in number, so the train is neither continuous nor piecewise continuous. Since $t$ is defined over the whole real line, it is a continuous-time signal. Cutting the train to a finite number of pulses leaves a finite number of discontinuities, which makes it piecewise continuous.
 
 ## Continuous versus continuous-time
 
@@ -103,7 +103,7 @@ The two terms describe properties on different axes.
 
 However many discontinuities there are, a signal whose $t$ axis is the whole real line is a continuous-time signal. Every signal in this course is continuous-time, and the only question within that class is whether it is continuous or piecewise continuous.
 
-## Exercise
+## Exercise 1
 
 For $x(t) = 3\,\mathrm{rect}\!\left(\frac{t - 4}{2}\right)$, find the following.
 
@@ -114,22 +114,116 @@ For $x(t) = 3\,\mathrm{rect}\!\left(\frac{t - 4}{2}\right)$, find the following.
 
 Solution. From the definition of $\mathrm{rect}(t/\tau)$, $\tau = 2$ and $t$ is replaced by $t - 4$, so the value is 3 where $|t - 4| < 1$, that is, for $3 < t < 5$. The discontinuities are at $t = 3, 5$. At both points the left-hand and right-hand limits are 0 and 3, so $x(3) = x(5) = (0 + 3)/2 = 3/2$. With $T_s = 1$ we have $t = k$, and the values at $k = 3, 4, 5$ are $3/2, 3, 3/2$ respectively, with 0 at every other $k$.
 
-[^dsp]: Digital Signal Processing. Lecture slide 6 defers discrete-time signals with "Covered intensively in Digital Signal Processing (DSP) courses".
+## Periodic signals and the fundamental period
 
-[^slides]: Slide numbers are the printed numbers in the top-right corner of the lecture slides "1. Representing Signals" (Seung-Chan Lim, School of Electronics and Electrical Engineering, Hongik University). Timestamps `[MM:SS]` refer to the transcript of the lecture recording from 2026-09-02.
+A periodic signal is a continuous-time signal for which some positive $T$ satisfies the following at every $t$.
 
-[^detectable]: Lecture `[04:19]`. The instructor glossed detectable as "can be detected, can be recognized" and used the example of students' ears detecting the instructor's voice in the classroom.
+$$
+x(t) = x(t + nT), \qquad n = 1, 2, 3, \dots
+$$
 
-[^variables]: Lecture `[09:11]`, `[10:45]`. The amplitude of a voice changing over time was modeled as $A(t)$, and a pixel value determined by two coordinates as $p(x, y)$. In electromagnetics an electric field has four independent variables, three spatial coordinates plus time.
+Because the condition must hold for every $t$, the signal is assumed to exist from $-\infty$ to $+\infty$[^infinite]. If $T$ is a period, then $2T$, $3T$, and $4T$ are periods as well. The smallest positive $T$ that satisfies the condition is the fundamental period[^fundamental], written $T_0$. A signal with fundamental period 2 also has 4 and 6 as periods. A signal with no such $T$ is aperiodic.
 
-[^axis]: Lecture `[26:38]`, `[37:56]`. To separate continuous-time from discrete-time, look at the independent-variable axis rather than the function value. No matter how many discontinuities the function value has, the signal is continuous-time if $t$ is defined over a whole interval.
+## Sinusoids
 
-[^sampling]: Slide 6 only describes $T_s$ as "a fixed positive real number". In DSP it is called the sampling period, and its reciprocal $f_s = 1/T_s$ is the sampling frequency. At `[39:36]` the instructor set $T_s = 2$ and $k = 0, \pm 1, \pm 2$ to produce $t = 0, \pm 2, \pm 4$.
+A real-valued sinusoid is fixed by three parameters.
 
-[^piecewise]: Slide 3 reads "piecewise continuous if it has only finite discontinuities". At `[36:06]` the instructor distinguished a train of finitely many pulses, which is piecewise continuous, from an infinitely extended train, which has infinitely many discontinuities and is not.
+$$
+x(t) = A\sin(\omega_0 t + \phi)
+$$
 
-[^average]: Slide 3, lecture `[24:31]`. The value that ordinary mathematics leaves undefined is fixed by the textbook as the average of the two one-sided limits. The instructor explained that this single convention lets the textbook account for many of its later results.
+$A$ is the amplitude, and $x(t)$ stays between $-A$ and $A$. $\omega_0$ is the radian frequency in rad/s. $\phi$ is the initial phase[^phase] in rad. The relation between radian frequency and frequency $f_0$ in Hz[^hertz], and the fundamental period, are as follows.
 
-[^tau]: Lecture `[31:02]`. With $\tau = 10^8$ the base extends to $\pm 5 \times 10^7$, and with $10^{-7}$ the pulse becomes very narrow. The height stays 1 in both cases.
+$$
+\omega_0 = 2\pi f_0, \qquad T_0 = \frac{1}{f_0} = \frac{2\pi}{\omega_0}
+$$
 
-[^train]: Slide 5 describes the pulse train as "Continuous at all $t$ except at $t = 0, \pm 1, \pm 2, \cdots$". At `[36:06]` the instructor explained, using the independent-variable axis, why the train is a continuous-time signal despite its infinitely many discontinuities.
+In the figure below, $A$ sets the vertical range, $T_0$ is the horizontal distance between two points of equal phase, and $\phi$ sets the starting height $A\sin\phi$ at $t = 0$.
+
+![Amplitude, period, and phase of a sinusoid](images/fig3-sinusoid.svg)
+
+## Harmonics
+
+For a fundamental radian frequency $\omega_0$, the $k$th harmonic[^harmonic] is the sinusoid whose radian frequency is $k\omega_0$. $k$ is the harmonic number and starts at 1.
+
+$$
+\omega_k = k\,\omega_0, \qquad f_k = k f_0, \qquad T_k = \frac{2\pi}{k\,\omega_0} = \frac{T_0}{k}
+$$
+
+With $\omega_0 = 2\pi$ the first, second, and third harmonics have radian frequencies $2\pi$, $4\pi$, $6\pi$ and periods $1$, $1/2$, $1/3$ s. In the figure below, a larger $k$ oscillates $k$ times within the same $T_0$, and all three curves return to their starting point together at $t = T_0$. This is why the fundamental period of any sum of harmonics is $T_0$.
+
+![Three harmonics and their common period](images/fig4-harmonics.svg)
+
+To decide whether a sum of sinusoids is periodic and to find its fundamental period, look only at the radian frequencies. The fundamental radian frequency of the sum is the greatest common divisor[^gcdnote] of the radian frequencies of the terms, and the harmonic number of each term is its radian frequency divided by $\omega_0$.
+
+$$
+x(t) = \cos(4\pi t) + \sin(6\pi t): \quad \omega_0 = 2\pi, \quad T_0 = 1 \text{ s}, \quad k = 2, 3
+$$
+
+If the ratio of the radian frequencies is irrational, no greatest common divisor exists and the sum is aperiodic.
+
+## Harmonically related complex exponentials
+
+Writing the harmonics as complex exponentials[^complex] instead of sinusoids gives the following set.
+
+$$
+\phi_k(t) = e^{\,jk\omega_0 t}, \qquad k = 0, \pm 1, \pm 2, \dots
+$$
+
+For $k \neq 0$ the signal is periodic with radian frequency $|k|\omega_0$ and fundamental period $2\pi/(|k|\omega_0)$. The absolute value keeps the frequency and period positive when $k$ is negative, and for positive $k$ the expression matches the harmonic formulas. Every $\phi_k(t)$ has $T_0 = 2\pi/\omega_0$ as a common period. For $k = 0$[^kzero], $\phi_0(t) = 1$ is a constant and no period is defined.
+
+Euler's formula splits the exponential into real and imaginary parts, which places it as a point on the complex plane (real part horizontal, imaginary part vertical).
+
+$$
+e^{\,j\omega_0 t} = \cos\omega_0 t + j\sin\omega_0 t
+$$
+
+The point at time $t$ is $(\cos\omega_0 t, \sin\omega_0 t)$ with magnitude $\sqrt{\cos^2 + \sin^2} = 1$. It starts at $(1, 0)$ when $t = 0$, moves counterclockwise as $t$ increases, and returns to the start when $\omega_0 t = 2\pi$. Since it lies on the unit circle of radius 1 at every $t$, in polar form it has magnitude 1 and angle $\omega_0 t$.
+
+![Complex exponential on the unit circle](images/fig5-unit-circle.svg)
+
+## Exercise 2
+
+For $x(t) = 2\cos(6\pi t) + \sin(9\pi t)$, find the following.
+
+(a) The fundamental radian frequency $\omega_0$ and fundamental period $T_0$
+(b) The harmonic number of each term
+(c) The radian frequency $\omega_1$ and period $T_1$ of the first harmonic
+
+Solution. The greatest common divisor of $6\pi$ and $9\pi$ is $3\pi$, so $\omega_0 = 3\pi$ rad/s and $T_0 = 2\pi/3\pi = 2/3$ s. Since $6\pi/3\pi = 2$ and $9\pi/3\pi = 3$, $2\cos(6\pi t)$ is the second harmonic and $\sin(9\pi t)$ is the third. The first harmonic has $\omega_1 = \omega_0 = 3\pi$ rad/s and $T_1 = T_0 = 2/3$ s.
+
+[^dsp]: Digital Signal Processing, the follow-on course that covers sampling of discrete-time signals, the discrete Fourier transform, and the z-transform.
+
+[^slides]: Slide numbers are the printed numbers in the top-right corner of the lecture slides "1. Representing Signals" (Seung-Chan Lim, School of Electronics and Electrical Engineering, Hongik University).
+
+[^detectable]: Detectable means that a measuring device or a sense organ can read the quantity. A voice is detected by ears and microphones, screen brightness by eyes and cameras, and current by an ammeter.
+
+[^variables]: The number of independent variables is the dimension of the signal: one (time) for a voice, two coordinates for an image, two coordinates plus time for a video, and three spatial coordinates plus time for an electric field. This count is why electromagnetics requires vector calculus and several coordinate systems.
+
+[^axis]: The criterion is the horizontal axis. No matter how often the function value breaks on the vertical axis, the signal is continuous-time when the domain is the whole real line and discrete-time when the domain is a set of isolated points such as $kT_s$.
+
+[^sampling]: $T_s$ is the sampling period, and its reciprocal $f_s = 1/T_s$ is the sampling frequency, the number of samples per second. The textbook describes $T_s$ only as "a fixed positive real number".
+
+[^piecewise]: The textbook reads "piecewise continuous if it has only finite discontinuities". This course reads finite as the number of discontinuities. In the mathematical literature the phrase is also used to mean that each jump is finite in size, and under that reading the infinite pulse train is piecewise continuous as well.
+
+[^average]: Ordinary analysis leaves the value at a discontinuity undefined. Fixing it as the average of the two one-sided limits matches the value to which a Fourier series converges at a jump discontinuity, so that in later chapters the series and the original signal agree at every point.
+
+[^tau]: With $\tau = 10^8$ the base runs from $-5 \times 10^7$ to $5 \times 10^7$, with $\tau = 10^{-7}$ it runs over $\pm 5 \times 10^{-8}$, and the height is 1 in both cases. Sending the width to zero while raising the height to $1/\tau$ so that the area stays 1 gives the unit impulse of slide 26.
+
+[^train]: The train on slide 5 repeats a pulse of width 1 every 2 units and is discontinuous at $t = 0, \pm 1, \pm 2, \dots$. The drawing with six pulses has 12 discontinuities and is piecewise continuous, and the infinitely extended signal has infinitely many and is not.
+
+[^infinite]: A graph drawn over a finite interval cannot settle whether a signal is periodic. Only with the assumption that the same shape continues outside the graph can $x(t) = x(t + T)$ be stated for every $t$.
+
+[^fundamental]: The reciprocal $f_0 = 1/T_0$ is the fundamental frequency and $\omega_0 = 2\pi/T_0$ is the fundamental radian frequency. The subscript 0 marks "fundamental", not a harmonic number. The period $T_1$ of the first harmonic equals $T_0$.
+
+[^phase]: $\phi$ shifts the curve along the time axis by $-\phi/\omega_0$. For $\phi > 0$ the curve is shifted left, so at $t = 0$ it has already risen to $A\sin\phi$.
+
+[^hertz]: Hz is 1/s, the number of repetitions per second. The radian frequency $\omega_0$ is the angle traversed per second in rad/s, so dividing by one full turn of $2\pi$ rad gives the number of turns per second, $f_0$. The only difference between the two units is the factor $2\pi$.
+
+[^harmonic]: Integer multiples are used because of the common period. $T_k = T_0/k$ divides $T_0$, so any sum of harmonics has $T_0$ as a period. A non-integer multiple such as 2.5 does not share $T_0$ as a period. The Fourier series of Chapter 3 writes a periodic signal as a weighted sum of these harmonics.
+
+[^gcdnote]: When the radian frequencies carry a factor of $\pi$, remove it, take the greatest common divisor of the integers, and put $\pi$ back. For $4\pi$ and $6\pi$ the greatest common divisor of 4 and 6 is 2, giving $2\pi$. Working with periods instead gives the least common multiple of the two periods, with the same result.
+
+[^complex]: A sinusoid is real-valued and a complex exponential is complex-valued. One complex exponential carries both $\cos$ and $\sin$ as its real and imaginary parts, which is why the Fourier series of Chapter 3 uses $e^{jk\omega_0 t}$ as its terms instead of $\cos$ and $\sin$. Negative $k$ is allowed so that $e^{jk\omega_0 t}$ and $e^{-jk\omega_0 t}$ can be added to form a real $\cos$.
+
+[^kzero]: With $k = 0$ the exponent is 0 and $e^0 = 1$. A constant satisfies $x(t) = x(t + T)$ for every $T$, so no smallest positive period can be chosen, and the textbook applies the periodicity statement only to $k \neq 0$.

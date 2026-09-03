@@ -1,0 +1,44 @@
+<svg width="720" height="320" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <filter id="uc-cyan-glow" x="-50%" y="-140%" width="200%" height="380%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <filter id="uc-magenta-glow" x="-220%" y="-220%" width="540%" height="540%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="wide"/>
+      <feComponentTransfer in="wide" result="wide-soft"><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="near"/>
+      <feComponentTransfer in="near" result="near-soft"><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+      <feMerge><feMergeNode in="wide-soft"/><feMergeNode in="near-soft"/></feMerge>
+    </filter>
+    <marker id="uc-grey-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#8c949d"/></marker>
+    <circle id="uc-circle" cx="360" cy="170" r="110" fill="none" stroke="#46d9ff" stroke-width="1.8"/>
+    <circle id="uc-dot" cx="430.7" cy="85.7" r="5" fill="#ed72d9"/>
+  </defs>
+  <rect x="0" y="0" width="720" height="320" rx="12" fill="#0d0e10" stroke="#22323a"/>
+  <text x="60.0" y="40.0" font-size="14" fill="#dbeef4" text-anchor="start" font-weight="600">e^{jω₀t} = cos ω₀t + j sin ω₀t</text>
+  <line x1="210" y1="170" x2="520" y2="170" stroke="#8c949d" stroke-width="1" marker-end="url(#uc-grey-arrow)"/>
+  <line x1="360" y1="310" x2="360" y2="20" stroke="#8c949d" stroke-width="1" marker-end="url(#uc-grey-arrow)"/>
+  <text x="510.0" y="186.0" font-size="12" fill="#8c949d" text-anchor="start" font-weight="400">Re</text>
+  <text x="368.0" y="32.0" font-size="12" fill="#8c949d" text-anchor="start" font-weight="400">Im</text>
+  <use xlink:href="#uc-circle" filter="url(#uc-cyan-glow)"/>
+  <use xlink:href="#uc-circle"/>
+  <line x1="360" y1="170" x2="430.7" y2="85.7" stroke="#ed72d9" stroke-width="1.5"/>
+  <line x1="430.7" y1="85.7" x2="430.7" y2="170" stroke="#8c949d" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <line x1="360" y1="85.7" x2="430.7" y2="85.7" stroke="#8c949d" stroke-width="0.8" stroke-dasharray="3 3"/>
+  <path d="M394 170 A34 34 0 0 0 381.9 144.0" fill="none" stroke="#ed72d9" stroke-width="1"/>
+  <text x="400.0" y="160.0" font-size="12" fill="#ed72d9" text-anchor="start" font-weight="400">ω₀t</text>
+  <use xlink:href="#uc-dot" filter="url(#uc-magenta-glow)"/>
+  <use xlink:href="#uc-dot"/>
+  <text x="438.7" y="79.7" font-size="12" fill="#ed72d9" text-anchor="start" font-weight="400">(cos ω₀t, sin ω₀t)</text>
+  <text x="395.4" y="186.0" font-size="12" fill="#8c949d" text-anchor="middle" font-weight="400">cos ω₀t</text>
+  <text x="352.0" y="89.7" font-size="12" fill="#8c949d" text-anchor="end" font-weight="400">sin ω₀t</text>
+  <circle cx="470" cy="170" r="3" fill="#46d9ff"/>
+  <text x="476.0" y="186.0" font-size="12" fill="#46d9ff" text-anchor="start" font-weight="400">1</text>
+  <circle cx="360" cy="60" r="3" fill="#46d9ff"/>
+  <text x="368.0" y="54.0" font-size="12" fill="#46d9ff" text-anchor="start" font-weight="400">j</text>
+  <text x="60.0" y="300.0" font-size="12" fill="#8c949d" text-anchor="start" font-weight="400">|e^{jω₀t}| = 1</text>
+</svg>
