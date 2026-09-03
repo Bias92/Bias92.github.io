@@ -19,7 +19,7 @@
     <circle id="uc-dot" cx="430.7" cy="85.7" r="5" fill="#ed72d9"/>
   </defs>
   <rect x="0" y="0" width="720" height="320" rx="12" fill="#0d0e10" stroke="#22323a"/>
-  <text x="60.0" y="40.0" font-size="14" fill="#dbeef4" text-anchor="start" font-weight="600">e^{jω₀t} = cos ω₀t + j sin ω₀t</text>
+  <text x="60" y="40" font-size="14" fill="#dbeef4" font-weight="600">e<tspan font-size="10" dy="-6">jω₀t</tspan><tspan dy="6"> = cos ω₀t + j sin ω₀t</tspan></text>
   <line x1="210" y1="170" x2="520" y2="170" stroke="#8c949d" stroke-width="1" marker-end="url(#uc-grey-arrow)"/>
   <line x1="360" y1="310" x2="360" y2="20" stroke="#8c949d" stroke-width="1" marker-end="url(#uc-grey-arrow)"/>
   <text x="510.0" y="186.0" font-size="12" fill="#8c949d" text-anchor="start" font-weight="400">Re</text>
@@ -40,5 +40,4 @@
   <text x="476.0" y="186.0" font-size="12" fill="#46d9ff" text-anchor="start" font-weight="400">1</text>
   <circle cx="360" cy="60" r="3" fill="#46d9ff"/>
   <text x="368.0" y="54.0" font-size="12" fill="#46d9ff" text-anchor="start" font-weight="400">j</text>
-  <text x="60.0" y="300.0" font-size="12" fill="#8c949d" text-anchor="start" font-weight="400">|e^{jω₀t}| = 1</text>
-</svg>
+  </svg>

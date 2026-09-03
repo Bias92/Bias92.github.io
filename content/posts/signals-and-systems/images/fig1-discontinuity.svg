@@ -37,7 +37,7 @@
   <line x1="60" y1="200" x2="330" y2="200" stroke="#8c949d" stroke-width="1" marker-end="url(#disc-grey-arrow)"/>
   <line x1="80" y1="215" x2="80" y2="60" stroke="#8c949d" stroke-width="1" marker-end="url(#disc-grey-arrow)"/>
   <text x="322" y="222" font-size="12" fill="#8c949d">t</text>
-  <text x="66" y="66" font-size="12" fill="#8c949d">x(t)</text>
+  <text x="86" y="66" font-size="12" fill="#8c949d">x(t)</text>
   <line x1="80" y1="150" x2="190" y2="150" stroke="#8c949d" stroke-width="0.8" stroke-dasharray="3 3"/>
   <line x1="80" y1="100" x2="190" y2="100" stroke="#8c949d" stroke-width="0.8" stroke-dasharray="3 3"/>
   <line x1="190" y1="200" x2="190" y2="205" stroke="#8c949d" stroke-width="1"/>
@@ -50,7 +50,7 @@
   <text x="62" y="104" font-size="12" fill="#8c949d">b</text>
   <text x="200" y="154" font-size="12" fill="#46d9ff">x(t₁⁻) = a</text>
   <text x="200" y="104" font-size="12" fill="#46d9ff">x(t₁⁺) = b</text>
-  <text x="200" y="129" font-size="12" fill="#ed72d9">x(t₁) = (a + b)/2</text>
+  <text x="200" y="129" font-size="12" fill="#ed72d9">x(t₁) =</text><text x="272.0" y="122.0" font-size="11" fill="#ed72d9" text-anchor="middle">a + b</text><line x1="255.0" y1="125.0" x2="289.0" y2="125.0" stroke="#ed72d9" stroke-width="0.9"/><text x="272.0" y="136.0" font-size="11" fill="#ed72d9" text-anchor="middle">2</text>
 
   <!-- right: unit step -->
   <text x="420" y="44" font-size="14" fill="#dbeef4" font-weight="600">u(t)</text>

@@ -57,15 +57,15 @@ $$
 x(t_1) = \frac{1}{2}\left[x(t_1^+) + x(t_1^-)\right]
 $$
 
-The unit step function $u(t)$ is 0 for $t < 0$ and 1 for $t > 0$. At $t = 0$ the left-hand limit 0 and the right-hand limit 1 differ, so the limit does not exist, and the signal is piecewise continuous rather than continuous. Applying the average definition gives $u(0) = 1/2$. In the left panel of the figure below, the two open circles are the left-hand limit $a$ and the right-hand limit $b$, and the filled dot is the value $(a + b)/2$ defined by the textbook. Applying the same rule in the right panel with $a = 0$ and $b = 1$ gives $u(0) = 1/2$.
+The unit step function $u(t)$ is 0 for $t < 0$ and 1 for $t > 0$. At $t = 0$ the left-hand limit 0 and the right-hand limit 1 differ, so the limit does not exist, and the signal is piecewise continuous rather than continuous. Applying the average definition gives $u(0) = \tfrac{1}{2}$. In the left panel of the figure below, the two open circles are the left-hand limit $a$ and the right-hand limit $b$, and the filled dot is the value $\tfrac{a + b}{2}$ defined by the textbook. Applying the same rule in the right panel with $a = 0$ and $b = 1$ gives $u(0) = \tfrac{1}{2}$.
 
 ![Value at a discontinuity and the unit step function](images/fig1-discontinuity.svg)
 
-As an example, $x(t) = 2u(t - 1) - u(t - 3)$ is 0 for $t < 1$, 2 for $1 < t < 3$, and 1 for $t > 3$. The discontinuities are at $t = 1, 3$, with $x(1) = (0 + 2)/2 = 1$ and $x(3) = (2 + 1)/2 = 3/2$. With two discontinuities the signal is piecewise continuous.
+As an example, $x(t) = 2u(t - 1) - u(t - 3)$ is 0 for $t < 1$, 2 for $1 < t < 3$, and 1 for $t > 3$. The discontinuities are at $t = 1, 3$, with $x(1) = \tfrac{0 + 2}{2} = 1$ and $x(3) = \tfrac{2 + 1}{2} = \tfrac{3}{2}$. With two discontinuities the signal is piecewise continuous.
 
 ## Rectangular pulse and pulse train
 
-The rectangular pulse $\mathrm{rect}(t/\tau)$ is 1 for $|t| < \tau/2$ and 0 for $|t| > \tau/2$.
+The rectangular pulse $\mathrm{rect}(t/\tau)$ is 1 for $|t| < \tfrac{\tau}{2}$ and 0 for $|t| > \tfrac{\tau}{2}$.
 
 $$
 \mathrm{rect}(t/\tau) =
@@ -75,7 +75,7 @@ $$
 \end{cases}
 $$
 
-The height is fixed at 1, and the parameter $\tau$[^tau] sets the width of the base. The discontinuities are the two points $t = \pm\tau/2$, so the pulse is piecewise continuous, and since $t$ is defined over the whole real line it is a continuous-time signal.
+The height is fixed at 1, and the parameter $\tau$[^tau] sets the width of the base. The discontinuities are the two points $t = \pm\tfrac{\tau}{2}$, so the pulse is piecewise continuous, and since $t$ is defined over the whole real line it is a continuous-time signal.
 
 Shifting $\mathrm{rect}(t/\tau)$ in time by a fixed spacing and adding the copies gives a pulse train[^train]. A train of pulses of width 1 repeated every 2 units is written as follows, with $n$ ranging over all integers.
 
@@ -83,7 +83,7 @@ $$
 x(t) = \sum_{n=-\infty}^{\infty} \mathrm{rect}(t - 2n)
 $$
 
-The discontinuities at $t = 2n \pm 1/2$ are infinite in number, so the train is neither continuous nor piecewise continuous. Since $t$ is defined over the whole real line, it is a continuous-time signal. Cutting the train to a finite number of pulses leaves a finite number of discontinuities, which makes it piecewise continuous.
+The discontinuities at $t = 2n \pm \tfrac{1}{2}$ are infinite in number, so the train is neither continuous nor piecewise continuous. Since $t$ is defined over the whole real line, it is a continuous-time signal. Cutting the train to a finite number of pulses leaves a finite number of discontinuities, which makes it piecewise continuous.
 
 ## Continuous versus continuous-time
 
@@ -112,7 +112,7 @@ For $x(t) = 3\,\mathrm{rect}\!\left(\frac{t - 4}{2}\right)$, find the following.
 (c) The value at each discontinuity under the textbook definition
 (d) All integers $k$ for which $x(kT_s)$ is nonzero when sampled with $T_s = 1$
 
-Solution. From the definition of $\mathrm{rect}(t/\tau)$, $\tau = 2$ and $t$ is replaced by $t - 4$, so the value is 3 where $|t - 4| < 1$, that is, for $3 < t < 5$. The discontinuities are at $t = 3, 5$. At both points the left-hand and right-hand limits are 0 and 3, so $x(3) = x(5) = (0 + 3)/2 = 3/2$. With $T_s = 1$ we have $t = k$, and the values at $k = 3, 4, 5$ are $3/2, 3, 3/2$ respectively, with 0 at every other $k$.
+Solution. From the definition of $\mathrm{rect}(t/\tau)$, $\tau = 2$ and $t$ is replaced by $t - 4$, so the value is 3 where $|t - 4| < 1$, that is, for $3 < t < 5$. The discontinuities are at $t = 3, 5$. At both points the left-hand and right-hand limits are 0 and 3, so $x(3) = x(5) = \tfrac{0 + 3}{2} = \tfrac{3}{2}$. With $T_s = 1$ we have $t = k$, and the values at $k = 3, 4, 5$ are $\tfrac{3}{2}, 3, \tfrac{3}{2}$ respectively, with 0 at every other $k$.
 
 ## Periodic signals and the fundamental period
 
@@ -150,7 +150,7 @@ $$
 \omega_k = k\,\omega_0, \qquad f_k = k f_0, \qquad T_k = \frac{2\pi}{k\,\omega_0} = \frac{T_0}{k}
 $$
 
-With $\omega_0 = 2\pi$ the first, second, and third harmonics have radian frequencies $2\pi$, $4\pi$, $6\pi$ and periods $1$, $1/2$, $1/3$ s. In the figure below, a larger $k$ oscillates $k$ times within the same $T_0$, and all three curves return to their starting point together at $t = T_0$. This is why the fundamental period of any sum of harmonics is $T_0$.
+With $\omega_0 = 2\pi$ the first, second, and third harmonics have radian frequencies $2\pi$, $4\pi$, $6\pi$ and periods $1$, $\tfrac{1}{2}$, $\tfrac{1}{3}$ s. In the figure below, a larger $k$ oscillates $k$ times within the same $T_0$, and all three curves return to their starting point together at $t = T_0$. This is why the fundamental period of any sum of harmonics is $T_0$.
 
 ![Three harmonics and their common period](images/fig4-harmonics.svg)
 
@@ -170,7 +170,7 @@ $$
 \phi_k(t) = e^{\,jk\omega_0 t}, \qquad k = 0, \pm 1, \pm 2, \dots
 $$
 
-For $k \neq 0$ the signal is periodic with radian frequency $|k|\omega_0$ and fundamental period $2\pi/(|k|\omega_0)$. The absolute value keeps the frequency and period positive when $k$ is negative, and for positive $k$ the expression matches the harmonic formulas. Every $\phi_k(t)$ has $T_0 = 2\pi/\omega_0$ as a common period. For $k = 0$[^kzero], $\phi_0(t) = 1$ is a constant and no period is defined.
+For $k \neq 0$ the signal is periodic with radian frequency $|k|\omega_0$ and fundamental period $\tfrac{2\pi}{|k|\omega_0}$. The absolute value keeps the frequency and period positive when $k$ is negative, and for positive $k$ the expression matches the harmonic formulas. Every $\phi_k(t)$ has $T_0 = \tfrac{2\pi}{\omega_0}$ as a common period. For $k = 0$[^kzero], $\phi_0(t) = 1$ is a constant and no period is defined.
 
 Euler's formula splits the exponential into real and imaginary parts, which places it as a point on the complex plane (real part horizontal, imaginary part vertical).
 
@@ -190,7 +190,7 @@ For $x(t) = 2\cos(6\pi t) + \sin(9\pi t)$, find the following.
 (b) The harmonic number of each term
 (c) The radian frequency $\omega_1$ and period $T_1$ of the first harmonic
 
-Solution. The greatest common divisor of $6\pi$ and $9\pi$ is $3\pi$, so $\omega_0 = 3\pi$ rad/s and $T_0 = 2\pi/3\pi = 2/3$ s. Since $6\pi/3\pi = 2$ and $9\pi/3\pi = 3$, $2\cos(6\pi t)$ is the second harmonic and $\sin(9\pi t)$ is the third. The first harmonic has $\omega_1 = \omega_0 = 3\pi$ rad/s and $T_1 = T_0 = 2/3$ s.
+Solution. The greatest common divisor of $6\pi$ and $9\pi$ is $3\pi$, so $\omega_0 = 3\pi$ rad/s and $T_0 = \tfrac{2\pi}{3\pi} = \tfrac{2}{3}$ s. Since $\tfrac{6\pi}{3\pi} = 2$ and $\tfrac{9\pi}{3\pi} = 3$, $2\cos(6\pi t)$ is the second harmonic and $\sin(9\pi t)$ is the third. The first harmonic has $\omega_1 = \omega_0 = 3\pi$ rad/s and $T_1 = T_0 = \tfrac{2}{3}$ s.
 
 [^dsp]: Digital Signal Processing, the follow-on course that covers sampling of discrete-time signals, the discrete Fourier transform, and the z-transform.
 
@@ -202,25 +202,25 @@ Solution. The greatest common divisor of $6\pi$ and $9\pi$ is $3\pi$, so $\omega
 
 [^axis]: The criterion is the horizontal axis. No matter how often the function value breaks on the vertical axis, the signal is continuous-time when the domain is the whole real line and discrete-time when the domain is a set of isolated points such as $kT_s$.
 
-[^sampling]: $T_s$ is the sampling period, and its reciprocal $f_s = 1/T_s$ is the sampling frequency, the number of samples per second. The textbook describes $T_s$ only as "a fixed positive real number".
+[^sampling]: $T_s$ is the sampling period, and its reciprocal $f_s = \tfrac{1}{T_s}$ is the sampling frequency, the number of samples per second. The textbook describes $T_s$ only as "a fixed positive real number".
 
 [^piecewise]: The textbook reads "piecewise continuous if it has only finite discontinuities". This course reads finite as the number of discontinuities. In the mathematical literature the phrase is also used to mean that each jump is finite in size, and under that reading the infinite pulse train is piecewise continuous as well.
 
 [^average]: Ordinary analysis leaves the value at a discontinuity undefined. Fixing it as the average of the two one-sided limits matches the value to which a Fourier series converges at a jump discontinuity, so that in later chapters the series and the original signal agree at every point.
 
-[^tau]: With $\tau = 10^8$ the base runs from $-5 \times 10^7$ to $5 \times 10^7$, with $\tau = 10^{-7}$ it runs over $\pm 5 \times 10^{-8}$, and the height is 1 in both cases. Sending the width to zero while raising the height to $1/\tau$ so that the area stays 1 gives the unit impulse of slide 26.
+[^tau]: With $\tau = 10^8$ the base runs from $-5 \times 10^7$ to $5 \times 10^7$, with $\tau = 10^{-7}$ it runs over $\pm 5 \times 10^{-8}$, and the height is 1 in both cases. Sending the width to zero while raising the height to $\tfrac{1}{\tau}$ so that the area stays 1 gives the unit impulse of slide 26.
 
 [^train]: The train on slide 5 repeats a pulse of width 1 every 2 units and is discontinuous at $t = 0, \pm 1, \pm 2, \dots$. The drawing with six pulses has 12 discontinuities and is piecewise continuous, and the infinitely extended signal has infinitely many and is not.
 
 [^infinite]: A graph drawn over a finite interval cannot settle whether a signal is periodic. Only with the assumption that the same shape continues outside the graph can $x(t) = x(t + T)$ be stated for every $t$.
 
-[^fundamental]: The reciprocal $f_0 = 1/T_0$ is the fundamental frequency and $\omega_0 = 2\pi/T_0$ is the fundamental radian frequency. The subscript 0 marks "fundamental", not a harmonic number. The period $T_1$ of the first harmonic equals $T_0$.
+[^fundamental]: The reciprocal $f_0 = \tfrac{1}{T_0}$ is the fundamental frequency and $\omega_0 = \tfrac{2\pi}{T_0}$ is the fundamental radian frequency. The subscript 0 marks "fundamental", not a harmonic number. The period $T_1$ of the first harmonic equals $T_0$.
 
-[^phase]: $\phi$ shifts the curve along the time axis by $-\phi/\omega_0$. For $\phi > 0$ the curve is shifted left, so at $t = 0$ it has already risen to $A\sin\phi$.
+[^phase]: $\phi$ shifts the curve along the time axis by $-\tfrac{\phi}{\omega_0}$. For $\phi > 0$ the curve is shifted left, so at $t = 0$ it has already risen to $A\sin\phi$.
 
 [^hertz]: Hz is 1/s, the number of repetitions per second. The radian frequency $\omega_0$ is the angle traversed per second in rad/s, so dividing by one full turn of $2\pi$ rad gives the number of turns per second, $f_0$. The only difference between the two units is the factor $2\pi$.
 
-[^harmonic]: Integer multiples are used because of the common period. $T_k = T_0/k$ divides $T_0$, so any sum of harmonics has $T_0$ as a period. A non-integer multiple such as 2.5 does not share $T_0$ as a period. The Fourier series of Chapter 3 writes a periodic signal as a weighted sum of these harmonics.
+[^harmonic]: Integer multiples are used because of the common period. $T_k = \tfrac{T_0}{k}$ divides $T_0$, so any sum of harmonics has $T_0$ as a period. A non-integer multiple such as 2.5 does not share $T_0$ as a period. The Fourier series of Chapter 3 writes a periodic signal as a weighted sum of these harmonics.
 
 [^gcdnote]: When the radian frequencies carry a factor of $\pi$, remove it, take the greatest common divisor of the integers, and put $\pi$ back. For $4\pi$ and $6\pi$ the greatest common divisor of 4 and 6 is 2, giving $2\pi$. Working with periods instead gives the least common multiple of the two periods, with the same result.
 
