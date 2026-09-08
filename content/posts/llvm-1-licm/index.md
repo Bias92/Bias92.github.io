@@ -196,7 +196,13 @@ diff -u -I '^; ModuleID' before.ll after.ll
 
 이 두 명령은 괜찮아요. 결과의 하위 32비트를 남기는 계산이고, 메모리를 읽거나 쓰지도 않거든요. 어떤 `scale`, `offset`이 들어와도 결과가 정의되어 있어서, 계산만 하고 그 값을 쓰지 않아도 문제가 없어요.
 
-이렇게 결과가 필요한지 결정되기 전에 계산하는 걸 **speculative execution**이라고 해요. 이 예제에서 두 명령을 preheader로 옮길 때 확인할 조건을 모아보면 다음과 같아요.
+이렇게 결과가 필요한지 결정되기 전에 계산하는 걸 **speculative execution**이라고 해요.
+
+어디서 많이 본 단어 같죠?ㅎㅎ LLM 추론에서 유명한 **speculative decoding**의 그 speculative이에요. 사실 speculative execution 쪽이 먼저 있었고, speculative decoding이 이 아이디어에서 출발했답니다. [논문 저자들의 설명](https://research.google/blog/looking-back-at-speculative-decoding/)에서도 이 연결을 직접 짚어줘요.
+
+작은 draft model이 다음 토큰 후보를 먼저 만들고, 큰 model이 그 후보들을 한꺼번에 검증하는 방식이 익숙하실 텐데요. 최종적으로 쓸지 확정되기 전에 일을 미리 해둔다는 생각이 여기에도 이어져요. LLVM 보다가 LLM에서 보던 이름을 만나네요ㅎㅎ
+
+이 LICM 예제에서는 LLVM이 **미리 실행해도 안전하다고 증명한 명령**을 옮겨요. 토큰 후보를 만들고 나중에 검증하는 절차와는 구분해서 봐주세요. 두 명령을 preheader로 옮길 때 확인할 조건을 모아보면 다음과 같아요.
 
 1. 계산에 필요한 모든 operand가 반복 불변이어야 해요.
 2. 메모리 읽기·쓰기나 함수 호출 등 외부에서 볼 수 있는 동작이 달라지면 안 돼요.

@@ -1,0 +1,178 @@
+{
+  "description": "Original LINE Moon stickers used by the Korean CUDA series. Copied unchanged from the source collection.",
+  "official_catalog": "https://developers.line.biz/en/docs/messaging-api/sticker-list/",
+  "official_packs": [
+    "https://store.line.me/stickershop/product/1/en",
+    "https://store.line.me/stickershop/product/1252/en"
+  ],
+  "stickers": [
+    {
+      "id": 4,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/4/android/sticker.png",
+      "file": "moon-4.png",
+      "width": 179,
+      "height": 155,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "반짝이는 기대"
+    },
+    {
+      "id": 13,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/13/android/sticker.png",
+      "file": "moon-13.png",
+      "width": 158,
+      "height": 181,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "반짝이는 능청 엄지척"
+    },
+    {
+      "id": 10,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/10/android/sticker.png",
+      "file": "moon-10.png",
+      "width": 165,
+      "height": 173,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "이를 드러낸 능청 웃음"
+    },
+    {
+      "id": 17,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/17/android/sticker.png",
+      "file": "moon-17.png",
+      "width": 179,
+      "height": 129,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "돌아보며 발끈"
+    },
+    {
+      "id": 5,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/5/android/sticker.png",
+      "file": "moon-5.png",
+      "width": 188,
+      "height": 165,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "꽃과 하트, 해맑은 기쁨"
+    },
+    {
+      "id": 3,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/3/android/sticker.png",
+      "file": "moon-3.png",
+      "width": 168,
+      "height": 177,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "당황과 식은땀"
+    },
+    {
+      "id": 8,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/8/android/sticker.png",
+      "file": "moon-8.png",
+      "width": 180,
+      "height": 180,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "짜증과 식은땀"
+    },
+    {
+      "id": 9,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/9/android/sticker.png",
+      "file": "moon-9.png",
+      "width": 158,
+      "height": 248,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "비구름 아래 눈물"
+    },
+    {
+      "id": 6,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/6/android/sticker.png",
+      "file": "moon-6.png",
+      "width": 158,
+      "height": 203,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "폭발하는 분노"
+    },
+    {
+      "id": 106,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/106/android/sticker.png",
+      "file": "moon-106.png",
+      "width": 195,
+      "height": 177,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "윙크하며 경례"
+    },
+    {
+      "id": 114,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/114/android/sticker.png",
+      "file": "moon-114.png",
+      "width": 203,
+      "height": 200,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "주먹을 올리며 환호"
+    },
+    {
+      "id": 115,
+      "pack": 1,
+      "packName": "Moon & James",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/115/android/sticker.png",
+      "file": "moon-115.png",
+      "width": 207,
+      "height": 177,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "진땀"
+    },
+    {
+      "id": 22085,
+      "pack": 1252,
+      "packName": "LINE Characters in Love!",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/22085/android/sticker.png",
+      "file": "moon-22085.png",
+      "width": 263,
+      "height": 224,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1252/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "양손으로 가슴 앞 하트"
+    },
+    {
+      "id": 22086,
+      "pack": 1252,
+      "packName": "LINE Characters in Love!",
+      "url": "https://stickershop.line-scdn.net/stickershop/v1/sticker/22086/android/sticker.png",
+      "file": "moon-22086.png",
+      "width": 248,
+      "height": 225,
+      "metadataUrl": "https://stickershop.line-scdn.net/stickershop/v1/product/1252/android/productInfo.meta",
+      "character": "Moon",
+      "expressionKo": "분홍 장미 배경에서 놀람"
+    }
+  ]
+}
