@@ -13,11 +13,11 @@ summary: "복사하는 동안 계산도 같이 하면 좋겠죠ㅎㅎ host memor
 
 안녕하세요~ 오늘은 복사하고, 계산하고, 다시 복사하는 동안 생기는 대기 시간을 좀 줄여보려고 해요ㅎㅎ
 
-CUDA에서는 CPU 쪽을 host, GPU 쪽을 device라고 부르죠. Host memory는 CPU가 사용하는 system RAM이고, 여기서 다룰 device memory는 GPU에 달린 memory예요. 입력이 처음에 host memory에 있으니 GPU에서 계산하려면 device memory로 옮겨줘야 해요.
+CUDA[^cu-platform]에서는 CPU 쪽을 host, GPU 쪽을 device라고 부르죠. Host memory는 CPU가 사용하는 system RAM이고, 여기서 다룰 device memory는 GPU에 달린 memory예요. 입력이 처음에 host memory에 있으니 GPU에서 계산하려면 device memory로 옮겨줘야 해요.
 
 그래서 [기본 흐름]({{< relref "/posts/cuda-c-basics" >}}#host-device-데이터-흐름)은 host memory의 입력을 device memory로 복사하고, GPU에서 계산한 뒤, 결과를 host memory로 가져오는 순서예요. 하나씩 전부 끝내고 다음 일을 시작하면 그만큼 기다리게 되겠죠.
 
-그런데 서로 다른 데이터라면 한쪽을 계산하는 동안 다른 쪽을 복사할 수도 있어요. 오늘 볼 stream이 이런 작업의 순서와 배치를 정해준답니다.
+그런데 서로 다른 데이터라면 한쪽을 계산하는 동안 다른 쪽을 복사할 수도 있어요. 오늘 볼 stream은 GPU에 보낼 작업의 순서를 묶어두는 단위예요. 이 순서에 맞춰 복사와 계산을 배치해볼 거랍니다.
 
 ![주먹을 들고 의욕을 보이는 문](/images/naver-moon/moon-114.png)
 
@@ -27,7 +27,7 @@ CUDA에서는 CPU 쪽을 host, GPU 쪽을 device라고 부르죠. Host memory는
 
 Host memory는 `malloc`으로 할당해서 `free`로 해제해요. Device memory는 `cudaMalloc`으로 할당하고 `cudaFree`로 해제하는데, 여기서 받은 pointer는 GPU가 접근하는 영역을 가리켜요. 두 pointer가 서로 다른 memory를 가리키니 CPU가 `malloc` 영역에 쓴 값을 GPU에서 읽으려면 복사가 필요하답니다.
 
-아래에서 `N`은 `float` 원소의 개수, `bytes`는 그 원소들의 전체 byte 수예요. Memory 크기를 담는 정수 타입으로 `size_t`를 쓰고요.
+아래에서 `N`은 `float`[^cu-float-byte] 원소의 개수, `bytes`는 그 원소들의 전체 byte 수예요. Memory 크기를 담는 정수 타입으로 `size_t`를 쓰고요.
 
 CPU가 입력을 채울 곳은 `h_x`, 결과를 받을 host memory는 `h_y`예요. 같은 크기의 device memory가 `d_x`, `d_y`고요. 이름이 네 개나 나왔지만 이 글에서는 끝까지 같은 뜻으로 쓸게요. 입력 한 쌍, 출력 한 쌍이라고 보시면 돼요~
 
@@ -85,13 +85,13 @@ $$
 T_{\text{serial}} = T_H + T_K + T_D
 $$
 
-그럼 다른 데이터는 어떨까요? 첫 번째 입력을 kernel이 계산하는 동안 copy engine이 두 번째 입력을 H2D copy하면, 계산 장치와 복사 장치가 같은 시간에 일할 수 있어요.
+그럼 다른 데이터는 어떨까요? 첫 번째 입력을 kernel이 계산하는 동안 복사 전용 장치인 copy engine이 두 번째 입력을 H2D copy하면, 계산 장치와 복사 장치가 같은 시간에 일할 수 있어요.
 
 다만 이때 copy engine은 CPU가 다음 코드로 넘어간 뒤에도 host memory를 계속 읽어야 해요. 그래서 stream 코드로 바로 가기 전에, 운영체제가 그 memory를 어떻게 관리하는지 잠깐 보고 갈게요.
 
 ## Page와 Pageable Memory
 
-운영체제는 host memory를 page라는 일정한 크기로 나눠 관리해요. 흔한 page 크기는 4KB예요. 프로그램이 보는 주소 공간의 조각이 virtual page이고, 실제 RAM을 같은 크기로 나눈 자리가 page frame이에요. 어느 virtual page가 어느 page frame에 놓였는지는 page table에 적혀 있고요.
+운영체제는 host memory를 page라는 일정한 크기로 나눠 관리해요. 흔한 page 크기는 4KB예요. 프로그램은 실제 RAM 위치와 구분되는 가상 주소를 사용해요. 그 주소 범위를 나눈 조각이 virtual page이고, 실제 RAM을 같은 크기로 나눈 자리가 page frame이에요. 어느 virtual page가 어느 page frame에 놓였는지는 page table에 적혀 있고요.
 
 `malloc`으로 할당하면 우선 프로그램 주소 공간의 page를 잡아요. 실제 RAM은 그 주소를 처음 읽거나 쓸 때 붙는답니다. 이렇게 필요할 때 RAM과 연결하고, 나중에는 그 연결이 바뀔 수도 있는 host memory를 pageable memory라고 해요.
 
@@ -105,13 +105,13 @@ $$
 
 ### Pinned Memory
 
-GPU에는 host memory와 device memory 사이의 복사를 전담하는 hardware, copy engine이 있어요. 여기서는 이 장치를 쓰는 전형적인 pinned H2D 경로를 따라가볼게요.
+GPU에는 host memory와 device memory 사이의 복사를 전담하는 hardware, copy engine이 있어요. 여기서는 RAM에 고정한 host memory를 읽는 pinned H2D 경로를 따라가볼게요.
 
-Copy engine이 실행하는 DMA(Direct Memory Access)는 CPU core가 byte를 하나하나 옮기는 대신 전용 hardware로 memory 사이의 데이터를 옮기는 방식이에요. CPU가 `cudaMemcpyAsync`를 호출하면 CUDA runtime이 요청을 CUDA driver에 넘겨요. GPU에 작업을 제출하는 software인 driver는 원본 주소, 목적지 주소, 크기를 담은 복사 명령을 GPU에 보내고요. Copy engine이 그 명령을 처리하는 동안 CPU는 다음 코드를 실행할 수 있어요.
+Copy engine이 실행하는 DMA(Direct Memory Access)는 CPU에서 명령을 실행하는 계산 단위인 core가 byte를 하나하나 옮기는 대신 전용 hardware로 memory 사이의 데이터를 옮기는 방식이에요. CPU가 비동기 복사 함수인 `cudaMemcpyAsync`[^cu-async]를 호출하면 CUDA runtime[^cu-runtime]이 요청을 CUDA driver에 넘겨요. GPU에 작업을 제출하는 software인 driver는 원본 주소, 목적지 주소, 크기를 담은 복사 명령을 GPU에 보내고요. Copy engine이 그 명령을 처리하는 동안 CPU는 다음 코드를 실행할 수 있어요.
 
-CPU와 별도 card에 달린 discrete GPU는 host system과 PCIe로 연결돼요. System DRAM에서 읽은 데이터는 CPU의 I/O 경로와 PCIe root complex를 거쳐 PCIe로 나가요. Root complex는 CPU 쪽에서 PCIe 장치를 연결하는 hardware예요.
+CPU와 별도 card에 달린 discrete GPU는 host system과 PCIe(PCI Express)라는 데이터 연결 통로로 이어져요. CPU의 주 memory인 system DRAM에서 읽은 데이터는 CPU의 입출력(I/O) 경로와 PCIe root complex를 거쳐 PCIe로 나가요. Root complex는 CPU 쪽에서 PCIe 장치를 연결하는 hardware예요.
 
-GPU에 도착하면 GPU의 PCIe I/O와 내부 데이터 경로를 지나 GPU memory subsystem으로 들어가요. 이 subsystem에는 최근 데이터를 잠시 보관하는 L2 cache와 GPU memory의 읽기·쓰기를 맡는 memory controller가 있어요. GPU 안의 copy engine이 이 H2D 전송을 실행하는 거예요.
+GPU에 도착하면 GPU의 PCIe I/O와 내부 데이터 경로를 지나 메모리에 데이터를 전달하는 장치들의 묶음인 GPU memory subsystem으로 들어가요. 이 subsystem에는 최근 데이터를 잠시 보관하는 L2 cache[^cu-l2]와 GPU memory의 읽기·쓰기를 맡는 memory controller가 있어요. GPU 안의 copy engine이 이 H2D 전송을 실행하는 거예요.
 
 정확한 내부 배치는 GPU architecture마다 달라요. 아래 그림에는 공개된 연결 관계까지만 담아뒀으니, 데이터를 따라가는 경로로 봐주세요.
 
@@ -128,6 +128,8 @@ Pinned memory는 `cudaHostAlloc`으로 만들고 `cudaFreeHost`로 해제해요.
 | `malloc` / `free` | pageable host memory |
 | `cudaHostAlloc` / `cudaFreeHost` | pinned host memory |
 | `cudaMalloc` / `cudaFree` | device memory |
+
+아래 `cudaHostAllocDefault`는 추가 옵션 없이 기본 pinned allocation을 만들겠다는 값이에요.
 
 ```cpp
 const int N = 1000;
@@ -162,8 +164,6 @@ cudaFree(d_y);
 편하다고 host memory를 전부 고정하고 싶어질 수도 있는데요.. RAM은 한정돼 있어요. Pinned memory는 실제 RAM을 그만큼 차지하므로 RAM 크기보다 많이 만들 수 없고, 한도를 넘으면 `cudaHostAlloc`이 memory 부족 오류를 돌려줘요.
 
 큰 영역을 계속 붙잡아두면 운영체제가 쓸 RAM이 줄어 host 실행까지 느려져요. 그래서 GPU와 데이터를 주고받는 영역만 pinned memory로 만들어요. 복사 좀 편하게 하려다가 CPU 쪽까지 답답해지면 안 되겠죠 ^^;;
-
-![진땀을 흘리는 문](/images/naver-moon/moon-115.png)
 
 ![Pinned H2D hardware topology](images/pinned-memory-chart.svg)
 
@@ -246,7 +246,7 @@ Chunk 0의 H2D copy, kernel, D2H copy를 H0, K0, D0이라고 부르고 stream 0�
 
 위 그림의 두 행은 가로 축척을 같게 맞췄어요. 직렬 막대 안의 점선은 그 막대를 chunk 4개 몫으로 나눈 자리예요. 점선 한 칸의 가로 길이와 아래 chunk 하나의 가로 길이가 같으니, 처리하는 작업량도 같아요.
 
-일을 덜 한 건 아니고 같은 일을 시간축의 다른 자리에 놓은 거예요. 그림 오른쪽의 시간은 NVIDIA A100에서 측정한 값이랍니다.[^bench]
+일을 덜 한 건 아니고 같은 일을 시간축의 다른 자리에 놓은 거예요. 그림 오른쪽의 시간은 NVIDIA A100에서 측정한 값이랍니다.[^bench] 측정 환경의 표기[^cu-bench-environment]와 반복 측정 통계[^cu-bench-statistics]도 각주에 풀어뒀어요.
 
 코드에서는 stream을 여러 개 만들어놓고 chunk마다 돌려 쓰면 돼요. Device memory도 배열 전체 크기로 한 번만 할당해요. 각 chunk가 시작하는 위치를 `offset`으로 옮겨가며 쓸 거예요.
 
@@ -336,7 +336,7 @@ GPU에 H2D와 D2H를 동시에 처리할 수 있는 copy engine 구성이 있다
 
 ## Default Stream
 
-Stream을 따로 적지 않은 kernel launch와 `cudaMemcpy`는 default stream에 들어가요. 기본 설정은 legacy default stream이에요.
+Stream을 따로 적지 않은 kernel launch와 `cudaMemcpy`는 default stream에 들어가요. 기본 설정은 legacy default stream[^cu-legacy]이에요.
 
 이걸 앞에서 `cudaStreamCreate`로 만든 stream과 함께 쓰면 기다리는 관계가 생겨요. 다른 stream에 먼저 제출된 작업이 전부 끝나야 default stream 작업이 시작돼요. 또 default stream 작업이 끝나야 다른 stream에 그 뒤로 제출한 작업이 시작되고요. 중간에 하나 끼었는데 앞뒤로 기다리게 되는 거예요.
 
@@ -356,7 +356,7 @@ B에는 stream 인자가 없으니 legacy default stream으로 들어가요. 그
 
 ![비구름 아래에서 우는 문](/images/naver-moon/moon-9.png)
 
-컴파일할 때 `nvcc --default-stream per-thread` 옵션을 주면 CPU thread마다 default stream이 따로 생겨요. 그러면 위의 B가 A와 C 사이를 자동으로 막지 않아요. 이미 default stream을 쓰도록 작성된 코드를 직접 만든 stream과 함께 사용할 때 쓸 수 있는 옵션이에요.
+CUDA C++ 코드를 실행 코드로 바꾸는 컴파일러에 `nvcc --default-stream per-thread` 옵션을 주면 CPU thread[^cu-host-thread]마다 default stream이 따로 생겨요. 그러면 위의 B가 A와 C 사이를 자동으로 막지 않아요. 이미 default stream을 쓰도록 작성된 코드를 직접 만든 stream과 함께 사용할 때 쓸 수 있는 옵션이에요.
 
 ![Default stream](images/default-stream-chart.svg)
 
@@ -431,8 +431,6 @@ cudaEventDestroy(ready);
 
 Device 전체를 세워두지 않고도 stream 0과 stream 1의 kernel 사이에 필요한 순서를 만들었네요~^^
 
-![알겠다는 듯 경례하는 문](/images/naver-moon/moon-106.png)
-
 ![CUDA event](images/event-wait-chart.svg)
 
 ## 여러 Kernel의 동시 실행
@@ -454,7 +452,7 @@ Kernel의 block이 실제로 배치되는 계산 장치가 SM(Streaming Multipro
 
 하나의 kernel로 GPU를 충분히 채울 수 있다면 그 kernel 하나로 처리하는 게 가장 빨라요. 여러 kernel의 동시 실행은 작업이 작은 단위로 들어오고, 그걸 하나의 kernel로 합치기 어려울 때 의미가 있어요.
 
-Stream priority는 다음 block을 어느 stream의 kernel에서 가져올지 GPU가 결정할 때 참고하는 우선순위예요. 오래 걸리는 background kernel은 낮은 priority에, 빨리 시작해야 하는 짧은 kernel은 높은 priority stream에 넣을 수 있어요.
+Stream priority[^cu-priority]는 다음 block을 어느 stream의 kernel에서 가져올지 GPU가 결정할 때 참고하는 우선순위예요. 오래 걸리는 background kernel은 낮은 priority에, 빨리 시작해야 하는 짧은 kernel은 높은 priority stream에 넣을 수 있어요.
 
 높은 priority라도 이미 실행 중인 block을 중단시키지는 않아요. SM에 자리가 생겼을 때 높은 priority stream의 다음 block을 먼저 고르는 거예요. Stream은 `cudaStreamCreateWithPriority`로 만들고, 사용할 수 있는 priority 범위는 `cudaDeviceGetStreamPriorityRange`로 확인해요.
 
@@ -497,7 +495,7 @@ cudaFree(d1_y);
 
 Kernel launch에서 CPU가 기다리지 않으니 GPU 0에 `transform`을 제출한 뒤 GPU 1에도 바로 제출할 수 있어요. 마지막에는 GPU를 다시 선택해서 각 stream이 끝날 때까지 기다리고요.
 
-GPU끼리 데이터를 옮길 때는 peer access를 쓸 수도 있어요. 한 GPU가 다른 GPU의 memory를 직접 읽고 쓰는 기능인데, 두 GPU가 PCIe나 NVLink 같은 연결 통로로 이어져 있어야 해요. `cudaDeviceCanAccessPeer`로 지원 여부를 먼저 확인해요.
+GPU끼리 데이터를 옮길 때는 peer access를 쓸 수도 있어요. 한 GPU가 다른 GPU의 memory를 직접 읽고 쓰는 기능인데, 두 GPU가 PCIe나 NVLink[^cu-nvlink] 같은 연결 통로로 이어져 있어야 해요. `cudaDeviceCanAccessPeer`로 지원 여부를 먼저 확인해요.
 
 두 방향 모두 복사할 거라면 `cudaDeviceEnablePeerAccess`를 양쪽에서 호출한 뒤 `cudaMemcpyPeerAsync`로 복사해요. 그러면 host memory를 거치지 않고 한 GPU의 memory에서 다른 GPU의 memory로 바로 이동해요. CPU 쪽으로 한 번 돌아오던 길을 줄일 수 있네요.
 
@@ -505,7 +503,7 @@ GPU끼리 데이터를 옮길 때는 peer access를 쓸 수도 있어요. 한 GP
 
 ## Unified Memory와 Prefetch
 
-[Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory와-managed-allocation)를 사용할 때도 stream의 순서 규칙은 같아요. `cudaMemPrefetchAsync`는 Unified Memory로 만든 영역을 CPU나 GPU 쪽으로 미리 옮겨주는 함수예요.
+CPU와 GPU가 같은 포인터로 접근하고 CUDA가 데이터 배치를 관리하는 [Unified Memory]({{< relref "/posts/cuda-4-unified-memory" >}}#unified-memory와-managed-allocation)를 사용할 때도 stream의 순서 규칙은 같아요. Prefetch는 필요한 데이터를 사용하기 전에 미리 준비하는 일이고, `cudaMemPrefetchAsync`[^cu-prefetch-support]는 Unified Memory로 만든 영역을 CPU나 GPU 쪽으로 미리 옮겨주는 함수예요.
 
 아래 `x`, `y`는 `cudaMallocManaged`로 할당한 Unified Memory pointer예요. CPU와 GPU에서 같은 pointer로 접근하고요. `device`는 kernel을 실행할 GPU 번호, `cudaCpuDeviceId`는 목적지가 CPU 쪽이라는 뜻의 CUDA 상수예요.
 
@@ -533,7 +531,7 @@ cudaFree(y);
 
 세 작업을 같은 stream에 넣었으니 GPU 방향 prefetch가 끝나야 kernel이 시작하고, kernel이 끝나야 CPU 방향 prefetch가 시작돼요. 마지막 대기가 끝난 뒤에는 CPU에서 `y`를 읽을 수 있고요.
 
-이 이동은 page 단위로 일어나요. CPU와 GPU 양쪽의 page 기록도 고쳐야 해서 실행 시간축에 빈 구간이 생길 수 있어요. 미리 옮기는 경우에도 그 관리 작업은 따라온답니다.
+이 이동은 page 단위로 일어나요. 어느 page가 어느 물리 메모리를 가리키는지 CPU와 GPU 양쪽의 주소 연결 기록도 고쳐야 해서 실행 시간축에 빈 구간이 생길 수 있어요. 미리 옮기는 경우에도 그 관리 작업은 따라온답니다.
 
 ![땀을 흘리며 난처해하는 문](/images/naver-moon/moon-8.png)
 
@@ -549,7 +547,7 @@ Nsight Systems는 프로그램 실행 중 CPU의 CUDA 호출과 GPU의 copy, ker
 nsys profile --stats=true ./overlap
 ```
 
-이 명령은 실행 결과를 report 파일로 저장하고, CUDA 호출과 kernel, 복사의 요약도 출력해줘요. Report를 Nsight Systems 화면에서 열면 위쪽에는 CPU 관점의 호출이, 아래쪽에는 GPU 관점의 복사와 kernel이 나와요.
+이 명령은 실행 결과를 report 파일로 저장하고, CUDA 호출과 kernel, 복사의 요약도 출력해줘요. Report를 Nsight Systems 화면에서 열면 위쪽에는 CPU 관점의 호출이, 아래쪽에는 GPU 관점의 복사와 kernel이 나와요.[^cu-nsight-labels]
 
 직렬 코드의 H2D copy, kernel, D2H copy는 한 줄로 이어져 보여요. 여러 stream을 썼다면 stream별 행에서 한 chunk의 kernel과 다른 chunk의 copy가 같은 시간 구간에 있는지 살펴보세요. 실제로 겹쳐 실행된 부분을 그렇게 확인하는 거예요.
 
@@ -558,8 +556,6 @@ nsys profile --stats=true ./overlap
 실제로 얼마나 겹칠지는 copy engine의 지원 방식과 SM의 빈 실행 자리에 달려 있어요. 시간축까지 확인하고 나면 어디에서 기다리는지도 보이겠죠.
 
 Async라고 적는 건 금방인데 같이 일하게 하려니 챙길 게 많았네요ㅎㅎ 필요한 코드와 참고 자료는 아래에 남겨둘게요~
-
-![두 손으로 하트를 보내는 문](/images/naver-moon/moon-22085.png)
 
 ## 참고
 
@@ -596,3 +592,29 @@ Async라고 적는 건 금방인데 같이 일하게 하려니 챙길 게 많았
     두 방식 모두 각 stream 안에서는 H → K → D 순서로 실행된다는 점은 같아요.
 
 [^chunkelements]: `chunkElements`는 chunk 하나에 넣을 원소 개수예요. 코드에서는 `1 << 20`, 즉 1,048,576개로 두었어요. `N`이 16,777,216개이니 chunk는 16개예요. 값을 크게 잡으면 chunk 수가 줄어 작업을 겹칠 기회도 적어져요. 작게 잡을수록 chunk 하나를 처리할 때 kernel launch와 copy 요청이 차지하는 비중이 커지고요.
+
+[^cu-platform]: CUDA는 NVIDIA GPU에서 일반 계산을 실행하도록 제공하는 프로그래밍 플랫폼이에요. CPU(Central Processing Unit)는 프로그램의 흐름과 범용 작업을 처리하고, GPU(Graphics Processing Unit)는 많은 데이터에 비슷한 계산을 병렬로 수행하도록 구성된 장치예요. 이 글은 CPU와 GPU의 물리 메모리가 분리된 시스템에서 시작해요.
+
+[^cu-float-byte]: `float`는 소수 부분이 있는 수를 표현하는 부동소수점 타입이고, 이 CUDA C++ 예제에서는 원소 하나가 4 byte를 차지해요. Byte는 8개의 이진 숫자(bit)를 묶은 메모리 크기 단위예요. `sizeof(float)`는 타입이 차지하는 byte 수를 구하니, 원소 개수와 곱하면 복사할 전체 크기가 나와요.
+
+[^cu-async]: 비동기(asynchronous)는 CPU가 요청한 복사의 완료를 기다리지 않고 다른 일을 진행할 수 있다는 뜻이에요. `Async`라는 이름만으로 항상 즉시 돌아오는 것은 아니며, 일반 pageable memory를 넘기면 임시로 RAM에 고정된 복사 공간을 준비하면서 CPU가 기다릴 수 있어요. 뒤에서는 pinned memory를 사용해 CPU 실행과 복사를 겹칠 조건을 갖출 거예요. ([CUDA API 동기화 동작](https://docs.nvidia.com/cuda/cuda-runtime-api/api-sync-behavior.html))
+
+[^cu-runtime]: CUDA runtime은 프로그램에서 메모리를 할당하거나 GPU 실행을 요청하도록 도와주는 실행 지원 라이브러리예요. 라이브러리는 미리 구현한 기능의 묶음이고, 프로그램이 그 기능을 호출하는 방법이 API(Application Programming Interface)예요. Runtime은 이런 요청을 driver에 연결해주며, driver가 장치와 운영체제 쪽 제어를 맡아요.
+
+[^cu-l2]: L2는 Level 2, 즉 두 번째 단계 캐시라는 이름이에요. 이 글의 GPU에서는 여러 계산 장치가 함께 사용하는 데이터 캐시이며, 가까운 곳에 최근 데이터 사본을 두어 매번 GPU 전용 메모리까지 가지 않게 해줘요. GPU memory 자체를 새로 할당한 영역과는 구분해요.
+
+[^cu-bench-environment]: RunPod는 여기서 사용한 원격 GPU 실행 서비스이고, 컨테이너는 실행에 필요한 소프트웨어를 모아 격리한 환경이에요. `nvcc`는 CUDA 컴파일러, `-O3`는 최적화 수준, `-arch=sm_80`은 compute capability 8.0 GPU용 코드를 만들라는 설정이며, compute capability는 GPU가 지원하는 CUDA 하드웨어 기능 세대예요. `asyncEngineCount`는 장치가 보고한 비동기 복사 엔진 수로, 그 값만큼 모든 복사가 반드시 동시에 실행된다는 뜻은 아니에요. ([CUDA 장치 속성](https://docs.nvidia.com/cuda/cuda-runtime-api/structcudaDeviceProp.html))
+
+[^cu-bench-statistics]: Warm-up은 본 측정 전에 같은 작업을 몇 번 실행해 초기 준비의 영향을 줄이는 예열이에요. Median은 측정값을 크기순으로 놓았을 때 가운데 값으로, 개수가 짝수면 가운데 두 값의 평균을 쓰며 min과 max는 최솟값과 최댓값이에요. `ms`는 1초의 1,000분의 1이고, 여기서 CUDA event는 GPU 작업 순서 안에 시점을 표시해 두 표시 사이의 시간을 재는 데 쓰여요.
+
+[^cu-legacy]: Legacy는 이전부터 쓰이던 기본 동작을 뜻하며, 여기서는 같은 GPU에서 `cudaStreamCreate`로 만든 stream들과 자동으로 기다리는 관계를 만드는 default stream이에요. `cudaStreamNonBlocking` 옵션으로 만든 stream은 이 자동 대기의 예외이고, 그 이름이 모든 CPU 호출의 즉시 반환을 보장하는 것은 아니에요. Per-thread 모드는 CPU thread마다 별도의 default stream을 두는 설정으로, 뒤의 예제에서 따로 볼게요. ([CUDA stream 동기화 규칙](https://docs.nvidia.com/cuda/cuda-runtime-api/stream-sync-behavior.html))
+
+[^cu-host-thread]: CPU thread는 CPU 쪽 프로그램 안에서 코드를 순서대로 실행하는 흐름 하나예요. 같은 프로그램에 이런 흐름이 여러 개 있을 수 있어요. 앞에서 kernel의 원소 계산을 맡았던 GPU thread와 실행하는 곳이 다르답니다.
+
+[^cu-priority]: Priority는 실행 대기 중인 kernel 작업을 선택할 때 참고하는 우선순위예요. 선택을 담당하는 동작을 scheduling이라고 하며, 이 우선순위는 이미 실행 중인 작업을 중단시키거나 특정 실행 순서를 보장하는 강제 규칙은 아니에요. 일반적으로 kernel 실행에 적용하는 힌트라서 복사에도 같은 우선순위가 적용된다고 가정하면 안 돼요. ([CUDA stream 우선순위](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/asynchronous-execution.html#stream-prioritization))
+
+[^cu-nvlink]: NVLink는 NVIDIA가 제공하는 처리 장치 간 데이터 연결 기술이에요. 여기서는 GPU끼리 메모리 데이터를 주고받는 통로이며, 지원 장치와 실제 연결 구성이 맞아야 사용할 수 있어요. GPU가 여러 개 꽂혀 있다는 것만으로 NVLink 연결이나 peer access가 생기는 건 아니에요.
+
+[^cu-prefetch-support]: 이 예제는 `cudaMemPrefetchAsync`를 지원하는 Unified Memory 환경을 전제로 해요. CUDA 12.x의 이 호출은 관련 GPU의 `concurrentManagedAccess`가 1이어야 하며, 이 속성은 CPU와 GPU가 managed memory에 함께 접근할 수 있는 지원 수준을 뜻해요. 앞 글에서 본 Orin의 `concurrentManagedAccess=0` 환경에 이 코드를 그대로 적용하면 안 돼요. ([CUDA 12.4 메모리 API](https://docs.nvidia.com/cuda/archive/12.4.1/cuda-runtime-api/group__CUDART__MEMORY.html))
+
+[^cu-nsight-labels]: 화면의 CUDA API 행은 CPU가 CUDA 함수를 호출한 구간이고, GPU의 kernel·memory 행은 GPU에서 실제 계산·복사가 실행된 구간이에요. `HtoD`와 `DtoH`는 각각 앞서 본 H2D와 D2H이며, Stream ID는 작업이 속한 stream을 구분하는 번호예요. CPU 호출 막대의 길이와 GPU 작업 시간을 같은 것으로 읽지 않도록 행 이름도 같이 봐주세요. ([Nsight Systems 안내](https://docs.nvidia.com/nsight-systems/UserGuide/index.html))

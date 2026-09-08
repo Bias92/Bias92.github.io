@@ -10,43 +10,43 @@ summary: "CPU와 GPU가 메모리 하나를 함께 쓰면 안에서는 무슨 �
 
 안녕하세요~ㅎㅎ
 
-앞에서는 CPU와 GPU 사이에 데이터를 직접 복사해줬는데요. 이번에는 둘이 메모리 하나를 함께 쓰는 이야기를 해보려고 해요.
+앞에서는 CPU와 GPU[^um-processors] 사이에 데이터를 직접 복사해줬는데요. 이번에는 둘이 메모리 하나를 함께 쓰는 이야기를 해보려고 해요.
 
-CUDA 프로그램에서 CPU는 Host, GPU는 Device라고 부르죠. 둘 다 processor지만 명령을 실행하는 방식도, memory에 접근하는 방식도 달라요. 이렇게 성격이 다른 처리 장치를 함께 사용하는 구조가 heterogeneous system이랍니다.
+CUDA[^um-cuda] 프로그램에서 CPU는 Host, GPU는 Device라고 부르죠. 둘 다 명령을 처리하는 장치인 processor지만 명령을 실행하는 방식도, memory에 접근하는 방식도 달라요. 이렇게 성격이 다른 처리 장치를 함께 사용하는 구조가 heterogeneous system이랍니다.
 
 [Host-Device 데이터 흐름]({{< relref "/posts/cuda-c-basics" >}}#host-device-데이터-흐름)에서는 CPU용 `h_data`와 GPU용 `d_data`를 따로 만들었어요. 두 memory 사이에는 `cudaMemcpy`로 데이터를 옮겨줬고요. 어디에 두고 언제 옮길지가 코드에 드러나는 explicit memory management예요.
 
-자료구조가 복잡해지면 챙길 것도 늘어나요. 두 memory 영역의 수명에, copy 방향에, 이동 시점까지.. 계산하기 전에 준비할 일이 제법 있네요.
+자료구조가 복잡해지면 챙길 것도 늘어나요. 두 memory 영역을 할당해서 해제할 때까지의 수명에, copy 방향에, 이동 시점까지.. 계산하기 전에 준비할 일이 제법 있네요.
 
 Unified Memory에서는 `cudaMallocManaged`로 CPU와 GPU가 함께 사용할 메모리 영역을 만들어요. 이렇게 CUDA가 관리해주는 영역을 managed allocation이라고 한답니다.
 
-포인터 하나로 쓸 수 있다니 반갑죠?ㅎㅎ 다만 실제 데이터가 어디에 있고 언제 읽어도 되는지는 조금 더 봐야 해요. 가상 주소부터 배치와 이동, 동기화와 캐시 일관성을 살펴보고 Jetson AGX Orin의 실제 장치 출력까지 이어서 볼게요.
+메모리 주소를 담는 포인터 하나로 쓸 수 있다니 반갑죠?ㅎㅎ 다만 실제 데이터가 어디에 있고 언제 읽어도 되는지는 조금 더 봐야 해요. 가상 주소[^um-virtual-address]부터 배치와 이동, 동기화[^um-sync]와 캐시 일관성[^um-coherence]을 살펴보고 Jetson AGX Orin[^um-orin]의 실제 장치 출력까지 이어서 볼게요.
 
 ![두 손을 모으고 기대하는 문](/images/naver-moon/moon-4.png)
 
 ## CPU Memory와 GPU Memory
 
-메모리를 함께 쓰기 전에, 할당부터 잠깐 짚고 갈게요. Allocation은 프로그램이 쓸 memory 영역을 확보하는 일이에요. Allocation API에 크기를 요청하면 그만큼의 영역을 마련하고, 시작 address를 pointer로 돌려줘요.
+메모리를 함께 쓰기 전에, 할당부터 잠깐 짚고 갈게요. Allocation은 프로그램이 쓸 memory 영역을 확보하는 일이에요. Allocation API[^um-api]에 크기를 요청하면 그만큼의 영역을 마련하고, 시작 address를 pointer로 돌려줘요.
 
 `malloc`으로 만들면 CPU code가 쓸 allocation이고, `cudaMalloc`으로 만들면 GPU가 접근하도록 CUDA가 관리하는 device allocation이에요. 둘 다 pointer를 돌려주지만 그 pointer들이 가리키는 memory 영역은 서로 다를 수 있답니다.
 
-discrete GPU가 달린 일반적인 PC를 생각해볼까요? CPU의 주 memory인 system DRAM과 GPU 전용 memory인 VRAM이 물리적으로 떨어져 있어요. 둘 사이에서 데이터를 주고받는 연결 통로가 PCIe고요.
+CPU와 별도 칩으로 붙는 discrete GPU가 달린 일반적인 PC를 생각해볼까요? CPU의 주 memory인 system DRAM[^um-dram]과 GPU 전용 memory인 VRAM이 물리적으로 떨어져 있어요. 둘 사이에서 데이터를 주고받는 연결 통로가 PCIe(PCI Express)고요.
 
 그러니 앞 글처럼 CPU에는 `malloc`, GPU에는 `cudaMalloc`으로 각각 할당했다면, 계산 전에 H2D(Host to Device) copy가 필요해요. GPU가 만든 결과를 CPU에서 읽을 때는 D2H(Device to Host) copy로 가져와야 하고요. 왔다가 갔다가.. 이 복사가 코드에 들어가 있었던 거예요.
 
-integrated GPU에서는 CPU와 GPU가 같은 system DRAM을 사용해요. 이쪽은 물리 메모리를 함께 쓰네요.
+CPU 쪽 시스템에 통합된 integrated GPU에서는 CPU와 GPU가 같은 system DRAM을 사용해요. 이쪽은 물리 메모리를 함께 쓰네요.
 
 그런데 각 처리 장치에는 주소 변환 장치와 cache가 따로 있어요. Cache는 자주 쓰는 data를 잠깐 보관하는 곳이고요. DRAM을 공유해도 각 장치에 맞는 주소 연결은 필요하고, CPU와 GPU가 어떤 순서로 접근할지도 정해줘야 한답니다.
 
-예를 들어 GPU 작업이 끝난 뒤 CPU가 읽게끔 프로그램에서 순서를 정할 수 있어요. 프로그램이 호출하는 API를 제공하는 library가 CUDA Runtime이고, GPU 실행과 주소 연결을 제어하는 system software가 CUDA driver예요. 이 Runtime과 driver, hardware가 주소 연결과 데이터 배치, cache 상태를 나눠서 관리해줘요.
+예를 들어 GPU 작업이 끝난 뒤 CPU가 읽게끔 프로그램에서 순서를 정할 수 있어요. 프로그램이 호출할 기능을 모아둔 library가 CUDA Runtime이고, GPU 실행과 주소 연결을 제어하는 system software가 CUDA driver예요. 이 Runtime과 driver, hardware가 주소 연결과 데이터 배치, cache 상태를 나눠서 관리해줘요.
 
 ## Virtual Address와 Physical Memory
 
 ### 주소 변환
 
-여기서 process와 processor가 나란히 나오는데요. 이름이 비슷해서 잠깐 멈칫하죠ㅎㅎ Process는 실행 중인 프로그램 하나를 가리키는 OS 단위예요. CPU·GPU 같은 processor와 구분해서 읽어주세요.
+여기서 process와 processor가 나란히 나오는데요. 이름이 비슷해서 잠깐 멈칫하죠ㅎㅎ Process는 실행 중인 프로그램 하나를 가리키는 운영체제(OS)의 관리 단위예요. CPU·GPU 같은 processor와 구분해서 읽어주세요.
 
-CUDA process의 pointer에는 virtual address가 들어 있어요. 이걸 DRAM이나 VRAM의 physical address로 바꿔주는 장치가 MMU(Memory Management Unit)랍니다.
+CUDA process의 pointer에는 virtual address가 들어 있어요. 이걸 DRAM이나 VRAM에서 데이터가 놓인 실제 위치, physical address로 바꿔주는 장치가 MMU(Memory Management Unit)랍니다.
 
 한 process가 사용할 수 있는 virtual address 전체 범위를 virtual address space라고 해요. 보통 이 범위를 일정 크기의 page로 나누고, physical memory는 같은 크기의 frame(page frame)으로 나눠요.
 
@@ -57,8 +57,6 @@ CPU나 GPU가 pointer를 통해 값을 읽고 쓸 때는 각 장치의 MMU가 �
 이 변환을 할 때 MMU는 우선 TLB(Translation Lookaside Buffer)부터 찾아봐요. 최근에 사용한 가상 페이지→물리 프레임 변환 결과가 들어 있거든요.
 
 자주 쓰는 것을 가까운 곳에 작게 복사해두고 먼저 찾아보는 저장소를 캐시라고 하는데, TLB는 그중 주소 변환 결과를 보관하는 캐시예요. 아까 찾았던 주소를 또 처음부터 찾아야 하면 조금 아깝겠죠ㅎㅎ
-
-![혼자 흐뭇하게 웃는 문](/images/naver-moon/moon-10.png)
 
 ![CPU의 virtual address가 MMU와 TLB를 거쳐 physical address로 변환되는 구조](images/address-translation.png?v=4#medium)
 
@@ -157,7 +155,7 @@ CPU가 GPU 작업이 끝난 뒤에 읽어야 하고, 그때 읽은 값도 GPU가
 
 ![이전 값이 보일까 놀라는 문](/images/naver-moon/moon-3.png)
 
-읽는 시점을 맞추는 게 synchronization이에요. `cudaDeviceSynchronize()`는 앞서 제출한 GPU 작업이 끝날 때까지 CPU thread를 기다리게 해요. 덕분에 GPU write가 끝난 다음 CPU read를 시작할 수 있어요.
+읽는 시점을 맞추는 게 synchronization이에요. `cudaDeviceSynchronize()`는 앞서 제출한 GPU 작업이 끝날 때까지 CPU thread[^um-host-thread]를 기다리게 해요. 덕분에 GPU write가 끝난 다음 CPU read를 시작할 수 있어요.
 
 그다음 볼 게 cache coherence예요. CPU와 GPU는 DRAM에 자주 다녀오지 않으려고 최근 데이터를 각자의 cache에 보관해요. 가져올 때는 연속된 byte 묶음인 cache line 단위로 가져오고요.
 
@@ -177,7 +175,7 @@ CUDA는 managed allocation에 접근하는 방식을 `Full model`과 `Limited mo
 
 ### Full model
 
-Device attribute인 `concurrentManagedAccess`부터 보면 돼요. CPU와 GPU가 managed allocation을 동시에 사용할 수 있는지를 나타내는데, 값이 `1`이면 `Full model`이에요.
+장치가 지원하는 기능을 조회하는 값, device attribute인 `concurrentManagedAccess`부터 보면 돼요. CPU와 GPU가 managed allocation을 동시에 사용할 수 있는지를 나타내는데, 값이 `1`이면 `Full model`이에요.
 
 GPU가 virtual page에 접근할 때 CUDA가 GPU mapping을 설정해요. 필요하다면 data를 GPU memory의 physical frame으로 옮기고요. 이 모델에서는 CPU와 GPU가 같은 managed allocation의 서로 다른 주소를 동시에 사용할 수 있어요. 여기서 서로 다른 주소라는 부분도 같이 봐주세요~
 
@@ -209,8 +207,8 @@ GPU가 virtual page에 접근할 때 CUDA가 GPU mapping을 설정해요. 필요
 우선 `managedMemory`는 `cudaMallocManaged`처럼 명시적으로 요청하는 managed allocation을 지원하는지 알려줘요. 지원 여부를 봤다면, 그다음 세 attribute는 아래 순서로 읽어보시면 돼요.
 
 1. `concurrentManagedAccess`가 `0`이면 `Limited model`이에요.
-2. 그 값이 `1`이면 `Full model`이에요. 이때 `pageableMemoryAccess`가 `0`이라면 CUDA API로 명시적으로 만든 managed allocation만 이 모델을 사용해요.
-3. 두 값이 모두 `1`이면 `malloc`, `new`, `mmap` 같은 system allocation까지 Unified Memory 범위에 들어와요. 이때만 `pageableMemoryAccessUsesHostPageTables`를 읽어요. `0`이면 driver가 mapping과 migration을 관리하며 앞서 본 cache coherence를 달성하는 software coherence예요. `1`이면 CPU와 GPU가 같은 host page table을 쓰고 hardware가 cache 상태를 직접 맞추는 hardware coherence랍니다.
+2. 그 값이 `1`이면 `Full model`이에요. 이때 `pageableMemoryAccess`[^um-pageable]가 `0`이라면 CUDA API로 명시적으로 만든 managed allocation만 이 모델을 사용해요.
+3. 두 값이 모두 `1`이면 `malloc`, `new`, `mmap` 같은 system allocation[^um-system-allocation]까지 Unified Memory 범위에 들어와요. 이때만 `pageableMemoryAccessUsesHostPageTables`를 읽어요. `0`이면 driver가 mapping과 migration을 관리하며 앞서 본 cache coherence를 달성하는 software coherence예요. `1`이면 CPU와 GPU가 같은 host page table을 쓰고 hardware가 cache 상태를 직접 맞추는 hardware coherence랍니다.
 
 ## Discrete GPU의 Page Fault와 Migration
 
@@ -220,7 +218,7 @@ GPU가 virtual page에 접근할 때 CUDA가 GPU mapping을 설정해요. 필요
 
 이때 page fault는 해당 virtual page를 읽을 GPU mapping을 준비하라는 신호예요. 이름에 fault가 붙었다고 여기서 프로그램이 끝나는 건 아니랍니다.
 
-Fault는 migration이나 remote mapping으로 처리할 수 있어요. 아래 그림은 migration을 택한 경우예요. Page table과 physical frame을 관리하는 operating-system memory manager가 CUDA driver와 함께 GPU memory에 physical frame을 준비하고, data를 옮긴 뒤 GPU mapping을 설치해요. Mapping 준비가 끝나면 기다리던 GPU instruction도 다시 실행돼요.
+Fault는 migration이나 remote mapping, 즉 데이터를 옮기지 않고 다른 처리 장치 쪽 memory에 접근할 주소를 연결하는 방식으로 처리할 수 있어요. 아래 그림은 migration을 택한 경우예요. Page table과 physical frame을 관리하는 operating-system memory manager가 CUDA driver와 함께 GPU memory에 physical frame을 준비하고, data를 옮긴 뒤 GPU mapping을 설치해요. Mapping 준비가 끝나면 기다리던 GPU instruction도 다시 실행돼요.
 
 ![Software coherence를 사용하는 Full model의 page fault와 migration](images/demand-paging.svg)
 
@@ -228,13 +226,13 @@ Remote mapping을 택하면 data는 CPU memory의 physical frame에 그대로 �
 
 CPU와 GPU가 같은 pages를 번갈아 수정하면 양쪽으로 migration이 반복될 수 있어요. 이게 page ping-pong이에요. 옮겨왔더니 다시 저쪽에서 쓰고.. 페이지도 바쁘겠어요ㅠㅠ
 
-`cudaMemPrefetchAsync`로 지정한 범위의 데이터를 미리 옮기면 placement 시점을 앞당길 수 있어요. CPU와 GPU가 실행되는 순서는 CUDA synchronization으로 정해주고요.
+`cudaMemPrefetchAsync`[^um-prefetch]로 지정한 범위의 데이터를 미리 옮기면 placement 시점을 앞당길 수 있어요. CPU와 GPU가 실행되는 순서는 CUDA synchronization으로 정해주고요.
 
 ![비구름 아래에서 우는 문](/images/naver-moon/moon-9.png)
 
 ### HMM
 
-HMM(Heterogeneous Memory Management)도 여기서 같이 볼게요. Linux kernel에서 CPU page table의 변경과 GPU fault, page migration을 연결하는 subsystem이에요.
+HMM(Heterogeneous Memory Management)도 여기서 같이 볼게요. Linux kernel 안에서 메모리 관리의 일부를 맡는 subsystem이에요. CPU page table의 변경과 GPU fault, page migration을 연결해줘요.
 
 HMM을 사용하는 `Full model`에서는 `malloc`, `new`, `mmap`으로 만든 system allocation도 GPU가 사용할 수 있어요. Device attributes로 지원 범위를 분류할 수 있고, 현재 HMM 사용 여부는 NVIDIA driver에 딸린 명령줄 도구 `nvidia-smi`를 `-q`로 실행해서 `Addressing Mode` 항목을 보면 된답니다.
 
@@ -242,7 +240,7 @@ HMM을 사용하는 `Full model`에서는 `malloc`, `new`, `mmap`으로 만든 s
 
 그럼 앞의 내용을 실제 장치 출력에 대입해볼게요. 확인한 환경은 Jetson AGX Orin Developer Kit예요. Jetson Linux 배포판인 L4T(Linux for Tegra)는 R36.5.0, CUDA 개발 도구를 묶은 JetPack은 6.2.2, CUDA는 12.6이었어요.
 
-Tegra는 Orin이 속한 NVIDIA SoC 제품군의 이름이에요. Orin은 CPU와 GPU가 한 chip에 들어 있는 SoC(System on Chip)고요. Device 0으로 잡힌 건 compute capability 8.7인 integrated GPU였어요. Compute capability는 GPU가 지원하는 CUDA hardware 기능 세대를 나타낸답니다.
+Tegra는 Orin이 속한 NVIDIA SoC 제품군의 이름이에요. Orin은 CPU와 GPU가 한 chip에 들어 있는 SoC(System on Chip)고요. 첫 번째 GPU를 뜻하는 Device 0으로 잡힌 건 compute capability 8.7인 integrated GPU였어요. Compute capability는 GPU가 지원하는 CUDA hardware 기능 세대를 나타낸답니다.
 
 ```text
 device=0 name=Orin cc=8.7 integrated=1
@@ -263,7 +261,7 @@ Tegra 문서에 따르면 CPU와 integrated GPU가 SoC DRAM을 공유해요. Dev
 
 Orin의 managed allocation도 이 shared SoC DRAM에 놓여요. 그리고 CPU와 GPU는 managed data를 각자의 cache에 저장할 수 있어요. 그래서 앞선 처리 장치가 쓴 결과를 다음 처리 장치가 읽도록 cache 상태를 맞춰야 하죠. 여기에서도 cache coherence가 필요한 거예요.
 
-Orin의 one-way I/O coherency는 CPU가 cache에 기록한 값을 GPU에서 읽을 수 있게 해줘요. 반대 방향, 즉 GPU가 쓴 값을 CPU가 읽을 때는 CUDA driver가 synchronization 경계에서 GPU cache 상태를 관리해요.
+Orin의 one-way I/O coherency[^um-io]는 CPU가 cache에 기록한 값을 GPU에서 읽을 수 있게 해줘요. 반대 방향, 즉 GPU가 쓴 값을 CPU가 읽을 때는 CUDA driver가 synchronization 경계에서 GPU cache 상태를 관리해요.
 
 One-way라는 말이 괜히 붙은 건 아니네요. 두 방향을 따로 따라가야 해요ㅎㅎ
 
@@ -273,7 +271,7 @@ Tegra 문서에서는 `concurrentManagedAccess=0`인 환경의 kernel launch와 
 
 ![Jetson AGX Orin의 one-way I/O coherency와 driver-managed GPU cache](images/orin-shared-dram.svg)
 
-앞의 예제 코드인 `managed_add.cu`를 실제로 실행한 출력도 볼게요. Compute capability 8.7의 compile target인 `sm_87`로 빌드한 결과예요.
+앞의 예제 코드인 `managed_add.cu`를 실제로 실행한 출력도 볼게요. Compute capability 8.7의 compile target인 `sm_87`[^um-compile-target]로 빌드한 결과예요.
 
 ```text
 before kernel: 41
@@ -294,3 +292,31 @@ after kernel:  42
 - [CUDA Programming Guide: Unified Memory](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/unified-memory.html): page fault, migration, coherence, performance behavior의 상세 설명.
 - [CUDA for Tegra: Memory Management](https://docs.nvidia.com/cuda/cuda-for-tegra-appnote/index.html#memory-management): Tegra의 shared SoC DRAM, cache coherence, `Limited model` 지침.
 - 스티커: LINE의 Moon 캐릭터. [Moon & James](https://store.line.me/stickershop/product/1/en), [LINE Characters in Love!](https://store.line.me/stickershop/product/1252/en).
+
+[^um-processors]: CPU(Central Processing Unit)는 프로그램의 흐름과 여러 범용 작업을 처리하는 중앙처리장치예요. GPU(Graphics Processing Unit)는 많은 데이터에 비슷한 계산을 병렬로 수행하도록 구성된 처리 장치고요. 원래 그래픽 처리에서 출발했지만 여기서는 일반 계산을 맡겨요.
+
+[^um-cuda]: CUDA는 NVIDIA GPU에서 일반 계산 코드를 실행하도록 제공하는 프로그래밍 플랫폼이에요. GPU용 코드를 작성하는 방법과 컴파일 도구, 메모리·실행을 관리하는 기능을 함께 제공해요.
+
+[^um-virtual-address]: 가상 주소는 프로그램이 데이터를 가리킬 때 쓰는 주소예요. RAM의 실제 위치와 바로 같다고 보면 안 되고, 주소 변환을 거쳐 실제 저장 위치에 연결돼요. 포인터에 적힌 주소와 데이터가 놓인 자리를 따로 보는 이유랍니다.
+
+[^um-sync]: 동기화(synchronization)는 여러 작업 사이에 먼저 끝나야 할 일과 그 뒤에 할 일의 순서를 정하는 거예요. 이 글에서는 GPU가 값을 다 쓴 다음 CPU가 읽도록 기다리는 경우가 대표적이에요.
+
+[^um-coherence]: 캐시는 처리 장치 가까이에 데이터 사본을 잠시 보관해 메모리에 다시 다녀오는 횟수를 줄이는 저장소예요. 캐시 일관성(cache coherence)은 같은 데이터의 사본들이 서로 어긋난 값을 계속 보여주지 않도록 맞추는 성질이에요. CPU와 GPU가 동시에 같은 값을 수정해도 된다는 뜻은 아니라서, 접근 순서를 정하는 동기화도 필요해요.
+
+[^um-orin]: Jetson AGX Orin은 CPU와 NVIDIA GPU를 한 칩에 통합한 시스템을 사용하는 개발 플랫폼이에요. 일반적인 외장 GPU PC와 달리 CPU와 GPU가 같은 물리 메모리를 사용해요. 본문의 장치 출력은 그중 Developer Kit에서 확인한 것이에요.
+
+[^um-api]: API(Application Programming Interface)는 프로그램이 다른 소프트웨어의 기능을 요청할 때 사용하는 호출 방법이에요. 여기서는 `cudaMallocManaged`처럼 함수에 인자를 넘겨 메모리를 확보하는 호출이 해당돼요.
+
+[^um-dram]: DRAM(Dynamic Random Access Memory)은 실행 중인 코드와 데이터를 담는 주 메모리에 널리 쓰이는 저장 장치예요. 전원을 끄면 내용이 사라지므로 파일을 오래 보관하는 SSD와는 역할이 달라요. 여기서 system DRAM은 CPU 쪽 주 메모리, VRAM은 GPU 전용 메모리를 가리켜요.
+
+[^um-pageable]: Pageable memory는 운영체제가 물리 메모리의 연결이나 배치를 바꿀 수 있는 일반적인 host memory예요. RAM에 계속 고정해두는 pinned memory와 구분해요. `pageableMemoryAccess`는 이런 system allocation까지 GPU의 Unified Memory 접근 범위에 들어가는지 확인하는 속성이에요.
+
+[^um-system-allocation]: System allocation은 `cudaMallocManaged` 같은 CUDA 전용 함수 대신 일반적인 시스템·언어 기능으로 마련한 메모리예요. `malloc`은 C의 동적 메모리 할당 함수, `new`는 C++에서 객체를 만들고 저장 공간을 확보하는 연산자, `mmap`은 파일 또는 파일과 연결하지 않은 익명 메모리 영역을 프로세스 주소 공간에 연결하는 시스템 호출이에요.
+
+[^um-prefetch]: Prefetch는 곧 쓸 데이터를 실제 접근보다 먼저 준비하는 일이에요. 여기서는 지원하는 시스템에서 지정한 CPU·GPU 쪽으로 데이터를 미리 옮기도록 요청하고, `Async`는 CPU가 이동 완료까지 기다리는 호출이 아니라는 뜻이에요. 이 함수가 쓰는 작업 순서 단위가 stream이며, 실제 사용 전에는 같은 stream의 순서나 명시적인 동기화로 완료를 확인해줘야 해요. ([CUDA 메모리 안내](https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/understanding-memory.html#memory-advise-and-prefetch))
+
+[^um-io]: I/O(Input/Output)는 처리 장치가 외부 장치와 데이터를 주고받는 입출력을 뜻해요. 여기서는 GPU 같은 장치가 CPU 쪽 메모리에 접근하는 경로를 말하며, one-way는 CPU 캐시의 변경을 GPU가 볼 수 있는 방향의 지원이라는 뜻이에요. 반대 방향의 GPU 캐시 관리까지 없애주는 기능은 아니랍니다. ([Tegra I/O coherency](https://docs.nvidia.com/cuda/cuda-for-tegra-appnote/index.html#i-o-coherency))
+
+[^um-compile-target]: Compile target은 소스 코드를 실행 코드로 바꿀 때 어느 하드웨어용으로 만들지 지정하는 대상이에요. `sm_87`은 compute capability 8.7 GPU용 기계어를 생성하라는 표기예요.
+
+[^um-host-thread]: CPU thread는 CPU 쪽 프로그램에서 코드를 차례대로 실행하는 흐름 하나예요. 앞에서 더하기를 맡았던 GPU thread와는 별개예요. 이 예제에서는 CPU의 그 흐름이 GPU 작업 완료를 기다렸다가 결과를 읽어요.
