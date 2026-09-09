@@ -15,7 +15,7 @@ summary: "One line from Tesla (2006) to Rubin (2026): how the NVIDIA SM stayed t
 
 From Tesla in 2006 to Rubin in 2026, NVIDIA has shipped over a dozen GPU architectures in twenty years. Listed by name, that looks like a lot to memorize. In practice, the whole lineage fits one simple frame, and the goal of this post is to build it: take any NVIDIA GPU, place it on a timeline, and state in one sentence what it changed and why.
 
-This post uses the 2006 Tesla chip — covered in the [primer post (CUDA 0)](../cuda-0-gpu-architecture/) — as its anchor, and follows that anchor forward.
+This post uses the 2006 Tesla chip — covered in the [previous post](../cuda-0-gpu-architecture/) — as its anchor, and follows that anchor forward.
 
 ![NVIDIA GPU architecture family tree, Tesla to Rubin](./images/timeline.svg?v=1)
 *The family tree: a shared trunk through Pascal, then a fork at Volta into a datacenter line (top) and a graphics line (bottom).*

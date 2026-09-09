@@ -17,7 +17,7 @@ summary: "Tesla(2006)부터 Rubin(2026)까지 NVIDIA GPU의 계보를 따라가�
 
 ![눈을 반짝이며 기대하는 문](/images/naver-moon/moon-4.png)
 
-출발점은 [primer 글(CUDA 0)](../cuda-0-gpu-architecture/)[^genealogy-cuda]에서 본 2006년 Tesla 칩이에요. 그 구조를 기준으로 놓고, 다음 세대에서는 무엇이 달라졌는지 살펴볼게요.
+출발점은 [이전 글](../cuda-0-gpu-architecture/)[^genealogy-cuda]에서 본 2006년 Tesla 칩이에요. 그 구조를 기준으로 놓고, 다음 세대에서는 무엇이 달라졌는지 살펴볼게요.
 
 ![NVIDIA GPU architecture family tree, Tesla to Rubin](./images/timeline.svg?v=1)
 *Pascal까지는 하나의 줄기를 공유하고, Volta부터 위쪽 datacenter 라인과 아래쪽 graphics 라인으로[^genealogy-lines] 갈라져요.*
